@@ -1,0 +1,74 @@
+<div class="stmt-container">
+  <h2>Extrato</h2>
+
+  <!-- Cabeçalho de Filtro -->
+  <div class="filter-section">
+    <div class="form-group">
+      <label for="beginDate">Data de Início:</label>
+      <input id="beginDate" type="date" [(ngModel)]="beginDate" />
+    </div>
+    <div class="form-group">
+      <label for="endDate">Data de Fim:</label>
+      <input id="endDate" type="date" [(ngModel)]="endDate" />
+    </div>
+    <button (click)="getStatement()">Gerar Extrato</button>
+  </div>
+
+  <!-- Resultados -->
+  <div class="results-section" *ngIf="pgDailyRecords.length > 0">
+    <div *ngFor="let record of pgDailyRecords" class="day-block">
+      <div class="day-header">
+        <h3>{{ record.date | date : "dd/MM/yyyy" }}</h3>
+        <span
+          >Saldo ao Fim do Dia:
+          <strong>{{
+            record.consolidatedBalance | currency : "BRL"
+          }}</strong></span
+        >
+      </div>
+
+      <table *ngIf="record.transactions.length > 0; else noMovement">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Operação</th>
+            <th>Destino/Origem</th>
+            <th>Quantia</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let transaction of record.transactions"
+            [ngClass]="{
+              income: transaction.amount > 0,
+              expense: transaction.amount < 0
+            }"
+          >
+            <td>{{ transaction.dateTime | date : "dd/MM/yyyy HH:mm" }}</td>
+            <td>{{ transaction.operation }}</td>
+            <td>{{ transaction.fromOrToClient || "N/A" }}</td>
+            <td>{{ transaction.amount | currency : "BRL" }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Caso não haja movimentação-->
+      <ng-template #noMovement>
+        <p class="no-movement">Nenhuma transação realizada neste dia.</p>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Controle de Paginação -->
+  <div class="pg-controls" *ngIf="totalPgs > 1">
+    <button (click)="previousPg()" [disabled]="currentPg === 1">
+      &laquo; Anterior
+    </button>
+
+    <span>Pagina {{ currentPg }} de {{ totalPgs }}</span>
+
+    <button (click)="nextPg()" [disabled]="currentPg === totalPgs">
+      &raquo; Próxima
+    </button>
+  </div>
+</div>
