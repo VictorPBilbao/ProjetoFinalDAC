@@ -5,8 +5,16 @@ import { StatementComponent } from './features/pages/statement/statement.compone
 
 export const routes: Routes = [
   {
+    path: '',
+    component: LoginComponent,
+  },
+  {
     path: 'cadastro',
     component: RegisterComponent,
+  },
+  {
+    path: 'extrato',
+    component: StatementComponent,
   },
   { path: '**', redirectTo: '' },
 ];
