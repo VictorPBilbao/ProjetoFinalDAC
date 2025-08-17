@@ -48,6 +48,9 @@ body {
   --footer-menu-line-height: 22px;
   --footer-menu-font-weight: 600;
   --footer-menu-font-style: normal;
+  --statement-font-family: 'Segoe UI', sans-serif;
+  --statement-font-size: 16px;
+  --statement-font-weight: 400;
 
   --normal-box-shadow: 4px 4px 58px 0px rgba(0, 0, 0, 0.12);
 }
