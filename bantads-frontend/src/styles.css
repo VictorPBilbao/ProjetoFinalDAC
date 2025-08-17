@@ -1,9 +1,7 @@
-/* src/styles.css */
 
-/* Adicione isso ao seu arquivo de estilos global */
 body {
   margin: 0;
-  font-family: "Akshar-Medium", sans-serif; /* Opcional, mas bom para consistência */
+  font-family: "Akshar-Medium", sans-serif; 
 }
 
 :root {
@@ -17,10 +15,6 @@ body {
   --black-12: rgba(224, 224, 224, 0.5);
   --primary-100: #0ec093;
   --primary-100: rgba(14, 192, 147, 0.2);
-  --primary-60: #f467b2;
-  --primary-40: #f899cc;
-  --primary-20: #fbcce5;
-  --primary-12: #fce0ef;
 
   /* Fonts */
   --menu-font-family: Abel-Regular, sans-serif;
