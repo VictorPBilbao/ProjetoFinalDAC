@@ -1,14 +1,16 @@
 import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
+
 @Component({
   selector: 'app-register',
+  standalone: true,
   imports: [
     CommonModule,
     FormsModule
   ],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.css'
+  styleUrls: ['./register.component.css']
 })
 export class RegisterComponent {
   constructor() {
@@ -22,9 +24,7 @@ export class RegisterComponent {
   isUsernameAvailable: boolean = true;
   isCepValid: boolean = true;
 
-  onSubmit() {
-
-  }
+  onSubmit() {}
 
   goToNextStep(): void {
     if (this.currentStep < 2) {
@@ -38,17 +38,11 @@ export class RegisterComponent {
     }
   }
 
-  onVerifyCep(): void {
+  onVerifyCep(): void {}
 
-  }
+  onValidateEmail(): void {}
 
-  onValidateEmail(): void {
-
-  }
-
-  onValidateUsername(): void {
-
-  }
+  onValidateUsername(): void {}
 
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
