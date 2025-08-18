@@ -1,1 +1,50 @@
-/* You can add global styles to this file, and also import other style files */
+
+body {
+  margin: 0;
+  font-family: "Akshar-Medium", sans-serif; 
+}
+
+:root {
+  /* Colors */
+  --white: #ffffff;
+  --black-100: #010101;
+  --black-80: #343434;
+  --black-60: #676767;
+  --black-40: #999999;
+  --black-20: #cccccc;
+  --black-12: rgba(224, 224, 224, 0.5);
+  --primary-100: #0ec093;
+  --primary-100: rgba(14, 192, 147, 0.2);
+
+  /* Fonts */
+  --menu-font-family: Abel-Regular, sans-serif;
+  --menu-font-size: 36px;
+  --menu-line-height: 43px;
+  --menu-font-weight: 400;
+  --menu-font-style: normal;
+  --subtitle-font-family: Akshar-Medium, sans-serif;
+  --subtitle-font-size: 16px;
+  --subtitle-line-height: 22px;
+  --subtitle-font-weight: 500;
+  --subtitle-font-style: normal;
+  --values-font-family: Abel-Regular, sans-serif;
+  --values-font-size: 40px;
+  --values-line-height: 43px;
+  --values-font-weight: 400;
+  --values-font-style: normal;
+  --footer-font-family: Akshar-Medium, sans-serif;
+  --footer-font-size: 14px;
+  --footer-line-height: 22px;
+  --footer-font-weight: 500;
+  --footer-font-style: normal;
+  --footer-menu-font-family: Akshar-SemiBold, sans-serif;
+  --footer-menu-font-size: 18px;
+  --footer-menu-line-height: 22px;
+  --footer-menu-font-weight: 600;
+  --footer-menu-font-style: normal;
+  --statement-font-family: 'Segoe UI', sans-serif;
+  --statement-font-size: 16px;
+  --statement-font-weight: 400;
+
+  --normal-box-shadow: 4px 4px 58px 0px rgba(0, 0, 0, 0.12);
+}
