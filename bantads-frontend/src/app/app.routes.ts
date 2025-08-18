@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './features/pages/login/login.component';
 import { RegisterComponent } from './features/pages/register/register.component';
+import { DepositoComponent } from './deposito/deposito.component';
 import { StatementComponent } from './features/pages/statement/statement.component';
 
 export const routes: Routes = [
@@ -16,5 +17,9 @@ export const routes: Routes = [
     path: 'extrato',
     component: StatementComponent,
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: 'deposito',
+    component: DepositoComponent
+  },
+  { path: '**', redirectTo: '' }
 ];
