@@ -1,8 +1,10 @@
 import { Routes } from '@angular/router';
+
+import { DepositoComponent } from './deposito/deposito.component';
 import { LoginComponent } from './features/pages/login/login.component';
 import { RegisterComponent } from './features/pages/register/register.component';
-import { DepositoComponent } from './deposito/deposito.component';
 import { StatementComponent } from './features/pages/statement/statement.component';
+import { UserDashboardComponent } from './features/pages/user-dashboard/user-dashboard.component';
 
 export const routes: Routes = [
   {
@@ -19,7 +21,11 @@ export const routes: Routes = [
   },
   {
     path: 'deposito',
-    component: DepositoComponent
+    component: DepositoComponent,
   },
-  { path: '**', redirectTo: '' }
+  {
+    path: 'dashboard-cliente',
+    component: UserDashboardComponent,
+  },
+  { path: '**', redirectTo: '' },
 ];
