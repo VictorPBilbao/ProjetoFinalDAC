@@ -5,6 +5,7 @@ import { LoginComponent } from './features/pages/login/login.component';
 import { RegisterComponent } from './features/pages/register/register.component';
 import { StatementComponent } from './features/pages/statement/statement.component';
 import { UserDashboardComponent } from './features/pages/user-dashboard/user-dashboard.component';
+import { UserDetailsComponent } from './features/pages/user-details/user-details.component';
 
 export const routes: Routes = [
   {
@@ -26,6 +27,10 @@ export const routes: Routes = [
   {
     path: 'dashboard-cliente',
     component: UserDashboardComponent,
+  },
+  {
+    path: 'detalhes-cliente',
+    component: UserDetailsComponent,
   },
   { path: '**', redirectTo: '' },
 ];
