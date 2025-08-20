@@ -3,16 +3,28 @@
     <div class="header-content-left">
       <div class="logo-title">
         <img src="images/banco-de-dinheiro-2-10.png" alt="Logo" class="logo" />
-        <span class="brand-title">BANTADS</span>
+        <span class="brand-title" style="font-size: 2rem">BANTADS</span>
       </div>
       <div class="agency-account-row">
         <span class="account-access">
           <img src="images/lock0.svg" alt="Lock" class="lock-icon" />
-          Acesse sua conta
+          Acessar
         </span>
-        <input type="text" class="agency-input" placeholder="Agência" />
-        <input type="text" class="account-input" placeholder="Conta" />
-        <button class="ok-btn">OK</button>
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+          <input
+            type="text"
+            class="user-input"
+            placeholder="Usuário"
+            formControlName="user"
+          />
+          <input
+            type="text"
+            class="password-input"
+            placeholder="Senha"
+            formControlName="password"
+          />
+          <button class="ok-btn">OK</button>
+        </form>
       </div>
     </div>
     <div class="header-content-right">
@@ -37,7 +49,9 @@
       <h1 class="main-title">Conectando você<br />ao seu futuro!</h1>
       <p class="subtitle">Seu potencial, nosso impulso.</p>
       <div class="hero-actions">
-        <button class="btn-primary">ABRIR CONTA</button>
+        <button type="button" class="btn-primary" (click)="abrirCadastro()">
+          ABRIR CONTA
+        </button>
         <button class="btn-outline">ATENDIMENTO</button>
       </div>
     </div>
