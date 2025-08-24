@@ -1,1 +1,57 @@
-<p>list-clients works!</p>
+<div class="client-container">
+  <h2>Lista de Clientes</h2>
+
+  <div class="search-bar">
+    <input
+      type="text"
+      placeholder="Pesquisar por nome ou CPF..."
+      [(ngModel)]="search"
+      (input)="filterClients()"
+    />
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>CPF</th>
+          <th>Nome</th>
+          <th>Cidade</th>
+          <th>Estado</th>
+          <th>Saldo</th>
+          <th>Limite</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let cliente of pgClients">
+          <td>{{ cliente.cpf }}</td>
+          <td>{{ cliente.nome }}</td>
+          <td>{{ cliente.endereco.cidade }}</td>
+          <td>{{ cliente.endereco.estado }}</td>
+          <td>{{ cliente.saldo | currency : "BRL" }}</td>
+          <td>{{ cliente.limite | currency : "BRL" }}</td>
+          <td>
+            <a [routerLink]="['']" class="details-link">Detalhes</a>
+          </td>
+        </tr>
+        <tr *ngIf="filteredClients.length === 0">
+          <td colspan="7" class="no-results">Nenhum cliente encontrado.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Controle de Paginação -->
+  <div class="pg-controls" *ngIf="totalPgs > 1">
+    <button (click)="previousPg()" [disabled]="currentPg === 1">
+      &laquo; Anterior
+    </button>
+
+    <span>Pagina {{ currentPg }} de {{ totalPgs }}</span>
+
+    <button (click)="nextPg()" [disabled]="currentPg === totalPgs">
+      &raquo; Próxima
+    </button>
+  </div>
+</div>
