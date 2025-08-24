@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { DepositoComponent } from './deposito/deposito.component';
+import { DepositoComponent } from './features/pages/deposito/deposito.component';
 import { LoginComponent } from './features/pages/login/login.component';
 import { RegisterComponent } from './features/pages/register/register.component';
 import { StatementComponent } from './features/pages/statement/statement.component';
