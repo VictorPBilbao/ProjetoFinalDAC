@@ -1,20 +1,9 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-//As interfaces só estão aqui pra página funcionar sozinha por enquanto :P
-//E até definirmos uma estrutura de páginas comum
-export interface Transaction {
-  dateTime: Date;
-  operation: 'Transferencia' | 'Deposito' | 'Saque';
-  fromOrToClient?: string; // Nome do cliente de destino ou de origem depende da op
-  amount: number;
-}
 
-export interface Record {
-  date: Date;
-  consolidatedBalance: number; // Saldo consolidado da conta no dia
-  transactions: Transaction[]; // Transações realizadas
-}
+import { Transaction } from '../../models/transaction.model';
+import { Record } from '../../models/record.model';
 
 @Component({
   selector: 'app-statement',
