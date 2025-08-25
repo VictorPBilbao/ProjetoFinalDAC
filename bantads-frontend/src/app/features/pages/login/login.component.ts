@@ -11,39 +11,10 @@ import { Router, RouterModule } from '@angular/router';
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
-  loginForm: FormGroup;
-  mensagem: string = '';
+  constructor(private fb: FormBuilder, private router: Router) { }
 
-  // usuário teste
-  private readonly USER_DATA = {
-    user: 'teste@bantads.com',
-    password: 'teste'
-  };
-
-  constructor(private fb: FormBuilder, private router: Router) {
-    this.loginForm = this.fb.group({
-      user: ['', [Validators.required]],
-      password: ['', [Validators.required]],
-      lembrarMe: [false]
-    });
-  }
-  onSubmit(): void {
-    if (this.loginForm.valid) {
-      const { user, password } = this.loginForm.value;
-      if (user === this.USER_DATA.user && password === this.USER_DATA.password) {
-        this.mensagem = 'Login realizado com sucesso!';
-        // redireciona para /dashboard-cliente
-        this.router.navigate(['/dashboard-cliente']);
-      } else {
-        this.mensagem = 'Usuário ou senha incorretos!';
-      }
-    } else {
-      this.mensagem = 'Formulário inválido. Por favor, preencha todos os campos.';
-    }
-  }
   abrirCadastro() {
     this.router.navigate(['/cadastro']);
   }
-
 }
 

@@ -1,0 +1,37 @@
+<header class="home-header">
+  <div class="header-bar">
+    <div class="header-content-left">
+      <div class="logo-title">
+        <img src="images/banco-de-dinheiro-2-10.png" alt="Logo" class="logo" />
+        <span class="brand-title" style="font-size: 2rem">BANTADS</span>
+      </div>
+      <div class="agency-account-row">
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+          <span class="account-access">
+            <img src="images/lock0.svg" alt="Lock" class="lock-icon" />
+            Acessar
+          </span>
+          <input
+            type="text"
+            class="user-input"
+            placeholder="Usuário"
+            formControlName="user"
+          />
+          <input
+            type="text"
+            class="password-input"
+            placeholder="Senha"
+            formControlName="password"
+          />
+          <button class="ok-btn">OK</button>
+        </form>
+      </div>
+    </div>
+    <div class="header-content-right">
+      <div class="search-bar">
+        <input type="text" placeholder="Pesquisar..." />
+        <img src="images/icon0.svg" alt="Search Icon" />
+      </div>
+    </div>
+  </div>
+</header>
