@@ -1,3 +1,5 @@
+import { Manager } from './manager.model';
+
 export interface EnderecoCliente {
   tipo: string; // rua, avenida, etc
   logradouro: string;
@@ -17,7 +19,7 @@ export interface Cliente {
   salario: number;
   limite: number; // limite de crédito calculado a partir do salário
   saldo: number; // saldo atual (pode ser negativo)
-  gerenteNome: string; // nome do gerente responsável
+  manager: Manager; // nome do gerente responsável
   endereco: EnderecoCliente;
   agencia: string;
   conta: string;

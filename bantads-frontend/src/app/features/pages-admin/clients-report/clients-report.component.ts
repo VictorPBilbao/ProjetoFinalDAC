@@ -1,18 +1,17 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 
 import { Cliente } from '../../models/cliente.model';
 import { Manager } from '../../models/manager.model';
 
 @Component({
-  selector: 'app-list-clients',
-  imports: [FormsModule, CommonModule, RouterLink],
-  templateUrl: './list-clients.component.html',
-  styleUrl: './list-clients.component.css',
+  selector: 'app-clients-report',
+  imports: [FormsModule, CommonModule],
+  templateUrl: './clients-report.component.html',
+  styleUrl: './clients-report.component.css',
 })
-export class ListClientsComponent {
+export class ClientsReportComponent {
   private allClients: Cliente[] = [];
   filteredClients: Cliente[] = [];
   pgClients: Cliente[] = [];

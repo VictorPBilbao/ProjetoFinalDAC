@@ -7,6 +7,7 @@ import { StatementComponent } from './features/pages-customer/statement/statemen
 import { UserDashboardComponent } from './features/pages-customer/user-dashboard/user-dashboard.component';
 import { UserDetailsComponent } from './features/pages-customer/user-details/user-details.component';
 import { ListClientsComponent } from './features/pages-customer/list-clients/list-clients.component';
+import { ClientsReportComponent } from './features/pages-admin/clients-report/clients-report.component';
 
 export const routes: Routes = [
   {
@@ -36,6 +37,10 @@ export const routes: Routes = [
   {
     path: 'clientes',
     component: ListClientsComponent,
+  },
+  {
+    path: 'relatorio-clientes',
+    component: ClientsReportComponent,
   },
   { path: '**', redirectTo: '' },
 ];
