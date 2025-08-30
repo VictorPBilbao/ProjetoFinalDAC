@@ -7,6 +7,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { Cliente } from '../../models/cliente.model';
+import { Manager } from '../../models/manager.model';
 
 @Component({
   selector: 'app-user-details',
@@ -33,7 +34,13 @@ export class UserDetailsComponent {
       salario: 5000,
       limite: 5000 * 0.5,
       saldo: -500,
-      gerenteNome: 'Maria Pereira',
+      manager: {
+        id: 'g1',
+        name: 'Carlos Pereira',
+        cpf: '999.888.777-11',
+        email: 'carlos.p@bank.com',
+        telephone: '(11) 91111-2222',
+      },
       endereco: {
         tipo: 'Rua',
         logradouro: 'das Flores',
