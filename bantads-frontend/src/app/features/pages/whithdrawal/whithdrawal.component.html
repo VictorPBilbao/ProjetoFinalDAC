@@ -1,1 +1,95 @@
-<p>whithdrawal works!</p>
+<header class="home-header">
+	<div class="header-bar">
+		<div class="header-content-left">
+			<div class="logo-title">
+				<img src="images/banco-de-dinheiro-2-10.png" alt="Logo" class="logo" />
+				<span class="brand-title">BANTADS</span>
+			</div>
+			<div class="agency-account-row">
+				<span class="account-access">
+					<img src="images/lock0.svg" alt="Lock" class="lock-icon" />
+					Acessar
+				</span>
+				<input type="text" class="user-input" placeholder="Usuário" />
+				<input type="password" class="password-input" placeholder="Senha" />
+				<button class="ok-btn" type="button">OK</button>
+			</div>
+		</div>
+		<div class="header-content-right">
+			<div class="search-bar">
+				<input type="text" placeholder="Pesquisar..." />
+				<img src="images/icon0.svg" alt="Search Icon" />
+			</div>
+		</div>
+	</div>
+	</header>
+
+	<main class="deposit-main">
+		<div class="page-header">
+			<h1>Saque</h1>
+			<span class="last-access">Último acesso: {{ (cliente$ | async)?.criadoEm | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+		</div>
+
+		<section class="content-grid">
+			<aside class="side-menu card">
+				<h3>Menu</h3>
+				<nav>
+					<ul>
+						<li><a routerLink="/deposito">Depositar</a></li>
+						<li class="active"><a routerLink="/whithdrawal">Saque</a></li>
+						<li><a routerLink="/extrato">Consultar Extrato</a></li>
+					</ul>
+				</nav>
+			</aside>
+
+			<div class="main-content">
+				<section class="card account-info" *ngIf="cliente$ | async as cliente">
+					<h2>Informações da Conta</h2>
+					<div class="info-row"><span>Agência</span><strong>{{ cliente.agencia }}</strong></div>
+					<div class="info-row"><span>Conta Corrente</span><strong>{{ cliente.conta }}</strong></div>
+					<div class="balances">
+						<div class="balance-item">
+							<span>Saldo</span>
+							<strong [class.negative]="cliente.saldo < 0" [class.positive]="cliente.saldo >= 0">{{ cliente.saldo | currency:'BRL':'symbol':'1.2-2' }}</strong>
+						</div>
+						<div class="balance-item">
+							<span>Limite</span>
+							<strong class="positive">{{ cliente.limite | currency:'BRL':'symbol':'1.2-2' }}</strong>
+						</div>
+					</div>
+				</section>
+
+				<section class="card deposit-form">
+					<h2>Realizar Saque</h2>
+
+					<form [formGroup]="form" (ngSubmit)="submit()">
+						<div class="form-grid">
+							<div class="form-group">
+								<label for="agencia">Agência</label>
+								<input id="agencia" type="text" formControlName="agencia" />
+								<small class="error" *ngIf="form.get('agencia')?.touched && form.get('agencia')?.invalid">Informe a agência.</small>
+							</div>
+							<div class="form-group">
+								<label for="conta">Conta Corrente</label>
+								<input id="conta" type="text" formControlName="conta" />
+								<small class="error" *ngIf="form.get('conta')?.touched && form.get('conta')?.invalid">Informe a conta.</small>
+							</div>
+							<div class="form-group">
+								<label for="valor">Valor</label>
+								<input id="valor" type="number" step="0.01" formControlName="valor" placeholder="0,00" />
+								<small class="error" *ngIf="form.get('valor')?.touched && form.get('valor')?.errors?.['min']">O valor deve ser maior que zero.</small>
+								<small class="error" *ngIf="form.get('valor')?.touched && form.get('valor')?.errors?.['required']">Informe um valor.</small>
+							</div>
+						</div>
+
+						<div class="actions">
+							<button type="submit" class="btn-primary" [disabled]="form.invalid">Continuar</button>
+							<button type="reset" class="btn-outline" (click)="form.reset()">Limpar</button>
+						</div>
+
+						<p *ngIf="message" [class.msg-success]="message.type==='success'" [class.msg-error]="message.type==='error'">{{ message.text }}</p>
+					</form>
+				</section>
+			</div>
+		</section>
+	</main>
