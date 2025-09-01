@@ -5,7 +5,7 @@ import { Component } from '@angular/core';
   standalone: true,
   imports: [],
   templateUrl: './deposito.component.html',
-  styleUrls: ['./deposito.component.css'] // corrigido
+  styleUrls: ['./deposito.component.css'] 
 })
 export class DepositoComponent {
 

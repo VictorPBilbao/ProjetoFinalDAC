@@ -9,6 +9,7 @@ import { UserDetailsComponent } from './features/pages-customer/user-details/use
 import { ListClientsComponent } from './features/pages-customer/list-clients/list-clients.component';
 import { BestClientsListViewComponent } from './features/pages-manager/best-clients-list-view/best-clients-list-view.component';
 import { ClientsReportComponent } from './features/pages-admin/clients-report/clients-report.component';
+import { WhithdrawalComponent } from './features/pages/whithdrawal/whithdrawal.component';
 
 export const routes: Routes = [
   {
@@ -26,6 +27,10 @@ export const routes: Routes = [
   {
     path: 'deposito',
     component: DepositoComponent,
+  },
+  {
+    path: 'whithdrawal',
+    component: WhithdrawalComponent,
   },
   {
     path: 'dashboard-cliente',
