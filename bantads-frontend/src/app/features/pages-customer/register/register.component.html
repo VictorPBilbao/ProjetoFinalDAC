@@ -2,206 +2,106 @@
  <div class="rigister-section-inputs flex flex-column">
     <h1 class="register-title"> {{ currentStep === 1 ? 'Crie sua conta' : 'Dados Pessoais' }}</h1>
     <form #registerForm="ngForm" (ngSubmit)="onSubmit()" class="register-form flex flex-column">
-      <div  class="step-container step1 register-form-item flex flex-column"
+      <div class="step-container step1 register-form-item flex flex-column"
             [class.active]="currentStep === 1"
-            [class.hidden]="currentStep !== 1"
-      >
-        <!-- Campo Username -->
-        <input
-          type="text"
-          name="username"
-          ngModel
-          #username="ngModel"
-          placeholder="Usuário"
-          minlength="3"
-          maxlength="30"
-          (blur)="onValidateUsername()"
-          required>
+            [class.hidden]="currentStep !== 1">
+
+        <input type="text" name="username" ngModel #username="ngModel" placeholder="Usuário"
+          minlength="3" maxlength="30" (blur)="onValidateUsername()" required>
         <div *ngIf="username.invalid && username.touched" class="error-message">
           <small *ngIf="username.errors?.['required']">O campo Username é obrigatório.</small>
-          <small *ngIf="username.errors?.['minlength']">O Username deve ter pelo menos 3 caracteres.</small>
-          <small *ngIf="username.errors?.['maxlength']">O Username não pode ter mais de 30 caracteres.</small>
         </div>
 
-        <!-- Campo Password -->
         <div style="position: relative; width: 250px;">
-          <input
-            [type]="showPassword ? 'text' : 'password'"
-            name="password"
-            ngModel
-            #password="ngModel"
-            placeholder="Senha"
-            required
-            minlength="6">
-            <i
-              class="bi eye-input-password"
+          <input [type]="showPassword ? 'text' : 'password'" name="password" ngModel #password="ngModel"
+            placeholder="Senha" required minlength="6">
+          <i class="bi eye-input-password"
               [class.bi-eye-slash]="!showPassword"
               [class.bi-eye]="showPassword"
               (click)="togglePasswordVisibility()"></i>
         </div>
-
         <div *ngIf="password.invalid && password.touched" class="error-message">
-          <small *ngIf="password.errors?.['required']">O campo Senha é obrigatório.</small>
-          <small *ngIf="password.errors?.['minlength']">A senha deve ter pelo menos 6 caracteres.</small>
+          <small>A senha deve ter pelo menos 6 caracteres.</small>
         </div>
 
-        <!-- Campo Confirm Password -->
-        <input
-          [type]="showPassword ? 'text' : 'password'"
-          name="confirmedPassword"
-          ngModel
-          #confirmedPassword="ngModel"
-          placeholder="Confirme a Senha"
-          minlength="6"
-          required>
+        <input [type]="showPassword ? 'text' : 'password'" name="confirmedPassword" ngModel #confirmedPassword="ngModel"
+          placeholder="Confirme a Senha" minlength="6" required>
         <div *ngIf="confirmedPassword.invalid && confirmedPassword.touched || confirmedPassword.value !== password.value" class="error-message">
-          <small *ngIf="confirmedPassword.errors?.['required']">O campo Confirme a Senha é obrigatório.</small>
-          <small *ngIf="confirmedPassword.value !== password.value && confirmedPassword.touched">
-            As senhas não coincidem.
-          </small>
+          <small>As senhas não coincidem.</small>
         </div>
 
         <div class="button-step-container">
-          <button type="button"
-                  class="btn btn-primary"
+          <button type="button" class="btn btn-primary"
                   (click)="goToNextStep()"
-                  [disabled] = "confirmedPassword.value !== password.value || !confirmedPassword.value
+                  [disabled]="confirmedPassword.value !== password.value || !confirmedPassword.value
                                 || !password.value || isUsernameAvailable === false
-                                || username.invalid || password.invalid || confirmedPassword.invalid"
-          >
-            Próximo</button>
+                                || username.invalid || password.invalid || confirmedPassword.invalid">
+            Próximo
+          </button>
         </div>
       </div>
 
-      <div  class="step-container"
+      <div class="step-container"
             [class.active]="currentStep === 2"
             [class.hidden]="currentStep !== 2"
-            style="gap: 30px;"
-      >
+            style="gap: 30px;">
         <div class="step2-container flex flex-wrap" style="gap: 30px;">
+
           <div class="register-form-item flex flex-column">
-            <input
-              type="text"
-              name="cpf"
-              ngModel
-              placeholder="CPF"
-              required
-              maxlength="14"
-            >
-            <div *ngIf="registerForm.controls['cpf']?.invalid && registerForm.controls['cpf']?.touched" class="error-message">
-              <small>O campo CPF é obrigatório.</small>
-            </div>
+            <input type="text" name="nome" ngModel placeholder="Nome completo" required>
+            <input type="text" name="cpf" ngModel placeholder="CPF" maxlength="14" required>
+            <input type="text" name="rg" ngModel placeholder="RG" maxlength="12" required>
+            <input type="text" name="nascimento" ngModel placeholder="Data de Nascimento" maxlength="10" required validDate #nascimento="ngModel">
 
-            <input
-              type="text"
-              name="nascimento"
-              ngModel
-              placeholder="Nascimento"
-              style="max-width: 200px;"
-              required
-              maxlength="10"
-              validDate
-              #nascimento="ngModel"
-            >
-            <div class="error-message">
-              <small *ngIf="nascimento.errors?.['required'] && nascimento.touched">
-                O campo Nascimento é obrigatório.
-              </small>
-              <small *ngIf="nascimento.errors?.['invalidDate'] && nascimento.touched">
-                Data inválida. Por favor, insira uma data válida.
-              </small>
-            </div>
-            <!-- Erro de data inválida (ex: 32/01/2024) -->
-
-            <div>
-              <input type="text" name="nome" ngModel placeholder="Nome" required>
-              <div *ngIf="registerForm.controls['nome']?.invalid && registerForm.controls['nome']?.touched" class="error-message">
-                <small>O campo Nome completo é obrigatório.</small>
-              </div>
-
-              <input type="text" name="sobrenome" ngModel placeholder="Sobrenome" required>
-              <div *ngIf="registerForm.controls['sobrenome']?.invalid && registerForm.controls['sobrenome']?.touched" class="error-message">
-                <small>O campo Sobrenome é obrigatório.</small>
-              </div>
-            </div>
+            <input type="text" name="nomeMae" ngModel placeholder="Nome da mãe" required>
+            <select name="estadoCivil" ngModel required>
+              <option value="" disabled selected>Estado Civil</option>
+              <option value="solteiro">Solteiro(a)</option>
+              <option value="casado">Casado(a)</option>
+              <option value="divorciado">Divorciado(a)</option>
+              <option value="viuvo">Viúvo(a)</option>
+            </select>
 
             <label>Sexo:</label>
             <div class="radio-group flex items-center">
-              <label><input type="radio" name="sexo" ngModel value="Female" required> Feminino</label>
-              <label><input type="radio" name="sexo" ngModel value="Male" required> Masculino</label>
-              <label><input type="radio" name="sexo" ngModel value="Other" required> Outro</label>
-            </div>
-            <div *ngIf="registerForm.controls['sexo']?.invalid && registerForm.controls['sexo']?.touched" class="error-message">
-              <small>O campo Sexo é obrigatório.</small>
+              <label><input type="radio" name="sexo" ngModel value="Feminino" required> Feminino</label>
+              <label><input type="radio" name="sexo" ngModel value="Masculino" required> Masculino</label>
+              <label><input type="radio" name="sexo" ngModel value="Outro" required> Outro</label>
             </div>
 
-            <input
-              type="email"
-              name="email"
-              ngModel
-              placeholder="E-mail"
-              required
-              (blur)="onValidateEmail()">
-            <div
-              *ngIf="registerForm.controls['email']?.invalid && registerForm.controls['email']?.touched && !isEmailAvailable"
-              class="error-message">
-              <small>O campo E-mail é obrigatório.</small>
-            </div>
-
-            <input
-              type="tel"
-              name="telefone"
-              ngModel
-              placeholder="Contato"
-              required
-              maxlength="15"
-            >
-            <div *ngIf="registerForm.controls['telefone']?.invalid && registerForm.controls['telefone']?.touched" class="error-message">
-              <small>O campo Telefone é obrigatório.</small>
-            </div>
+            <input type="email" name="email" ngModel placeholder="E-mail" required (blur)="onValidateEmail()">
+            <input type="tel" name="telefone" ngModel placeholder="Telefone" maxlength="15" required>
+            <input type="text" name="renda" ngModel placeholder="Renda Mensal (R$)" required>
           </div>
 
           <div class="register-form-item flex flex-column">
-            <input
-              type="text"
-              name="cep"
-              ngModel
-              placeholder="CEP"
-              required
-              maxlength="9"
-              (blur)="onVerifyCep()"
-            >
-            <div *ngIf="registerForm.controls['cep']?.invalid && registerForm.controls['cep']?.touched" class="error-message">
-              <small>O campo CEP é obrigatório.</small>
-            </div>
-
+            <input type="text" name="cep" ngModel placeholder="CEP" maxlength="9" (blur)="onVerifyCep()" required>
             <div class="input-row flex">
               <input type="text" name="uf" ngModel placeholder="UF/Estado" required>
               <input type="text" name="cidade" ngModel placeholder="Cidade" style="margin-left: 10px;" required>
             </div>
-
-            <input type="text" name="bairro" ngModel placeholder="Bairro/Distrito" required>
+            <input type="text" name="bairro" ngModel placeholder="Bairro" required>
             <input type="text" name="logradouro" ngModel placeholder="Logradouro" required>
-
             <div class="input-row">
               <input type="text" name="numero" ngModel placeholder="Número" style="max-width: 150px;" required>
               <input type="text" name="complemento" ngModel placeholder="Complemento" style="max-width: 180px;">
             </div>
+
+            <label>Tipo de Conta:</label>
+            <select name="tipoConta" ngModel required>
+              <option value="" disabled selected>Selecione</option>
+              <option value="corrente">Conta Corrente</option>
+              <option value="poupanca">Conta Poupança</option>
+              <option value="digital">Conta Digital</option>
+            </select>
           </div>
 
           <div class="regiter-btn flex flex-column items-center">
-            <button
-              type="submit"
-              class="btn btn-primary"
-              [disabled]="registerForm.invalid || !isCepValid  || !isUsernameAvailable || !isEmailAvailable"
-            >
+            <button type="submit" class="btn btn-primary"
+              [disabled]="registerForm.invalid || !isCepValid || !isUsernameAvailable || !isEmailAvailable">
               CADASTRAR
             </button>
             <button type="button" class="btn btn-secondary" (click)="goToPreviousStep()" style="margin-top: 10px;">Voltar</button>
-            <div class="login-link-container">
-              <p>Já tem uma conta?</p>
-              <a routerLink="/login">Logar</a>
-            </div>
           </div>
         </div>
       </div>
