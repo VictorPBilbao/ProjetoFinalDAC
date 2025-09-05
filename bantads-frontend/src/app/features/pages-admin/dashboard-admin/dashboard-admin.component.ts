@@ -14,8 +14,8 @@ import { ScaleType } from '@swimlane/ngx-charts';
   styleUrls: ['./dashboard-admin.component.css']
 })
 export class DashboardAdminComponent implements OnInit {
-  managers: Manager[] = [];
-  chartData: any[] = [];
+  managers: Manager[] = []; // List of managers with their clients
+  chartData: any[] = []; // Data for the chart
   colorScheme = {
     name: 'customScheme',
     selectable: true,
@@ -26,32 +26,33 @@ export class DashboardAdminComponent implements OnInit {
   constructor(private dashboardService: DashboardAdminService) { }
 
   ngOnInit(): void {
-    this.loadManagers();
+    this.loadManagers(); // Load managers and their clients on component initialization
   }
 
-  private safeNumber(value: any): number {
+  private safeNumber(value: any): number { // Utility to safely convert to number
     const n = Number(value);
     return Number.isFinite(n) ? n : 0;
   }
 
   loadManagers() {
 
-    this.managers = this.dashboardService.getManagersWithClients();
+    this.managers = this.dashboardService.getManagersWithClients(); // Fetch managers with their clients
 
+    // Calculate totals and client counts for each manager
     this.managers.forEach(manager => {
-      manager.clients = manager.clients || [];
-      manager.clientCount = manager.clients.length;
-      manager.positiveTotal = manager.clients.reduce((acc, cli) => acc + (this.safeNumber(cli.saldo) >= 0 ? this.safeNumber(cli.saldo) : 0), 0);
-      manager.negativeTotal = manager.clients.reduce((acc, cli) => acc + (this.safeNumber(cli.saldo) < 0 ? this.safeNumber(cli.saldo) : 0), 0);
+      manager.clients = manager.clients || []; // Ensure clients array is defined
+      manager.clientCount = manager.clients.length; // Total number of clients
+      manager.positiveTotal = manager.clients.reduce((acc, cli) => acc + (this.safeNumber(cli.saldo) >= 0 ? this.safeNumber(cli.saldo) : 0), 0); // Sum of positive balances
+      manager.negativeTotal = manager.clients.reduce((acc, cli) => acc + (this.safeNumber(cli.saldo) < 0 ? this.safeNumber(cli.saldo) : 0), 0); // Sum of negative balances
     });
 
-    this.managers.sort((a, b) => (this.safeNumber(b.positiveTotal)) - (this.safeNumber(a.positiveTotal)));
-
+    this.managers.sort((a, b) => (this.safeNumber(b.positiveTotal)) - (this.safeNumber(a.positiveTotal))); // Sort managers by positive total descending
+    // Prepare chart data
     this.chartData = this.managers.map(m => ({
       name: m.name,
       series: [
-        { name: 'Saldo Positivo', value: this.safeNumber(m.positiveTotal) },
-        { name: 'Saldo Negativo', value: Math.abs(this.safeNumber(m.negativeTotal)) }
+        { name: 'Saldo Positivo', value: this.safeNumber(m.positiveTotal) }, // Positive balance
+        { name: 'Saldo Negativo', value: Math.abs(this.safeNumber(m.negativeTotal)) } // Negative balance as positive value
       ]
     }));
   }

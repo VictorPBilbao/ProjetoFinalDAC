@@ -7,24 +7,24 @@ import { Cliente } from '../models/cliente.model';
 })
 export class DashboardAdminService {
 
-  private readonly MANAGERS_KEY = 'managers';
-  private readonly CLIENTES_KEY = 'clients';
+  private readonly MANAGERS_KEY = 'managers'; // Chave para armazenar gerentes no localStorage
+  private readonly CLIENTES_KEY = 'clients'; // Chave para armazenar clientes no localStorage
 
   constructor() {
-    this.initData();
+    this.initData(); // initialize mock data
   }
 
-  getManagers(): Manager[] {
+  getManagers(): Manager[] { //get all managers
     const managersJson = localStorage.getItem(this.MANAGERS_KEY);
     return managersJson ? JSON.parse(managersJson) : [];
   }
 
-  getClients(): Cliente[] {
+  getClients(): Cliente[] { //get all clients
     const clientsJson = localStorage.getItem(this.CLIENTES_KEY);
     return clientsJson ? JSON.parse(clientsJson) : [];
   }
 
-  getManagersWithClients(): Manager[] {
+  getManagersWithClients(): Manager[] { //get all managers with their clients
     const managers = this.getManagers();
     const clients = this.getClients();
 
@@ -35,15 +35,15 @@ export class DashboardAdminService {
     return managers;
   }
 
-  private initData(): void {
+  private initData(): void { // Initialize mock data if not present
     const managersExisting = localStorage.getItem(this.MANAGERS_KEY);
     if (!managersExisting) {
-      const mockManagers: Manager[] = [
+      const mockManagers: Manager[] = [ // mock data for managers
         { id: '1', name: 'Thalita Santos', cpf: '596.644.780-24', email: 'thalita@bantads.com', telephone: '(41) 3361-4904' },
         { id: '2', name: 'Ana Carolina', cpf: '943.173.280-70', email: 'ana@bantads.com', telephone: '(41) 3361-4904' }
       ];
 
-      const mockClients: Cliente[] = [
+      const mockClients: Cliente[] = [ // mock data for clients
         {
           id: '1', nome: 'Guilherme Arthur', email: '', cpf: '123.456.789-00', telefone: '', salario: 0, limite: 0, saldo: 1250000,
           manager: mockManagers[0],
@@ -105,8 +105,8 @@ export class DashboardAdminService {
           endereco: { tipo: '', logradouro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: ''
         }
       ];
-      localStorage.setItem(this.MANAGERS_KEY, JSON.stringify(mockManagers));
-      localStorage.setItem(this.CLIENTES_KEY, JSON.stringify(mockClients));
+      localStorage.setItem(this.MANAGERS_KEY, JSON.stringify(mockManagers)); // save mock data to localStorage
+      localStorage.setItem(this.CLIENTES_KEY, JSON.stringify(mockClients)); // save mock data to localStorage
     }
   }
 }

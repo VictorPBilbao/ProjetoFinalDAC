@@ -1,7 +1,7 @@
 <div class="dashboard-container">
   <h1 class="text-center">Dashboard de Gerentes</h1>
 
-  <!-- Resumo/tabela em cima -->
+  <!-- tabela resumo em cima do gráfico -->
   <table class="dashboard-table" style="margin-bottom: 30px">
     <thead>
       <tr>
@@ -21,6 +21,7 @@
     </tbody>
   </table>
 
+  <!-- gráfico de barras -->
   <ngx-charts-bar-horizontal-2d
     *ngIf="chartData?.length"
     [results]="chartData"
