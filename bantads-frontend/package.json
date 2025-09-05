@@ -10,6 +10,8 @@
   },
   "private": true,
   "dependencies": {
+    "@angular/animations": "~19.2.0",
+    "@angular/cdk": "~19.2.0",
     "@angular/common": "^19.2.0",
     "@angular/compiler": "^19.2.0",
     "@angular/core": "^19.2.0",
@@ -17,6 +19,10 @@
     "@angular/platform-browser": "^19.2.0",
     "@angular/platform-browser-dynamic": "^19.2.0",
     "@angular/router": "^19.2.14",
+    "@swimlane/ngx-charts": "^23.0.1",
+    "chart.js": "^4.5.0",
+    "d3": "^7.9.0",
+    "ng2-charts": "^8.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
@@ -26,6 +32,7 @@
     "@angular/cli": "^19.2.5",
     "@angular/compiler-cli": "^19.2.0",
     "@types/jasmine": "~5.1.0",
+    "@types/plotly.js": "^3.0.3",
     "autoprefixer": "^10.4.21",
     "jasmine-core": "~5.6.0",
     "karma": "~6.4.0",

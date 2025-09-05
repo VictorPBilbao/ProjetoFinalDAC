@@ -5,6 +5,10 @@
 /tmp
 /out-tsc
 /bazel-out
+node_modules/
+dist/
+*.log
+.env
 
 # Node
 /node_modules
@@ -40,3 +44,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# ignora o arquivo de teste
+src/app/features/services/a.txt

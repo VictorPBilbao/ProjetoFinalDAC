@@ -9,4 +9,7 @@ export interface Manager {
   password?: string; //Estão como opcionais só pra eu n ter que colocar no Mock
   salt?: string;
   clients?: Cliente[];
+  clientCount?: number;
+  positiveTotal?: number;
+  negativeTotal?: number;
 }

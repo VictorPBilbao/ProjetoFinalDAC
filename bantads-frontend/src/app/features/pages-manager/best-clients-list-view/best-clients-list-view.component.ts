@@ -19,8 +19,8 @@ export class BestClientsListViewComponent implements OnInit {
     this.carregarClientes();
   }
   carregarClientes(): void {
-    const gerente1: Manager = { id: 'gerente-1', name: 'Thalita Santos', cpf: '596.644.780-24', email: 'thalita@bantads.com', telephone: '(41) 3361-4904' };
-    const gerente2: Manager = { id: 'gerente-2', name: 'Ana Carolina', cpf: '943.173.280-70', email: 'ana@bantads.com', telephone: '(41) 3361-4904' };
+    const gerente1: Manager = { id: '1', name: 'Thalita Santos', cpf: '596.644.780-24', email: 'thalita@bantads.com', telephone: '(41) 3361-4904' };
+    const gerente2: Manager = { id: '2', name: 'Ana Carolina', cpf: '943.173.280-70', email: 'ana@bantads.com', telephone: '(41) 3361-4904' };
 
     const todosOsClientes: Cliente[] = [
       { id: '1', nome: 'Guilherme Arthur', email: '', cpf: '123.456.789-00', telefone: '', salario: 0, limite: 0, saldo: 1250000, manager: gerente1, endereco: { tipo: '', logradouro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: '' },

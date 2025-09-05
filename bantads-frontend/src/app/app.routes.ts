@@ -10,6 +10,7 @@ import { ListClientsComponent } from './features/pages-customer/list-clients/lis
 import { BestClientsListViewComponent } from './features/pages-manager/best-clients-list-view/best-clients-list-view.component';
 import { ClientsReportComponent } from './features/pages-admin/clients-report/clients-report.component';
 import { WhithdrawalComponent } from './features/pages/whithdrawal/whithdrawal.component';
+import { DashboardAdminComponent } from './features/pages-admin/dashboard-admin/dashboard-admin.component';
 import { PageNotFoundComponent } from './features/pages/page-not-found/page-not-found.component';
 
 export const routes: Routes = [
@@ -54,6 +55,9 @@ export const routes: Routes = [
     component: ClientsReportComponent,
   },
   {
+    path: 'dashboard-admin',
+    component: DashboardAdminComponent,
+  },
     path: '**',
     component: PageNotFoundComponent,
   },
