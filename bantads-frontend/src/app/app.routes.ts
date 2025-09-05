@@ -58,6 +58,7 @@ export const routes: Routes = [
     path: 'dashboard-admin',
     component: DashboardAdminComponent,
   },
+  {
     path: '**',
     component: PageNotFoundComponent,
   },
