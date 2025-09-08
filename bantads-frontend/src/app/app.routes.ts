@@ -12,6 +12,8 @@ import { ClientsReportComponent } from './features/pages-admin/clients-report/cl
 import { WhithdrawalComponent } from './features/pages/whithdrawal/whithdrawal.component';
 import { DashboardAdminComponent } from './features/pages-admin/dashboard-admin/dashboard-admin.component';
 import { PageNotFoundComponent } from './features/pages/page-not-found/page-not-found.component';
+import { ManagerListComponent } from './features/pages-manager/manager-list/manager-list.component';
+import { ManagerDetailsComponent } from './features/pages-manager/manager-details/manager-details.component';
 
 export const routes: Routes = [
   {
@@ -59,7 +61,19 @@ export const routes: Routes = [
     component: DashboardAdminComponent,
   },
   {
-    path: '**',
-    component: PageNotFoundComponent,
+    path: 'admin/gerentes',
+    component: ManagerListComponent,
   },
+  {
+    path: 'admin/gerente/novo',
+    component: ManagerDetailsComponent,
+  },
+  {
+    path: 'admin/gerente/:id',
+    component: ManagerDetailsComponent,
+  },
+  {
+    path: '*',
+    component: PageNotFoundComponent,
+  }
 ];

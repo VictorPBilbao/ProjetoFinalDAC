@@ -1,0 +1,83 @@
+.manager-list-container {
+  padding: 30px;
+  font-family: Arial, sans-serif;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-size: 24px;
+  color: #333;
+  font-weight: bold;
+}
+
+.new-manager-button {
+  background-color: #3cb371; /* Cor verde do botão 'Abrir Conta' */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.new-manager-button:hover {
+  background-color: #2e8b57;
+}
+
+.manager-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.manager-table th,
+.manager-table td {
+  text-align: left;
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+.manager-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+  color: #555;
+}
+
+.manager-table tr:last-child td {
+  border-bottom: none;
+}
+
+.actions a, button {
+  background: none;
+  border: 1px solid #dcdcdc;
+  border-radius: 5px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 8px;
+}
+
+.edit-button {
+  color: #4682b4; /* Cor azul */
+}
+
+.delete-button {
+  color: #dc3545; /* Cor vermelha */
+}
+
+.edit-button:hover,
+.delete-button:hover {
+  background-color: #f0f0f0;
+}

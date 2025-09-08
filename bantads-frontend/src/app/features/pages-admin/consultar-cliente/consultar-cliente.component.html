@@ -1,0 +1,102 @@
+<header class="home-header">
+  <div class="header-bar">
+    <div class="header-content-left">
+      <div class="logo-title">
+        <img src="images/banco-de-dinheiro-2-10.png" alt="Logo" class="logo" />
+        <span class="brand-title">BANTADS</span>
+      </div>
+
+      <div class="search-client-box">
+        <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" placeholder="Buscar por nome, CPF, conta..." />
+        <button type="button" (click)="onSearch()">Buscar</button>
+        <button type="button" class="clear-btn" *ngIf="searchTerm" (click)="clearSearch()">Limpar</button>
+      </div>
+    </div>
+    <div class="header-content-right">
+      <div class="quick-stats" *ngIf="clients.length">
+        <span>Total Clientes: <strong>{{ clients.length }}</strong></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="consultar-main">
+  <div class="page-header">
+    <h1>Consultar Cliente</h1>
+    <span class="last-access">Atualizado: {{ (selectedClient?.criadoEm || defaultDate) | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+  </div>
+
+  <section class="content-grid">
+    <aside class="side-menu card">
+      <h3>Menu</h3>
+      <nav>
+        <ul>
+          <li class="active"><a href="#">Consultar Cliente</a></li>
+          <li><a href="#">Relatórios</a></li>
+          <li><a href="#">Dashboard</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <div class="main-content">
+      <!-- Lista de resultados -->
+      <section class="card results" *ngIf="filteredClients.length > 1">
+        <h2>Resultados ({{ filteredClients.length }})</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Saldo</th>
+                <th>Limite</th>
+                <th>Gerente</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of filteredClients" (click)="selectClient(c)" [class.selected-row]="c.id === selectedClient?.id">
+                <td>{{ c.id }}</td>
+                <td>{{ c.nome }}</td>
+                <td>{{ c.cpf }}</td>
+                <td [class.negative]="c.saldo < 0" [class.positive]="c.saldo >= 0">{{ c.saldo | currency:'BRL':'symbol':'1.2-2' }}</td>
+                <td class="positive">{{ c.limite | currency:'BRL':'symbol':'1.2-2' }}</td>
+                <td>{{ c.manager.name }}</td>
+                <td><button type="button" (click)="selectClient(c); $event.stopPropagation()">Detalhes</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card no-results" *ngIf="notFound">
+        <p>Nenhum cliente encontrado.</p>
+      </section>
+
+      <!-- Detalhes do cliente -->
+      <section class="card cliente-detalhes" *ngIf="selectedClient as cli">
+        <h2>Detalhes do Cliente</h2>
+        <div class="info-grid">
+          <div class="info-item"><span class="label">ID</span><span class="value">{{ cli.id }}</span></div>
+          <div class="info-item"><span class="label">Nome</span><span class="value">{{ cli.nome }}</span></div>
+            <div class="info-item"><span class="label">Email</span><span class="value">{{ cli.email || '-' }}</span></div>
+          <div class="info-item"><span class="label">CPF</span><span class="value">{{ cli.cpf }}</span></div>
+          <div class="info-item"><span class="label">Telefone</span><span class="value">{{ cli.telefone || '-' }}</span></div>
+          <div class="info-item"><span class="label">Salário</span><span class="value">{{ cli.salario | currency:'BRL':'symbol':'1.2-2' }}</span></div>
+          <div class="info-item"><span class="label">Limite</span><span class="value positive">{{ cli.limite | currency:'BRL':'symbol':'1.2-2' }}</span></div>
+          <div class="info-item"><span class="label">Saldo</span><span class="value" [class.negative]="cli.saldo < 0" [class.positive]="cli.saldo >= 0">{{ cli.saldo | currency:'BRL':'symbol':'1.2-2' }}</span></div>
+          <div class="info-item"><span class="label">Gerente</span><span class="value">{{ cli.manager.name }}</span></div>
+          <div class="info-item full"><span class="label">Endereço</span><span class="value">{{ cli.endereco.tipo }} {{ cli.endereco.logradouro }}, {{ cli.endereco.numero }} {{ cli.endereco.complemento }} - {{ cli.endereco.cidade }}/{{ cli.endereco.estado }}</span></div>
+          <div class="info-item"><span class="label">Agência</span><span class="value">{{ cli.agencia || '-' }}</span></div>
+          <div class="info-item"><span class="label">Conta</span><span class="value">{{ cli.conta || '-' }}</span></div>
+          <div class="info-item"><span class="label">Criado Em</span><span class="value">{{ cli.criadoEm | date:'dd/MM/yyyy HH:mm:ss' }}</span></div>
+        </div>
+      </section>
+
+      <section class="card hint" *ngIf="!selectedClient && !notFound && filteredClients.length <= 1">
+        <p>Digite um termo de busca (nome, CPF, conta ou ID) e pressione Enter ou clique em Buscar.</p>
+      </section>
+    </div>
+  </section>
+</main>
