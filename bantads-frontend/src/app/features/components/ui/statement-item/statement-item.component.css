@@ -1,0 +1,41 @@
+* {
+  padding: 0;
+  margin: 0;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  padding: 0;
+  margin: 0;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  height: fit-content;
+  gap: 4px;
+}
+
+.information {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  width: fit-content;
+  height: fit-content;
+  gap: 4px;
+}
+
+.header h1,
+.information h1 {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.header p,
+.information p {
+  font-size: 16px;
+  font-weight: lighter;
+  color: rgba(0, 0, 0, 0.596);
+}

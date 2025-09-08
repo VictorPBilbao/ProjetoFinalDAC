@@ -10,33 +10,25 @@
   </section>
 
   <section class="main-content">
-    <div>
-      <h1>Saldo atual</h1>
-      <h2>R$ 3.483,23</h2>
+    <div class="container">
+      <div class="header">
+        <h1>Saldo atual</h1>
+        <h2>R$ 3.483,23</h2>
+      </div>
 
+      <ul class="content-header">
+        <li>Receita</li>
+        <li>Gastos</li>
+      </ul>
       <div>
-        <div>
-          <h3>Receita</h3>
-          <h3>Gastos</h3>
-        </div>
-        <div>
-          <img src="https://placehold.co/530x335" alt="Graph" />
-        </div>
+        <img src="https://placehold.co/530x335" alt="Graph" />
+      </div>
 
-        <div>
-          <h4>Esta semana</h4>
-          <hr />
-          <div>
-            <div>
-              <h5>Itaú</h5>
-              <p>Salário</p>
-            </div>
-            <div>
-              <h5>+ R$ 2.000,00</h5>
-              <p>16/08 08:34</p>
-            </div>
-          </div>
-        </div>
+      <h4>Esta semana</h4>
+      <hr />
+      <div class="statement-list">
+        <app-statement-item />
+        <app-statement-item />
       </div>
     </div>
   </section>

@@ -69,6 +69,7 @@ main {
 .main-content h1 {
   margin: 0;
   font-size: 16px;
+  font-weight: lighter;
   color: rgb(0 0 0/ 60%);
 }
 
@@ -76,4 +77,41 @@ main {
   margin: 0;
   font-size: 32px;
   font-weight: bolder;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.img-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.content-header {
+  display: flex;
+  gap: 10px;
+  justify-content: start;
+  width: 100%;
+  height: fit-content;
+}
+
+.content-header li {
+  padding: 12px 20px;
+  list-style: none;
+  border-radius: 999px;
+}
+
+.container h4 {
+  font-size: 24px;
+}
+
+.statement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
