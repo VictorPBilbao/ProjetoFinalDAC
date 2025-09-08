@@ -1,0 +1,81 @@
+.manager-details-container {
+  max-width: 600px;
+  margin: 50px auto;
+  padding: 30px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+h2 {
+  font-size: 24px;
+  color: #333;
+  font-weight: bold;
+}
+
+.manager-form .form-group {
+  margin-bottom: 20px;
+}
+
+.manager-form label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.manager-form input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+  box-sizing: border-box; /* Garante que o padding não aumente o tamanho total */
+}
+
+.manager-form input:focus {
+  outline: none;
+  border-color: #3cb371; /* Borda verde ao focar */
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.cancel-button,
+.save-button {
+  padding: 12px 25px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.cancel-button {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  color: #777;
+}
+
+.cancel-button:hover {
+  background-color: #f0f0f0;
+}
+
+.save-button {
+  background-color: #3cb371;
+  border: none;
+  color: white;
+}
+
+.save-button:hover {
+  background-color: #2e8b57;
+}
