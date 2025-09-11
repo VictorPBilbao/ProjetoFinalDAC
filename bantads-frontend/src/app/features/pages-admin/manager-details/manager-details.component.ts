@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-manager-details',
   imports: [
     CommonModule,
-    RouterLink
+    //RouterLink
   ],
   templateUrl: './manager-details.component.html',
   styleUrl: './manager-details.component.css'

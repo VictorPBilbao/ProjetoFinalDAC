@@ -72,7 +72,7 @@
 }
 .password-input {
   gap: 8px;
-  width: 50px;
+  width: 150px;
 }
 .ok-btn {
   background: rgba(224, 224, 224, 0.7);
