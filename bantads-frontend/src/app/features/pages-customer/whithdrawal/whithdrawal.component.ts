@@ -30,6 +30,7 @@ export class WhithdrawalComponent {
     endereco: {
       tipo: 'Rua',
       logradouro: 'Exemplo',
+      bairro: 'Centro',
       numero: '123',
       cep: '80000-000',
       cidade: 'Curitiba',

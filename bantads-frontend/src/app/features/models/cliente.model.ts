@@ -3,6 +3,7 @@ import { Manager } from './manager.model';
 export interface EnderecoCliente {
     tipo: string; // rua, avenida, etc
     logradouro: string;
+    bairro: string;
     numero: string;
     complemento?: string;
     cep: string;

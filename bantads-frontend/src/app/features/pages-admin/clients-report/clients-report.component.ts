@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { Cliente } from '../../models/cliente.model';
-import { ClientService } from '../../services/client.service';
+import { ClientService } from '../../services/client/client.service';
 
 @Component({
   selector: 'app-clients-report',
