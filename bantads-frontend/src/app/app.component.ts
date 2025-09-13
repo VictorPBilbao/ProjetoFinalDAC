@@ -3,12 +3,16 @@ import { HeaderComponent } from './features/components/header/header.component';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
-
+import { LoadingComponent } from './features/components/utils/loading/loading.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, HeaderComponent],
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    LoadingComponent,
+    HeaderComponent],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })

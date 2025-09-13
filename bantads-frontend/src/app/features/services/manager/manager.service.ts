@@ -31,6 +31,7 @@ export class ManagerService {
                     endereco: {
                         tipo: 'Rua',
                         logradouro: 'Alpha',
+                        bairro: 'Centro',
                         numero: '10',
                         cep: '80000-000',
                         cidade: 'Curitiba',
@@ -53,6 +54,7 @@ export class ManagerService {
                     endereco: {
                         tipo: 'Rua',
                         logradouro: 'Beta',
+                        bairro: 'Centro',
                         numero: '22',
                         cep: '80000-001',
                         cidade: 'Curitiba',

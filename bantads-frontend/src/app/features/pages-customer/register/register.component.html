@@ -1,107 +1,102 @@
 <section>
- <div class="rigister-section-inputs flex flex-column">
-    <h1 class="register-title"> {{ currentStep === 1 ? 'Crie sua conta' : 'Dados Pessoais' }}</h1>
+  <div class="rigister-section-inputs flex flex-column">
+    <h1 class="register-title">Cadastro de Cliente</h1>
+
     <form #registerForm="ngForm" (ngSubmit)="onSubmit()" class="register-form flex flex-column">
-      <div class="step-container step1 register-form-item flex flex-column"
-            [class.active]="currentStep === 1"
-            [class.hidden]="currentStep !== 1">
 
-        <input type="text" name="username" ngModel #username="ngModel" placeholder="Usuário"
-          minlength="3" maxlength="30" (blur)="onValidateUsername()" required>
-        <div *ngIf="username.invalid && username.touched" class="error-message">
-          <small *ngIf="username.errors?.['required']">O campo Username é obrigatório.</small>
-        </div>
+      <!-- STEP ÚNICO - DADOS CLIENTE -->
+      <div class="step-container active" style="gap: 30px;">
 
-        <div style="position: relative; width: 250px;">
-          <input [type]="showPassword ? 'text' : 'password'" name="password" ngModel #password="ngModel"
-            placeholder="Senha" required minlength="6">
-          <i class="bi eye-input-password"
-              [class.bi-eye-slash]="!showPassword"
-              [class.bi-eye]="showPassword"
-              (click)="togglePasswordVisibility()"></i>
-        </div>
-        <div *ngIf="password.invalid && password.touched" class="error-message">
-          <small>A senha deve ter pelo menos 6 caracteres.</small>
-        </div>
-
-        <input [type]="showPassword ? 'text' : 'password'" name="confirmedPassword" ngModel #confirmedPassword="ngModel"
-          placeholder="Confirme a Senha" minlength="6" required>
-        <div *ngIf="confirmedPassword.invalid && confirmedPassword.touched || confirmedPassword.value !== password.value" class="error-message">
-          <small>As senhas não coincidem.</small>
-        </div>
-
-        <div class="button-step-container">
-          <button type="button" class="btn btn-primary"
-                  (click)="goToNextStep()"
-                  [disabled]="confirmedPassword.value !== password.value || !confirmedPassword.value
-                                || !password.value || isUsernameAvailable === false
-                                || username.invalid || password.invalid || confirmedPassword.invalid">
-            Próximo
-          </button>
-        </div>
-      </div>
-
-      <div class="step-container"
-            [class.active]="currentStep === 2"
-            [class.hidden]="currentStep !== 2"
-            style="gap: 30px;">
         <div class="step2-container flex flex-wrap" style="gap: 30px;">
 
+          <!-- COLUNA 1 - DADOS PESSOAIS -->
           <div class="register-form-item flex flex-column">
             <input type="text" name="nome" ngModel placeholder="Nome completo" required>
-            <input type="text" name="cpf" ngModel placeholder="CPF" maxlength="14" required>
-            <input type="text" name="rg" ngModel placeholder="RG" maxlength="12" required>
-            <input type="text" name="nascimento" ngModel placeholder="Data de Nascimento" maxlength="10" required validDate #nascimento="ngModel">
-
-            <input type="text" name="nomeMae" ngModel placeholder="Nome da mãe" required>
-            <select name="estadoCivil" ngModel required>
-              <option value="" disabled selected>Estado Civil</option>
-              <option value="solteiro">Solteiro(a)</option>
-              <option value="casado">Casado(a)</option>
-              <option value="divorciado">Divorciado(a)</option>
-              <option value="viuvo">Viúvo(a)</option>
-            </select>
-
-            <label>Sexo:</label>
-            <div class="radio-group flex items-center">
-              <label><input type="radio" name="sexo" ngModel value="Feminino" required> Feminino</label>
-              <label><input type="radio" name="sexo" ngModel value="Masculino" required> Masculino</label>
-              <label><input type="radio" name="sexo" ngModel value="Outro" required> Outro</label>
-            </div>
-
+            <input
+              type="text"
+              name="cpf"
+              ngModel
+              placeholder="CPF"
+              maxlength="14"
+              required
+              mask="000.000.000-00">
             <input type="email" name="email" ngModel placeholder="E-mail" required (blur)="onValidateEmail()">
             <input type="tel" name="telefone" ngModel placeholder="Telefone" maxlength="15" required>
-            <input type="text" name="renda" ngModel placeholder="Renda Mensal (R$)" required>
+            <input
+                id="salario"
+                type="text"
+                name="salario"
+                ngModel
+                placeholder="Salário (R$)"
+                required
+                mask="separator.2"
+                prefix="R$ "
+                thousandSeparator="."
+                decimalMarker=",">
           </div>
 
+          <!-- COLUNA 2 - ENDEREÇO -->
           <div class="register-form-item flex flex-column">
-            <input type="text" name="cep" ngModel placeholder="CEP" maxlength="9" (blur)="onVerifyCep()" required>
+            <input type="text" name="tipo" ngModel placeholder="Tipo (Rua, Av, etc)" required>
+            <input
+              type="text"
+              name="cep"
+              ngModel
+              placeholder="CEP"
+              maxlength="9"
+              (blur)="onVerifyCep()"
+              mask="00000-000"
+              required>
+
             <div class="input-row flex">
-              <input type="text" name="uf" ngModel placeholder="UF/Estado" required>
+              <!-- SELECT DE ESTADOS -->
+              <select name="estado" ngModel required>
+                <option value="" disabled selected>Selecione o Estado</option>
+                <option value="AC">Acre (AC)</option>
+                <option value="AL">Alagoas (AL)</option>
+                <option value="AP">Amapá (AP)</option>
+                <option value="AM">Amazonas (AM)</option>
+                <option value="BA">Bahia (BA)</option>
+                <option value="CE">Ceará (CE)</option>
+                <option value="DF">Distrito Federal (DF)</option>
+                <option value="ES">Espírito Santo (ES)</option>
+                <option value="GO">Goiás (GO)</option>
+                <option value="MA">Maranhão (MA)</option>
+                <option value="MT">Mato Grosso (MT)</option>
+                <option value="MS">Mato Grosso do Sul (MS)</option>
+                <option value="MG">Minas Gerais (MG)</option>
+                <option value="PA">Pará (PA)</option>
+                <option value="PB">Paraíba (PB)</option>
+                <option value="PR">Paraná (PR)</option>
+                <option value="PE">Pernambuco (PE)</option>
+                <option value="PI">Piauí (PI)</option>
+                <option value="RJ">Rio de Janeiro (RJ)</option>
+                <option value="RN">Rio Grande do Norte (RN)</option>
+                <option value="RS">Rio Grande do Sul (RS)</option>
+                <option value="RO">Rondônia (RO)</option>
+                <option value="RR">Roraima (RR)</option>
+                <option value="SC">Santa Catarina (SC)</option>
+                <option value="SP">São Paulo (SP)</option>
+                <option value="SE">Sergipe (SE)</option>
+                <option value="TO">Tocantins (TO)</option>
+              </select>
+
               <input type="text" name="cidade" ngModel placeholder="Cidade" style="margin-left: 10px;" required>
             </div>
-            <input type="text" name="bairro" ngModel placeholder="Bairro" required>
+
             <input type="text" name="logradouro" ngModel placeholder="Logradouro" required>
             <div class="input-row">
               <input type="text" name="numero" ngModel placeholder="Número" style="max-width: 150px;" required>
               <input type="text" name="complemento" ngModel placeholder="Complemento" style="max-width: 180px;">
             </div>
-
-            <label>Tipo de Conta:</label>
-            <select name="tipoConta" ngModel required>
-              <option value="" disabled selected>Selecione</option>
-              <option value="corrente">Conta Corrente</option>
-              <option value="poupanca">Conta Poupança</option>
-              <option value="digital">Conta Digital</option>
-            </select>
           </div>
 
+          <!-- BOTÕES -->
           <div class="regiter-btn flex flex-column items-center">
             <button type="submit" class="btn btn-primary"
-              [disabled]="registerForm.invalid || !isCepValid || !isUsernameAvailable || !isEmailAvailable">
+              [disabled]="registerForm.invalid || !isCepValid || !isEmailAvailable">
               CADASTRAR
             </button>
-            <button type="button" class="btn btn-secondary" (click)="goToPreviousStep()" style="margin-top: 10px;">Voltar</button>
           </div>
         </div>
       </div>

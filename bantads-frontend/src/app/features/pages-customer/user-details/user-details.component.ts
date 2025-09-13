@@ -44,6 +44,7 @@ export class UserDetailsComponent {
             endereco: {
                 tipo: 'Rua',
                 logradouro: 'das Flores',
+                bairro: 'Jardim Primavera',
                 numero: '123',
                 complemento: 'Apto 45',
                 cep: '01000-000',

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Cliente } from '../models/cliente.model';
-import { Manager } from '../models/manager.model';
+import { Cliente } from '../../models/cliente.model';
+import { Manager } from '../../models/manager.model';
 
 @Injectable({
   providedIn: 'root',
@@ -91,6 +91,7 @@ export class ClientService {
         endereco: {
           tipo: 'Rua',
           logradouro: 'das Flores',
+          bairro: 'Jardim Primavera',
           numero: '123',
           cep: '01000-000',
           cidade: 'São Paulo',
@@ -113,6 +114,7 @@ export class ClientService {
         endereco: {
           tipo: 'Avenida',
           logradouro: 'Copacabana',
+          bairro: 'Copacabana',
           numero: '456',
           cep: '22000-000',
           cidade: 'Rio de Janeiro',
@@ -135,6 +137,7 @@ export class ClientService {
         endereco: {
           tipo: 'Rua',
           logradouro: 'Ouro Preto',
+          bairro: 'Centro',
           numero: '789',
           cep: '30000-000',
           cidade: 'Belo Horizonte',
@@ -157,6 +160,7 @@ export class ClientService {
         endereco: {
           tipo: 'Rua',
           logradouro: 'XV de Novembro',
+          bairro: 'Centro',
           numero: '101',
           cep: '80000-000',
           cidade: 'Curitiba',
@@ -179,6 +183,7 @@ export class ClientService {
         endereco: {
           tipo: 'Avenida',
           logradouro: 'Ipiranga',
+          bairro: 'Centro',
           numero: '202',
           cep: '90000-000',
           cidade: 'Porto Alegre',
