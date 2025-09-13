@@ -17,6 +17,7 @@ import { WhithdrawalComponent } from './features/pages-customer/whithdrawal/whit
 import { ListClientsComponent } from './features/pages-manager/list-clients/list-clients.component';
 import { BestClientsListViewComponent } from './features/pages-manager/best-clients-list-view/best-clients-list-view.component';
 import { ConsultarClienteComponent } from './features/pages-manager/consultar-cliente/consultar-cliente.component';
+import { ApprovalsComponent } from './features/pages-manager/approvals/approvals.component';
 
 //admin pages
 import { DashboardAdminComponent } from './features/pages-admin/dashboard-admin/dashboard-admin.component';
@@ -25,44 +26,116 @@ import { ManagerListComponent } from './features/pages-admin/manager-list/manage
 import { ManagerDetailsComponent } from './features/pages-admin/manager-details/manager-details.component';
 
 export const routes: Routes = [
-  //standard routes
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
-  { path: 'login', component: LoginComponent },
-  { path: 'cadastro', component: RegisterComponent },
+    //standard routes
+    { path: '', redirectTo: '/login', pathMatch: 'full' },
+    { path: 'login', component: LoginComponent },
+    { path: 'cadastro', component: RegisterComponent },
 
-  // customer routes
-  {
-    path: 'cliente',
-    children: [
-      { path: 'dashboard', component: UserDashboardComponent, canActivate: [authGuard], data: { role: ['cliente'] } },
-      { path: 'extrato', component: StatementComponent, canActivate: [authGuard], data: { role: ['cliente'] } },
-      { path: 'deposito', component: DepositoComponent, canActivate: [authGuard], data: { role: ['cliente'] } },
-      { path: 'saque', component: WhithdrawalComponent, canActivate: [authGuard], data: { role: ['cliente'] } },
-      { path: 'detalhes', component: UserDetailsComponent, canActivate: [authGuard], data: { role: ['cliente'] } },
-    ]
-  },
+    // customer routes
+    {
+        path: 'cliente',
+        children: [
+            {
+                path: 'dashboard',
+                component: UserDashboardComponent,
+                canActivate: [authGuard],
+                data: { role: ['cliente'] },
+            },
+            {
+                path: 'extrato',
+                component: StatementComponent,
+                canActivate: [authGuard],
+                data: { role: ['cliente'] },
+            },
+            {
+                path: 'deposito',
+                component: DepositoComponent,
+                canActivate: [authGuard],
+                data: { role: ['cliente'] },
+            },
+            {
+                path: 'saque',
+                component: WhithdrawalComponent,
+                canActivate: [authGuard],
+                data: { role: ['cliente'] },
+            },
+            {
+                path: 'detalhes',
+                component: UserDetailsComponent,
+                canActivate: [authGuard],
+                data: { role: ['cliente'] },
+            },
+        ],
+    },
 
-  // manager routes
-  {
-    path: 'gerente',
-    children: [
-      { path: 'clientes', component: ListClientsComponent, canActivate: [authGuard], data: { role: ['gerente'] } },
-      { path: 'melhores-clientes', component: BestClientsListViewComponent, canActivate: [authGuard], data: { role: ['gerente'] } },
-      { path: 'consultar-cliente', component: ConsultarClienteComponent, canActivate: [authGuard], data: { role: ['gerente'] } },
-    ]
-  },
+    // manager routes
+    {
+        path: 'gerente',
+        children: [
+            { path: '', redirectTo: 'aprovacoes', pathMatch: 'full' },
+            {
+                path: 'aprovacoes',
+                component: ApprovalsComponent,
+                canActivate: [authGuard],
+                data: { role: ['gerente'] },
+            },
+            {
+                path: 'clientes',
+                component: ListClientsComponent,
+                canActivate: [authGuard],
+                data: { role: ['gerente'] },
+            },
+            {
+                path: 'melhores-clientes',
+                component: BestClientsListViewComponent,
+                canActivate: [authGuard],
+                data: { role: ['gerente'] },
+            },
+            {
+                path: 'consultar-cliente',
+                component: ConsultarClienteComponent,
+                canActivate: [authGuard],
+                data: { role: ['gerente'] },
+            },
+        ],
+    },
 
-  // admin routes
-  {
-    path: 'admin',
-    children: [
-      { path: 'dashboard', component: DashboardAdminComponent, canActivate: [authGuard], data: { role: ['admin'] } },
-      { path: 'relatorio-clientes', component: ClientsReportComponent, canActivate: [authGuard], data: { role: ['admin'] } },
-      { path: 'gerentes', component: ManagerListComponent, canActivate: [authGuard], data: { role: ['admin'] } },
-      { path: 'gerente/novo', component: ManagerDetailsComponent, canActivate: [authGuard], data: { role: ['admin'] } },
-      { path: 'gerente/:id', component: ManagerDetailsComponent, canActivate: [authGuard], data: { role: ['admin'] } },
-    ]
-  },
-  // page not found
-  { path: '**', component: PageNotFoundComponent },
+    // admin routes
+    {
+        path: 'admin',
+        children: [
+            {
+                path: 'dashboard',
+                component: DashboardAdminComponent,
+                canActivate: [authGuard],
+                data: { role: ['admin'] },
+            },
+            {
+                path: 'relatorio-clientes',
+                component: ClientsReportComponent,
+                canActivate: [authGuard],
+                data: { role: ['admin'] },
+            },
+            {
+                path: 'gerentes',
+                component: ManagerListComponent,
+                canActivate: [authGuard],
+                data: { role: ['admin'] },
+            },
+            {
+                path: 'gerente/novo',
+                component: ManagerDetailsComponent,
+                canActivate: [authGuard],
+                data: { role: ['admin'] },
+            },
+            {
+                path: 'gerente/:id',
+                component: ManagerDetailsComponent,
+                canActivate: [authGuard],
+                data: { role: ['admin'] },
+            },
+        ],
+    },
+    // page not found
+    { path: '**', component: PageNotFoundComponent },
 ];

@@ -1,0 +1,101 @@
+<div class="approvals-container">
+    <h2>Pedidos de Autocadastro</h2>
+
+    <div class="feedback" *ngIf="feedbackMsg" [ngClass]="feedbackType">
+        {{ feedbackMsg }}
+    </div>
+
+    <div class="top-bar">
+        <input
+            type="text"
+            placeholder="Pesquisar por nome, CPF ou email"
+            [(ngModel)]="search"
+            (input)="applyFilter()"
+        />
+        <span class="count" *ngIf="filtered.length"
+            >{{ filtered.length }} pendente(s)</span
+        >
+    </div>
+
+    <div *ngIf="filtered.length === 0" class="empty">
+        Nenhum pedido pendente.
+    </div>
+
+    <div class="table-wrapper" *ngIf="filtered.length > 0">
+        <table>
+            <thead>
+                <tr>
+                    <th>CPF</th>
+                    <th>Nome</th>
+                    <th>Salário</th>
+                    <th>Cidade</th>
+                    <th>Estado</th>
+                    <th>Solicitado em</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let c of filtered">
+                    <td>{{ c.cpf }}</td>
+                    <td>{{ c.nome }}</td>
+                    <td>
+                        {{ c.salario | currency : "BRL" : "symbol" : "1.2-2" }}
+                    </td>
+                    <td>{{ c.endereco.cidade }}</td>
+                    <td>{{ c.endereco.estado }}</td>
+                    <td>{{ c.criadoEm | date : "short" }}</td>
+                    <td class="actions">
+                        <button class="btn approve" (click)="approve(c.id)">
+                            Aprovar
+                        </button>
+                        <button
+                            class="btn reject"
+                            (click)="startReject(c.id)"
+                            *ngIf="rejectingId !== c.id"
+                        >
+                            Recusar
+                        </button>
+                    </td>
+                </tr>
+                <tr class="reject-row" *ngFor="let c of filtered">
+                    <td colspan="7" *ngIf="rejectingId === c.id">
+                        <div class="reject-box">
+                            <label>Motivo da recusa:</label>
+                            <textarea
+                                [(ngModel)]="rejectReason"
+                                rows="2"
+                                placeholder="Descreva o motivo"
+                            ></textarea>
+                            <div class="reject-actions">
+                                <button
+                                    class="btn small"
+                                    (click)="cancelReject()"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    class="btn reject small"
+                                    [disabled]="!rejectReason.trim()"
+                                    (click)="confirmReject()"
+                                >
+                                    Confirmar Recusa
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="legend" *ngIf="filtered.length > 0">
+        <p>
+            <strong>Regra de limite:</strong> Salário >= 2.000 => Limite = 50%
+            do salário; caso contrário, sem limite.
+        </p>
+        <p>
+            Ao aprovar: sistema atribui automaticamente o gerente com menos
+            clientes e gera número de conta de 4 dígitos.
+        </p>
+    </div>
+</div>
