@@ -7,20 +7,22 @@
   },
   "tags": [],
   "paths": {
-    "/{user}": {
+    "/clientes/{cpf}": {
       "get": {
-        "summary": "Cliente",
+        "summary": "Untitled Endpoint",
         "deprecated": false,
         "description": "",
         "tags": [],
         "parameters": [
           {
-            "name": "user",
+            "name": "cpf",
             "in": "path",
             "description": "",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "minLength": 11,
+              "maxLength": 11
             }
           }
         ],
@@ -30,7 +32,119 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Cliente"
+                  "type": "object",
+                  "properties": {
+                    "cpf": {
+                      "type": "string"
+                    },
+                    "nome": {
+                      "type": "string"
+                    },
+                    "telefone": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "endereco": {
+                      "type": "string"
+                    },
+                    "cidade": {
+                      "type": "string"
+                    },
+                    "estado": {
+                      "type": "string"
+                    },
+                    "salario": {
+                      "type": "integer"
+                    },
+                    "conta": {
+                      "type": "string"
+                    },
+                    "saldo": {
+                      "type": "string"
+                    },
+                    "limite": {
+                      "type": "integer"
+                    },
+                    "gerente": {
+                      "type": "string"
+                    },
+                    "gerente_nome": {
+                      "type": "string"
+                    },
+                    "gerente_email": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "cpf",
+                    "nome",
+                    "telefone",
+                    "email",
+                    "endereco",
+                    "cidade",
+                    "estado",
+                    "salario",
+                    "conta",
+                    "saldo",
+                    "limite",
+                    "gerente",
+                    "gerente_nome",
+                    "gerente_email"
+                  ]
+                },
+                "example": {
+                  "cpf": "12912861012",
+                  "nome": "Catharyna",
+                  "telefone": "(41) 9 9999-8989",
+                  "email": "cli1@bantads.com.br",
+                  "endereco": "Rua X, nr 10",
+                  "cidade": "Curitib",
+                  "estado": "PR",
+                  "salario": 800,
+                  "conta": "1291",
+                  "saldo": "1291",
+                  "limite": 5000,
+                  "gerente": "98574307084",
+                  "gerente_nome": "Geniéve",
+                  "gerente_email": "ger1@bantads.com.br"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          },
+          "403": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
                 }
               }
             },
@@ -46,105 +160,7 @@
     }
   },
   "components": {
-    "schemas": {
-      "Cliente": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "nome": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "cpf": {
-            "type": "string"
-          },
-          "telefone": {
-            "type": "string"
-          },
-          "salario": {
-            "type": "number"
-          },
-          "limite": {
-            "type": "number"
-          },
-          "saldo": {
-            "type": "number"
-          },
-          "gerente": {
-            "type": "string"
-          },
-          "endereco": {
-            "$ref": "#/components/schemas/EnderecoCliente"
-          },
-          "agencia": {
-            "type": "string"
-          },
-          "conta": {
-            "type": "string"
-          },
-          "criado_em": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "nome",
-          "email",
-          "cpf",
-          "telefone",
-          "salario",
-          "limite",
-          "saldo",
-          "gerente",
-          "endereco",
-          "agencia",
-          "conta",
-          "criado_em"
-        ]
-      },
-      "EnderecoCliente": {
-        "type": "object",
-        "properties": {
-          "tipo": {
-            "type": "string",
-            "enum": [
-              "casa",
-              "apartamento"
-            ]
-          },
-          "logradouro": {
-            "type": "string"
-          },
-          "numero": {
-            "type": "string"
-          },
-          "complemento": {
-            "type": "string"
-          },
-          "cep": {
-            "type": "string"
-          },
-          "cidade": {
-            "type": "string"
-          },
-          "estado": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "tipo",
-          "logradouro",
-          "numero",
-          "cep",
-          "cidade",
-          "estado"
-        ]
-      }
-    },
+    "schemas": {},
     "securitySchemes": {
       "JTW Token": {
         "type": "http",
