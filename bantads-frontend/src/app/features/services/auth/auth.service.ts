@@ -16,32 +16,32 @@ export class AuthService {
     { user: 'adamantio@bantads.com', password: 'adamantio', role: 'admin' }
   ];
 
-  private saveUserInCookie(user: any): void { //
-    const expires = new Date();
+  private saveUserInCookie(user: any): void { //save user in cookie for 24 hours
+    const expires = new Date(); //set expiration time to 24 hours
     expires.setTime(expires.getTime() + 24 * 60 * 60 * 1000);
 
-    const userString = encodeURIComponent(JSON.stringify(user));
-    document.cookie = `user=${userString}; path=/; secure; samesite=strict; expires=${expires.toUTCString()}`;
+    const userString = encodeURIComponent(JSON.stringify(user)); //encode user object to string
+    document.cookie = `user=${userString}; path=/; secure; samesite=strict; expires=${expires.toUTCString()}`; //set cookie
   }
 
-  private removeUserCookie(): void {
-    document.cookie = 'user=; path=/; secure; samesite=strict; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+  private removeUserCookie(): void { //remove user cookie
+    document.cookie = 'user=; path=/; secure; samesite=strict; expires=Thu, 01 Jan 1970 00:00:00 UTC;'; //set cookie expiration to past date
   }
 
-  login(user: string, password: string): boolean {
-    const foundUser = this.USERS.find(u => u.user === user && u.password === password);
+  login(user: string, password: string): boolean { //find user in USERS array
+    const foundUser = this.USERS.find(u => u.user === user && u.password === password); //check if user exists
     if (foundUser) {
-      this.saveUserInCookie(foundUser); 
+      this.saveUserInCookie(foundUser); //save user in cookie
       return true;
     }
     return false;
   }
 
-  logout(): void {
-    this.removeUserCookie(); 
+  logout(): void { //remove user cookie
+    this.removeUserCookie();
   }
 
-  getUser(): any {
+  getUser(): any { //get user from cookie
     const cookies = document.cookie.split(';');
     for (const cookie of cookies) {
       const [key, value] = cookie.trim().split('=');
@@ -57,12 +57,12 @@ export class AuthService {
     return null;
   }
 
-  getUserRole(): string | null {
+  getUserRole(): string | null { //get user role from cookie
     const user = this.getUser();
     return user ? user.role : null;
   }
 
-  isAuthenticated(): boolean {
+  isAuthenticated(): boolean { //check if user cookie exists
     return !!this.getUser();
   }
 }

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Cliente } from '../../models/cliente.model';
-import { DashboardAdminService } from '../../services/dashboard-admin.service';
+import { DashboardAdminService } from '../../services/admin/dashboard-admin.service';
 
 @Component({
   selector: 'app-consultar-cliente',
@@ -20,7 +20,7 @@ export class ConsultarClienteComponent implements OnInit {
   notFound = false;
   defaultDate = new Date().toISOString();
 
-  constructor(private dashboardAdminService: DashboardAdminService) {}
+  constructor(private dashboardAdminService: DashboardAdminService) { }
 
   ngOnInit(): void {
     this.loadClients();
