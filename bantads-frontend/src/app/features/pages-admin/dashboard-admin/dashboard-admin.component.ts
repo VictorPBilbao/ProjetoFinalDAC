@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { Manager } from '../../models/manager.model';
 import { Cliente } from '../../models/cliente.model';
-import { DashboardAdminService } from '../../services/dashboard-admin.service';
+import { DashboardAdminService } from '../../services/admin/dashboard-admin.service';
 import { ScaleType } from '@swimlane/ngx-charts';
 
 @Component({

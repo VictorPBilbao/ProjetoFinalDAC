@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Cliente } from '../../models/cliente.model';
-import { DashboardAdminService } from '../dashboard-admin.service';
+import { DashboardAdminService } from '../admin/dashboard-admin.service';
+import { Manager } from '../../models/manager.model';
 
 // This service simulates backend behavior for manager approvals (R9, R10, R11)
 // It stores pending clients separately until approved or rejected.
@@ -11,7 +12,7 @@ export class ManagerService {
     private readonly PENDING_KEY = 'pendingClients';
     private readonly CLIENTS_KEY = 'clients';
 
-    constructor(private readonly dashboardAdmin: DashboardAdminService) {}
+    constructor(private readonly dashboardAdmin: DashboardAdminService) { }
 
     // Seed some pending clients if none exist (mock for prototype)
     private ensureSeed(): void {

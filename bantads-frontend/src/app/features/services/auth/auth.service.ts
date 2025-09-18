@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-//import { DashboardAdminService } from '../dashboard-admin.service';
 
 @Injectable({
   providedIn: 'root'
@@ -17,34 +16,53 @@ export class AuthService {
     { user: 'adamantio@bantads.com', password: 'adamantio', role: 'admin' }
   ];
 
-  //try to login and save in localStorage
-  login(user: string, password: string): boolean {
-    const foundUser = this.USERS.find(u => u.user === user && u.password === password);
+  private saveUserInCookie(user: any): void { //save user in cookie for 24 hours
+    const expires = new Date(); //set expiration time to 24 hours
+    expires.setTime(expires.getTime() + 24 * 60 * 60 * 1000);
+
+    const userString = encodeURIComponent(JSON.stringify(user)); //encode user object to string
+    document.cookie = `user=${userString}; path=/; secure; samesite=strict; expires=${expires.toUTCString()}`; //set cookie
+  }
+
+  private removeUserCookie(): void { //remove user cookie
+    document.cookie = 'user=; path=/; secure; samesite=strict; expires=Thu, 01 Jan 1970 00:00:00 UTC;'; //set cookie expiration to past date
+  }
+
+  login(user: string, password: string): boolean { //find user in USERS array
+    const foundUser = this.USERS.find(u => u.user === user && u.password === password); //check if user exists
     if (foundUser) {
-      localStorage.setItem('user', JSON.stringify(foundUser));
+      this.saveUserInCookie(foundUser); //save user in cookie
       return true;
     }
     return false;
   }
 
-  logout(): void {
-    localStorage.removeItem('user');
+  logout(): void { //remove user cookie
+    this.removeUserCookie();
   }
 
-  // returns the logged in user
-  getUser(): any {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+  getUser(): any { //get user from cookie
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [key, value] = cookie.trim().split('=');
+      if (key === 'user') {
+        try {
+          return JSON.parse(decodeURIComponent(value));
+        } catch (e) {
+          console.error('Erro ao parsear o cookie do usuário', e);
+          return null;
+        }
+      }
+    }
+    return null;
   }
 
-  // returns the role of the logged in user
-  getUserRole(): string | null {
+  getUserRole(): string | null { //get user role from cookie
     const user = this.getUser();
     return user ? user.role : null;
   }
 
-  // check if user is authenticated
-  isAuthenticated(): boolean {
-    return !!localStorage.getItem('user');
+  isAuthenticated(): boolean { //check if user cookie exists
+    return !!this.getUser();
   }
 }

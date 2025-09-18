@@ -56,6 +56,23 @@
   width: 22px;
   height: 22px;
 }
+.password-container {
+  position: relative; 
+  display: inline-block; 
+  vertical-align: middle;
+}
+
+.password-input {
+  padding-right: 40px !important; 
+}
+.toggle-password-icon {
+  position: absolute; 
+  top: 50%; 
+  right: 15px; 
+  transform: translateY(-50%); 
+  cursor: pointer; 
+  color: #555; 
+}
 .user-input, .password-input {
   border-radius: 20px;
   border: 1px solid #cccccc;
@@ -68,26 +85,26 @@
 }
 .user-input{
   gap: 8px;
-  width: 170px;
+  width: 180px;
 }
 .password-input {
   gap: 8px;
-  width: 150px;
+  width: 100px;
 }
 .ok-btn {
-  background: rgba(224, 224, 224, 0.7);
+  background: rgba(255, 255, 255, 0.692);
   border: none;
   border-radius: 20px;
   width: 52px;
   height: 38px;
   font-size: 17px;
-  color: #000;
+  color: #065743;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: bold;
   transition: background 0.2s;
 }
 .ok-btn:hover {
-  background: #fff;
+  background: #ffffff;
 }
 .header-content-right {
   display: flex;
