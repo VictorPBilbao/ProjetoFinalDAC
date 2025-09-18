@@ -4,7 +4,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { UserService } from '../../services/user/user.service'
 import { NgxMaskDirective, NgxMaskPipe, provideNgxMask } from 'ngx-mask';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Cliente } from '../../models/cliente.model';
 import { EnderecoCliente } from '../../models/cliente.model';
 import confetti from 'canvas-confetti'
@@ -16,7 +16,8 @@ import confetti from 'canvas-confetti'
     CommonModule,
     FormsModule,
     NgxMaskDirective,
-    NgxMaskPipe
+    NgxMaskPipe,
+    RouterLink
   ],
   providers: [provideNgxMask()],
   templateUrl: './register.component.html',

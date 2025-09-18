@@ -42,7 +42,7 @@ export class HeaderComponent {
         if (role === 'cliente') {
           this.router.navigate(['/cliente/dashboard']);
         } else if (role === 'gerente') {
-          this.router.navigate(['/gerente/clientes']);
+          this.router.navigate(['/gerente/dashboard']);
         } else if (role === 'admin') {
           this.router.navigate(['/admin/dashboard']);
         } else {
