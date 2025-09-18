@@ -1,25 +1,3 @@
-<header class="home-header">
-  <div class="header-bar">
-    <div class="header-content-left">
-      <div class="logo-title">
-        <img src="images/banco-de-dinheiro-2-10.png" alt="Logo" class="logo" />
-        <span class="brand-title">BANTADS</span>
-      </div>
-
-      <div class="search-client-box">
-        <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" placeholder="Buscar por nome, CPF, conta..." />
-        <button type="button" (click)="onSearch()">Buscar</button>
-        <button type="button" class="clear-btn" *ngIf="searchTerm" (click)="clearSearch()">Limpar</button>
-      </div>
-    </div>
-    <div class="header-content-right">
-      <div class="quick-stats" *ngIf="clients.length">
-        <span>Total Clientes: <strong>{{ clients.length }}</strong></span>
-      </div>
-    </div>
-  </div>
-</header>
-
 <main class="consultar-main">
   <div class="page-header">
     <h1>Consultar Cliente</h1>
@@ -27,17 +5,6 @@
   </div>
 
   <section class="content-grid">
-    <aside class="side-menu card">
-      <h3>Menu</h3>
-      <nav>
-        <ul>
-          <li class="active"><a href="#">Consultar Cliente</a></li>
-          <li><a href="#">Relatórios</a></li>
-          <li><a href="#">Dashboard</a></li>
-        </ul>
-      </nav>
-    </aside>
-
     <div class="main-content">
       <!-- Lista de resultados -->
       <section class="card results" *ngIf="filteredClients.length > 1">

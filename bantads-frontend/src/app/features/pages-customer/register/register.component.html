@@ -92,7 +92,8 @@
           </div>
 
           <!-- BOTÕES -->
-          <div class="regiter-btn flex flex-column items-center">
+          <div class="regiter-btn flex items-center justify-center" style="gap: 20px; margin-top: 20px;">
+            <a type="button" class="btn btn-primary" routerLink="/">Voltar</a>
             <button type="submit" class="btn btn-primary"
               [disabled]="registerForm.invalid || !isCepValid || !isEmailAvailable">
               CADASTRAR

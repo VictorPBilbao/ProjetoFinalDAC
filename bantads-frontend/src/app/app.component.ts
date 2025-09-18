@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { LoadingComponent } from './features/components/utils/loading/loading.component';
+import { MenuSidebarComponent } from './features/components/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-root',
@@ -12,7 +13,9 @@ import { LoadingComponent } from './features/components/utils/loading/loading.co
     CommonModule,
     RouterOutlet,
     LoadingComponent,
-    HeaderComponent],
+    HeaderComponent,
+    MenuSidebarComponent
+  ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
@@ -31,5 +34,14 @@ export class AppComponent {
         this.showHeader = false;
       }
     });
+  }
+
+  showSidebar(): boolean {
+    const url = this.router.url;
+    return (
+      url.startsWith('/cliente') ||
+      url.startsWith('/gerente') ||
+      url.startsWith('/admin')
+    );
   }
 }
