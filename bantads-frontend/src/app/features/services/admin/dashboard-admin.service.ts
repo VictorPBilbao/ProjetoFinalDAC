@@ -40,7 +40,8 @@ export class DashboardAdminService {
     if (!managersExisting) {
       const mockManagers: Manager[] = [ // mock data for managers
         { id: '1', name: 'Thalita Santos', cpf: '596.644.780-24', email: 'thalita@bantads.com', telephone: '(41) 3361-4904' },
-        { id: '2', name: 'Ana Carolina', cpf: '943.173.280-70', email: 'ana@bantads.com', telephone: '(41) 3361-4904' }
+        { id: '2', name: 'Ana Carolina', cpf: '943.173.280-70', email: 'ana@bantads.com', telephone: '(41) 3361-4904' },
+        { id: '3', name: 'Godofredo Pimentel', cpf: '123.456.789-10', email: 'godofredo@bantads.com', telephone: '(41) 3361-4904' }
       ];
 
       const mockClients: Cliente[] = [ // mock data for clients
@@ -56,7 +57,7 @@ export class DashboardAdminService {
         },
         {
           id: '3', nome: 'Victor Passini', email: '', cpf: '888.999.000-11', telefone: '', salario: 0, limite: 0, saldo: -15000,
-          manager: mockManagers[0],
+          manager: mockManagers[2],
           endereco: { tipo: '', logradouro: '', bairro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: ''
         },
         {
@@ -66,7 +67,7 @@ export class DashboardAdminService {
         },
         {
           id: '8', nome: 'Rafael Silva', email: '', cpf: '101.202.303-40', telefone: '', salario: 0, limite: 0, saldo: 350000,
-          manager: mockManagers[0],
+          manager: mockManagers[2],
           endereco: { tipo: '', logradouro: '', bairro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: ''
         },
         {
@@ -86,22 +87,22 @@ export class DashboardAdminService {
         },
         {
           id: '9', nome: 'Carlos Eduardo', email: '', cpf: '666.777.888-99', telefone: '', salario: 0, limite: 0, saldo: -90000,
-          manager: mockManagers[1],
+          manager: mockManagers[2],
           endereco: { tipo: '', logradouro: '', bairro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: ''
         },
         {
           id: '10', nome: 'Patricia Lopes', email: '', cpf: '333.444.555-66', telefone: '', salario: 0, limite: 0, saldo: 420000,
-          manager: mockManagers[1],
+          manager: mockManagers[2],
           endereco: { tipo: '', logradouro: '', bairro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: ''
         },
         {
           id: '11', nome: 'Juliana Prado', email: '', cpf: '888.222.111-00', telefone: '', salario: 0, limite: 0, saldo: -55000,
-          manager: mockManagers[0],
+          manager: mockManagers[2],
           endereco: { tipo: '', logradouro: '', bairro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: ''
         },
         {
           id: '12', nome: 'Marcelo Torres', email: '', cpf: '777.111.222-33', telefone: '', salario: 0, limite: 0, saldo: -83000,
-          manager: mockManagers[1],
+          manager: mockManagers[0],
           endereco: { tipo: '', logradouro: '', bairro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: ''
         }
       ];
