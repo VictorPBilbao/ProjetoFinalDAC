@@ -1,83 +1,155 @@
+:host {
+  --c-primary: #1abc9c;
+  --c-primary-dark: #16a085;
+  --c-primary-light: #e8f8f5;
+  --c-surface: #ffffff;
+  --c-background: #f8f9fa;
+  --c-text: #2c3e50;
+  --c-text-muted: #7f8c8d;
+  --c-border: #dfe6e9;
+  --c-danger: #e74c3c;
+  --c-danger-dark: #c0392b;
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.75rem;
+  --font-weight-bold: 600;
+
+  --border-radius: 8px;
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+  --transition: all 0.2s ease-in-out;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+}
+
 .manager-list-container {
-  padding: 30px;
-  font-family: Arial, sans-serif;
+  max-width: 1200px;
+  margin: var(--space-xl) auto;
+  padding: var(--space-lg);
+  color: var(--c-text);
 }
 
 .header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-lg);
+  position: relative;
 }
 
-h2 {
-  font-size: 24px;
-  color: #333;
-  font-weight: bold;
+.header h2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--c-primary);
 }
 
 .new-manager-button {
-  background-color: #3cb371; /* Cor verde do botão 'Abrir Conta' */
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 10px 20px;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-sm);
+  padding: 0.65rem 1.25rem;
+  background-color: var(--c-primary);
+  color: var(--c-surface);
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
   text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition);
 }
 
 .new-manager-button:hover {
-  background-color: #2e8b57;
+  background-color: var(--c-primary-dark);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
 }
 
 .manager-table {
   width: 100%;
   border-collapse: collapse;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: var(--c-surface);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
 .manager-table th,
 .manager-table td {
+  padding: var(--space-md);
   text-align: left;
-  padding: 15px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.manager-table thead {
+  background-color: var(--c-primary-light);
 }
 
 .manager-table th {
-  background-color: #f2f2f2;
-  font-weight: bold;
-  color: #555;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--c-primary-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.manager-table tr:last-child td {
+.manager-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.actions a, button {
-  background: none;
-  border: 1px solid #dcdcdc;
-  border-radius: 5px;
-  padding: 8px 12px;
+.manager-table tbody tr:hover {
+  background-color: #fcfcfc;
+}
+
+td.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.edit-button,
+.delete-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: none;
+  color: var(--c-surface);
   cursor: pointer;
-  font-size: 14px;
-  margin-right: 8px;
+  transition: var(--transition);
 }
 
 .edit-button {
-  color: #4682b4; /* Cor azul */
+  background-color: var(--c-primary);
+  text-decoration: none;
+}
+
+.edit-button:hover {
+  background-color: var(--c-primary-dark);
 }
 
 .delete-button {
-  color: #dc3545; /* Cor vermelha */
+  background-color: var(--c-danger);
 }
 
-.edit-button:hover,
 .delete-button:hover {
-  background-color: #f0f0f0;
+  background-color: var(--c-danger-dark);
 }
