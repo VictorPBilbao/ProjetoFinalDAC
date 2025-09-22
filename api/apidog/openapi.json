@@ -1,168 +1,1709 @@
 {
-  "openapi": "3.0.1",
+  "openapi": "3.1.0",
   "info": {
     "title": "DAC",
-    "description": "",
+    "description": "API do Back-end do Bantads",
     "version": "1.0.0"
   },
-  "tags": [],
+  "tags": [
+    {
+      "name": "Inicialização"
+    },
+    {
+      "name": "Login"
+    },
+    {
+      "name": "Clientes"
+    },
+    {
+      "name": "Contas"
+    },
+    {
+      "name": "Gerentes"
+    }
+  ],
   "paths": {
-    "/clientes/{cpf}": {
+    "/reboot": {
       "get": {
-        "summary": "Untitled Endpoint",
+        "summary": "/reboot",
         "deprecated": false,
-        "description": "",
-        "tags": [],
-        "parameters": [
-          {
-            "name": "cpf",
-            "in": "path",
-            "description": "",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 11,
-              "maxLength": 11
-            }
-          }
+        "description": "inicia o banco de dados",
+        "tags": [
+          "Inicialização"
         ],
+        "parameters": [],
         "responses": {
           "200": {
-            "description": "",
+            "description": "Banco de dados criado conforme especificação",
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/login": {
+      "post": {
+        "summary": "/login",
+        "deprecated": false,
+        "description": "efetua o login do usuário",
+        "tags": [
+          "Login"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login efetuado com sucesso",
+            "headers": {}
+          },
+          "401": {
+            "description": "Usuário/Senha incorretos",
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/logout": {
+      "post": {
+        "summary": "/logout",
+        "deprecated": false,
+        "description": "efetua o logout do usuário",
+        "tags": [
+          "Login"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Login efetuado com sucesso",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "cpf": {
-                      "type": "string"
-                    },
-                    "nome": {
-                      "type": "string"
-                    },
-                    "telefone": {
-                      "type": "string"
-                    },
-                    "email": {
-                      "type": "string"
-                    },
-                    "endereco": {
-                      "type": "string"
-                    },
-                    "cidade": {
-                      "type": "string"
-                    },
-                    "estado": {
-                      "type": "string"
-                    },
-                    "salario": {
-                      "type": "integer"
-                    },
-                    "conta": {
-                      "type": "string"
-                    },
-                    "saldo": {
-                      "type": "string"
-                    },
-                    "limite": {
-                      "type": "integer"
-                    },
-                    "gerente": {
-                      "type": "string"
-                    },
-                    "gerente_nome": {
-                      "type": "string"
-                    },
-                    "gerente_email": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "cpf",
-                    "nome",
-                    "telefone",
-                    "email",
-                    "endereco",
-                    "cidade",
-                    "estado",
-                    "salario",
-                    "conta",
-                    "saldo",
-                    "limite",
-                    "gerente",
-                    "gerente_nome",
-                    "gerente_email"
-                  ]
-                },
-                "example": {
-                  "cpf": "12912861012",
-                  "nome": "Catharyna",
-                  "telefone": "(41) 9 9999-8989",
-                  "email": "cli1@bantads.com.br",
-                  "endereco": "Rua X, nr 10",
-                  "cidade": "Curitib",
-                  "estado": "PR",
-                  "salario": 800,
-                  "conta": "1291",
-                  "saldo": "1291",
-                  "limite": 5000,
-                  "gerente": "98574307084",
-                  "gerente_nome": "Geniéve",
-                  "gerente_email": "ger1@bantads.com.br"
+                  "$ref": "#/components/schemas/LogoutResponse"
                 }
               }
             },
             "headers": {}
           },
           "401": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {}
-                }
-              }
-            },
-            "headers": {}
-          },
-          "403": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {}
-                }
-              }
-            },
-            "headers": {}
-          },
-          "404": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {}
-                }
-              }
-            },
+            "description": "O usuário não está logado",
             "headers": {}
           }
         },
         "security": [
           {
-            "JTW Token": []
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/clientes/{cpf}": {
+      "get": {
+        "summary": "/clientes/{cpf}",
+        "deprecated": false,
+        "description": "Consulta um cliente",
+        "tags": [
+          "Clientes"
+        ],
+        "parameters": [
+          {
+            "name": "cpf",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuário consultado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DadosClienteResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          },
+          "404": {
+            "description": "Usuário não encontrado",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "/clientes/{cpf}",
+        "deprecated": false,
+        "description": "altera os dados de perfil de cliente",
+        "tags": [
+          "Clientes"
+        ],
+        "parameters": [
+          {
+            "name": "cpf",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PerfilInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil do cliente alterado com sucesso",
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/clientes": {
+      "get": {
+        "summary": "/clientes",
+        "deprecated": false,
+        "description": "consulta todos os clientes",
+        "tags": [
+          "Clientes"
+        ],
+        "parameters": [
+          {
+            "name": "filtro",
+            "in": "query",
+            "description": "Define qual tipo de busca será feita.\n   - _para_aprovar_: (GERENTE) busca os clientes que aguardam aprovação\n   - _adm_relatorio_clientes_: (ADMINISTRADOR) busca todos os clientes para tirar o relatório, com dados de cliente, conta e gerente\n   - _melhores_clientes_: (GERENTE) busca os 3 melhores clientes\n   <sem filtro>: (GERENTE) busca todos os clientes com conta\n",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "para_aprovar",
+                "adm_relatorio_clientes",
+                "melhores_clientes"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clientes retornados com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ParaAprovarResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/RelatorioClientesResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TodosClientesResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "/clientes",
+        "deprecated": false,
+        "description": "autocadastro de cliente",
+        "tags": [
+          "Clientes"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutocadastroInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cliente autocadastrado",
+            "headers": {}
+          },
+          "400": {
+            "description": "Erro inserindo cliente",
+            "headers": {}
+          },
+          "409": {
+            "description": "Cliente já cadastrado ou aguardando aprovação, CPF duplicado",
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/clientes/{cpf}/aprovar": {
+      "post": {
+        "summary": "/clientes/{cpf}/aprovar",
+        "deprecated": false,
+        "description": "aprova o cliente com o cpf passado",
+        "tags": [
+          "Clientes"
+        ],
+        "parameters": [
+          {
+            "name": "cpf",
+            "in": "path",
+            "description": "CPF do cliente a ser aprovado",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente aprovado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContaResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/clientes/{cpf}/rejeitar": {
+      "post": {
+        "summary": "/clientes/{cpf}/rejeitar",
+        "deprecated": false,
+        "description": "rejeita o cliente com o cpf passado",
+        "tags": [
+          "Clientes"
+        ],
+        "parameters": [
+          {
+            "name": "cpf",
+            "in": "path",
+            "description": "CPF do cliente a ser rejeitado",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "motivo": {
+                    "type": "string",
+                    "examples": [
+                      "Usuário não é interessante para o banco"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cliente rejeitado com sucesso",
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/contas/{numero}/saldo": {
+      "post": {
+        "summary": "/contas/{numero}/saldo",
+        "deprecated": false,
+        "description": "retorna o saldo da conta",
+        "tags": [
+          "Contas"
+        ],
+        "parameters": [
+          {
+            "name": "numero",
+            "in": "path",
+            "description": "Número da conta",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saldo retornado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaldoResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "Filtro Não Existe",
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          },
+          "404": {
+            "description": "Clientes não encontradas",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/contas/{numero}/depositar": {
+      "post": {
+        "summary": "/contas/{numero}/depositar",
+        "deprecated": false,
+        "description": "deposita um valor na conta do cliente",
+        "tags": [
+          "Contas"
+        ],
+        "parameters": [
+          {
+            "name": "numero",
+            "in": "path",
+            "description": "Número da conta",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "valor": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Valor a ser depositado",
+                    "examples": [
+                      51.44
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Depósito efetuado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperacaoResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/contas/{numero}/sacar": {
+      "post": {
+        "summary": "/contas/{numero}/sacar",
+        "deprecated": false,
+        "description": "Saca um valor da conta do cliente",
+        "tags": [
+          "Contas"
+        ],
+        "parameters": [
+          {
+            "name": "numero",
+            "in": "path",
+            "description": "Número da conta",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "valor": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Valor a ser sacado",
+                    "examples": [
+                      51.44
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saque efetuado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperacaoResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/contas/{numero}/transferir": {
+      "post": {
+        "summary": "/contas/{numero}/transferir",
+        "deprecated": false,
+        "description": "Saca um valor da conta do cliente",
+        "tags": [
+          "Contas"
+        ],
+        "parameters": [
+          {
+            "name": "numero",
+            "in": "path",
+            "description": "Número da conta",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "destino": {
+                    "type": "string",
+                    "description": "Conta destino da transferência",
+                    "examples": [
+                      "0123"
+                    ]
+                  },
+                  "valor": {
+                    "type": "number",
+                    "format": "double",
+                    "description": "Valor a ser transferido",
+                    "examples": [
+                      51.44
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transferência efetuada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferenciaResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/contas/{numero}/extrato": {
+      "post": {
+        "summary": "/contas/{numero}/extrato",
+        "deprecated": false,
+        "description": "Retorna o extrado da conta",
+        "tags": [
+          "Contas"
+        ],
+        "parameters": [
+          {
+            "name": "numero",
+            "in": "path",
+            "description": "Número da conta",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transferência efetuada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtratoResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/gerentes": {
+      "get": {
+        "summary": "/gerentes",
+        "deprecated": false,
+        "description": "Busca todos os gerentes cadastrados",
+        "tags": [
+          "Gerentes"
+        ],
+        "parameters": [
+          {
+            "name": "numero",
+            "in": "query",
+            "description": "Se é para retornar todos os gerentes ou se a consulta é para dashboard\n- *dashboard* : retorna os dados para montar o dashboard do gerente\n- sem filtro : retorna todos os dados de gerentes\n",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retorna a lista de gerentes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/DashboardResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GerentesResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "/gerentes",
+        "deprecated": false,
+        "description": "Inserção de Gerentes.\n<br>Permissões:\n- ADMINISTRADOR\n",
+        "tags": [
+          "Gerentes"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DadoGerenteInsercao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Gerente inserido com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DadoGerente"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/gerentes/{cpf}": {
+      "get": {
+        "summary": "/gerentes/{cpf}",
+        "deprecated": false,
+        "description": "Consulta um gerente.\n<br>Permissões:\n- ADMINISTRADOR\n",
+        "tags": [
+          "Gerentes"
+        ],
+        "parameters": [
+          {
+            "name": "cpf",
+            "in": "path",
+            "description": "CPF do gerente a ser consultado",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gerente encontrado e dados retornados com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DadoGerente"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          },
+          "404": {
+            "description": "Gerente não encontrado",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "/gerentes/{cpf}",
+        "deprecated": false,
+        "description": "Remove um gerente.\n<br>Permissões:\n- ADMINISTRADOR\n",
+        "tags": [
+          "Gerentes"
+        ],
+        "parameters": [
+          {
+            "name": "cpf",
+            "in": "path",
+            "description": "CPF do gerente a ser removido",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gerente encontrado e removido com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DadoGerente"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          },
+          "404": {
+            "description": "Gerente não encontrado",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "/gerentes/{cpf}",
+        "deprecated": false,
+        "description": "Atualiza os dados de um gerente.\n<br>Permissões:\n- ADMINISTRADOR\n",
+        "tags": [
+          "Gerentes"
+        ],
+        "parameters": [
+          {
+            "name": "cpf",
+            "in": "path",
+            "description": "CPF do gerente a ser atualizado",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DadoGerenteAtualizacao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Gerente encontrado e alterado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DadoGerente"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          },
+          "404": {
+            "description": "Gerente não encontrado",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
           }
         ]
       }
     }
   },
+  "webhooks": {},
   "components": {
-    "schemas": {},
+    "schemas": {
+      "AutocadastroInfo": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "telefone": {
+            "type": "string"
+          },
+          "salario": {
+            "type": "number",
+            "format": "double"
+          },
+          "endereco": {
+            "type": "string"
+          },
+          "CEP": {
+            "type": "string"
+          },
+          "cidade": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginInfo": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "senha": {
+            "type": "string"
+          }
+        }
+      },
+      "LogoutResponse": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          }
+        }
+      },
+      "SaldoResponse": {
+        "type": "object",
+        "properties": {
+          "cliente": {
+            "type": "string",
+            "examples": [
+              "76179646090"
+            ]
+          },
+          "conta": {
+            "type": "string",
+            "examples": [
+              "0556"
+            ]
+          },
+          "saldo": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              1506.88
+            ]
+          }
+        }
+      },
+      "PerfilInfo": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "examples": [
+              "Crysthôncio"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "examples": [
+              "crys@bantads.com.br"
+            ]
+          },
+          "salario": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              1506.88
+            ]
+          },
+          "endereco": {
+            "type": "string",
+            "examples": [
+              "Rua das Palmeiras, 500"
+            ]
+          },
+          "CEP": {
+            "type": "string",
+            "examples": [
+              "80000000"
+            ]
+          },
+          "cidade": {
+            "type": "string",
+            "examples": [
+              "Curitiba"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "examples": [
+              "PR"
+            ]
+          }
+        }
+      },
+      "ContaResponse": {
+        "type": "object",
+        "properties": {
+          "cliente": {
+            "type": "string",
+            "examples": [
+              "76179646090"
+            ]
+          },
+          "numero": {
+            "type": "string",
+            "examples": [
+              "0114"
+            ]
+          },
+          "saldo": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              2000
+            ]
+          },
+          "limite": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              1000
+            ]
+          },
+          "gerente": {
+            "type": "string",
+            "examples": [
+              "98574307084"
+            ]
+          },
+          "criacao": {
+            "type": "string",
+            "examples": [
+              "2025-08-01T10:22:45-03:00"
+            ]
+          }
+        }
+      },
+      "TodosClientesResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ClienteResponse"
+        }
+      },
+      "ParaAprovarResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ClienteParaAprovarResponse"
+        }
+      },
+      "RelatorioClientesResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DadosClienteResponse"
+        }
+      },
+      "ClienteResponse": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "examples": [
+              "12912861012"
+            ]
+          },
+          "nome": {
+            "type": "string",
+            "examples": [
+              "Catharyna"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "examples": [
+              "cli1@bantads.com.br"
+            ]
+          },
+          "telefone": {
+            "type": "string",
+            "examples": [
+              "(41) 9 9999-8989"
+            ]
+          },
+          "endereco": {
+            "type": "string",
+            "examples": [
+              "Rua X, nr 10"
+            ]
+          },
+          "cidade": {
+            "type": "string",
+            "examples": [
+              "Curitiba"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "examples": [
+              "PR"
+            ]
+          },
+          "conta": {
+            "type": "string",
+            "examples": [
+              "1291"
+            ]
+          },
+          "saldo": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              800
+            ]
+          },
+          "limite": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              5000
+            ]
+          }
+        }
+      },
+      "ClienteParaAprovarResponse": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "examples": [
+              "12912861012"
+            ]
+          },
+          "nome": {
+            "type": "string",
+            "examples": [
+              "Catharyna"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "examples": [
+              "cli1@bantads.com.br"
+            ]
+          },
+          "endereco": {
+            "type": "string",
+            "examples": [
+              "Rua X, nr 10"
+            ]
+          },
+          "cidade": {
+            "type": "string",
+            "examples": [
+              "Curitiba"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "examples": [
+              "PR"
+            ]
+          }
+        }
+      },
+      "DadosClienteResponse": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "examples": [
+              "12912861012"
+            ]
+          },
+          "nome": {
+            "type": "string",
+            "examples": [
+              "Catharyna"
+            ]
+          },
+          "telefone": {
+            "type": "string",
+            "examples": [
+              "(41) 9 9999-8989"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "examples": [
+              "cli1@bantads.com.br"
+            ]
+          },
+          "endereco": {
+            "type": "string",
+            "examples": [
+              "Rua X, nr 10"
+            ]
+          },
+          "cidade": {
+            "type": "string",
+            "examples": [
+              "Curitib"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "examples": [
+              "PR"
+            ]
+          },
+          "salario": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              800
+            ]
+          },
+          "conta": {
+            "type": "string",
+            "examples": [
+              "1291"
+            ]
+          },
+          "saldo": {
+            "type": "string",
+            "examples": [
+              "1291"
+            ]
+          },
+          "limite": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              5000
+            ]
+          },
+          "gerente": {
+            "type": "string",
+            "examples": [
+              "98574307084"
+            ]
+          },
+          "gerente_nome": {
+            "type": "string",
+            "examples": [
+              "Geniéve"
+            ]
+          },
+          "gerente_email": {
+            "type": "string",
+            "examples": [
+              "ger1@bantads.com.br"
+            ]
+          }
+        }
+      },
+      "OperacaoResponse": {
+        "type": "object",
+        "properties": {
+          "conta": {
+            "type": "string",
+            "examples": [
+              "1291"
+            ]
+          },
+          "data": {
+            "type": "string",
+            "examples": [
+              "2025-08-01T10:22:45-03:00"
+            ]
+          },
+          "saldo": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              1044.23
+            ]
+          }
+        }
+      },
+      "TransferenciaResponse": {
+        "type": "object",
+        "properties": {
+          "conta": {
+            "type": "string",
+            "examples": [
+              "1291"
+            ]
+          },
+          "data": {
+            "type": "string",
+            "examples": [
+              "2025-08-01T10:22:45-03:00"
+            ]
+          },
+          "destino": {
+            "type": "string",
+            "examples": [
+              "4321"
+            ]
+          },
+          "saldo": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              1044.23
+            ]
+          },
+          "valor": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              87.12
+            ]
+          }
+        }
+      },
+      "ExtratoResponse": {
+        "type": "object",
+        "properties": {
+          "conta": {
+            "type": "string",
+            "description": "Número da conta",
+            "examples": [
+              "8722"
+            ]
+          },
+          "saldo": {
+            "type": "number",
+            "format": "double",
+            "description": "Saldo final da conta",
+            "examples": [
+              1933.32
+            ]
+          },
+          "movimentacoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemExtratoResponse"
+            }
+          }
+        }
+      },
+      "ItemExtratoResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string",
+            "description": "Data da movimentação",
+            "examples": [
+              "2025-08-01T10:22:45-03:00"
+            ]
+          },
+          "tipo": {
+            "type": "string",
+            "description": "Tipo da movimentação",
+            "enum": [
+              "saque",
+              "depósito",
+              "transferência"
+            ]
+          },
+          "origem": {
+            "type": "string",
+            "description": "Conta origem dos valores",
+            "examples": [
+              "8872"
+            ]
+          },
+          "destino": {
+            "type": "string",
+            "description": "Conta destino dos valores",
+            "examples": [
+              "9961"
+            ]
+          },
+          "valor": {
+            "type": "number",
+            "format": "double",
+            "examples": [
+              972.22
+            ]
+          }
+        }
+      },
+      "DashboardResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ItemDashboardResponse"
+        }
+      },
+      "GerentesResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/DadoGerente"
+        }
+      },
+      "ItemDashboardResponse": {
+        "type": "object",
+        "properties": {
+          "gerente": {
+            "$ref": "#/components/schemas/DadoGerente"
+          },
+          "clientes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DadoConta"
+            }
+          },
+          "saldo_positivo": {
+            "type": "number",
+            "format": "double",
+            "description": "Saldo positivo das suas contas",
+            "examples": [
+              89123.22
+            ]
+          },
+          "saldo_negativo": {
+            "type": "number",
+            "format": "double",
+            "description": "Saldo negativo das suas contas",
+            "examples": [
+              -982.35
+            ]
+          }
+        }
+      },
+      "DadoConta": {
+        "type": "object",
+        "properties": {
+          "cliente": {
+            "type": "string",
+            "description": "CPF do cliente",
+            "examples": [
+              "40501740066"
+            ]
+          },
+          "numero": {
+            "type": "string",
+            "description": "Número da conta",
+            "examples": [
+              "7811"
+            ]
+          },
+          "saldo": {
+            "type": "number",
+            "format": "double",
+            "description": "Saldo da conta",
+            "examples": [
+              1099.21
+            ]
+          },
+          "limite": {
+            "type": "number",
+            "format": "double",
+            "description": "Limite da conta",
+            "examples": [
+              5000
+            ]
+          },
+          "gerente": {
+            "type": "string",
+            "description": "CPF do gerente",
+            "examples": [
+              "23862179060"
+            ]
+          },
+          "criacao": {
+            "type": "string",
+            "description": "Data da Criação da conta",
+            "examples": [
+              "2025-08-01T16:27:48-03:00"
+            ]
+          }
+        }
+      },
+      "DadoGerente": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "description": "CPF do gerente",
+            "examples": [
+              "40501740066"
+            ]
+          },
+          "nome": {
+            "type": "string",
+            "description": "Nome do gerente",
+            "examples": [
+              "Geniéve"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "description": "Email do gerente",
+            "examples": [
+              "ger1@bantads.com.br"
+            ]
+          },
+          "tipo": {
+            "type": "string",
+            "description": "Tipo do gerente",
+            "examples": [
+              "ADMINISTRADOR"
+            ]
+          }
+        }
+      },
+      "DadoGerenteInsercao": {
+        "type": "object",
+        "properties": {
+          "cpf": {
+            "type": "string",
+            "description": "CPF do gerente",
+            "examples": [
+              "40501740066"
+            ]
+          },
+          "nome": {
+            "type": "string",
+            "description": "Nome do gerente",
+            "examples": [
+              "Geniéve"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "description": "Email do gerente",
+            "examples": [
+              "ger1@bantads.com.br"
+            ]
+          },
+          "tipo": {
+            "type": "string",
+            "description": "Tipo do gerente",
+            "examples": [
+              "ADMINISTRADOR"
+            ]
+          },
+          "senha": {
+            "type": "string",
+            "description": "Senha do novo gerente",
+            "examples": [
+              "tads"
+            ]
+          }
+        }
+      },
+      "DadoGerenteAtualizacao": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "description": "Nome do gerente",
+            "examples": [
+              "Geniéve"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "description": "Email do gerente",
+            "examples": [
+              "ger1@bantads.com.br"
+            ]
+          },
+          "senha": {
+            "type": "string",
+            "description": "Senha do novo gerente",
+            "examples": [
+              "tads"
+            ]
+          }
+        }
+      }
+    },
     "securitySchemes": {
       "JTW Token": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
@@ -179,9 +1720,5 @@
       "description": "Prod Env"
     }
   ],
-  "security": [
-    {
-      "JTW Token": []
-    }
-  ]
+  "security": []
 }
