@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -24,6 +24,10 @@ export class ListClientsComponent implements OnInit {
   itmsPerPg: number = 7;
   totalPgs: number = 0;
 
+  // Modal state
+  modalOpen = false;
+  selectedClient?: Cliente;
+
   constructor(private clientService: ClientService) {
     this.allClients = this.clientService.getClients();
   }
@@ -46,6 +50,14 @@ export class ListClientsComponent implements OnInit {
     }
     this.currentPg = 1;
     this.updatePgView();
+
+    // Se houver apenas 1 resultado, abre modal com detalhes
+    if (this.filteredClients.length === 1) {
+      this.openModal(this.filteredClients[0]);
+    } else if (this.modalOpen && this.selectedClient && !this.filteredClients.find(c => c.id === this.selectedClient!.id)) {
+      // Se o cliente selecionado não está mais no filtro, fecha modal
+      this.closeModal();
+    }
   }
 
   updatePgView() {
@@ -71,5 +83,20 @@ export class ListClientsComponent implements OnInit {
 
   previousPg() {
     this.goToPg(this.currentPg - 1);
+  }
+
+  openModal(cliente: Cliente) {
+    this.selectedClient = cliente;
+    this.modalOpen = true;
+  }
+
+  closeModal() {
+    this.modalOpen = false;
+    this.selectedClient = undefined;
+  }
+
+  @HostListener('document:keydown.escape')
+  onEsc() {
+    if (this.modalOpen) this.closeModal();
   }
 }
