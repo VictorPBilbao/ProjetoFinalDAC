@@ -1,25 +1,55 @@
 <main>
-  <section class="main-content">
-    <div class="container">
-      <div class="header">
-        <h1>Saldo atual</h1>
-        <h2>R$ 3.483,23</h2>
-      </div>
-
-      <ul class="content-header">
-        <li>Receita</li>
-        <li>Gastos</li>
-      </ul>
-      <div>
-        <img src="https://placehold.co/530x335" alt="Graph" />
-      </div>
-
-      <h4>Esta semana</h4>
-      <hr />
-      <div class="statement-list">
-        <app-statement-item />
-        <app-statement-item />
-      </div>
-    </div>
-  </section>
+    <section class="main-content">
+        <div class="balance-container">
+            <h1>Saldo atual</h1>
+            <h2 [ngStyle]="{ color: balance < 0 ? 'red' : '#097459' }">
+                <span
+                    style="
+                        font-size: 18px;
+                        vertical-align: top;
+                        font-weight: lighter;
+                    "
+                    >R$</span
+                >
+                {{ balance | number : "1.2-2" }}
+            </h2>
+            <h3>Depositados este mês: R$ 4500,00</h3>
+        </div>
+        <ul>
+            <li>
+                <a routerLink="/cliente/deposito" href="/cliente/deposito">
+                    <img src="icon" alt="icon" />
+                    <p>Depositar</p>
+                </a>
+            </li>
+            <li>
+                <a routerLink="/cliente/saque" href="/cliente/saque">
+                    <img src="icon" alt="icon" />
+                    <p>Sacar</p>
+                </a>
+            </li>
+            <li>
+                <a routerLink="/cliente/extrato" href="/cliente/extrato">
+                    <img src="icon" alt="icon" />
+                    <p>Extrato</p>
+                </a>
+            </li>
+            <li>
+                <a routerLink="/cliente/detalhes" href="/cliente/detalhes">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        height="24px"
+                        viewBox="0 -960 960 960"
+                        width="24px"
+                        fill="#FFFFFF"
+                    >
+                        <path
+                            d="M480-440q58 0 99-41t41-99q0-58-41-99t-99-41q-58 0-99 41t-41 99q0 58 41 99t99 41ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-46q-54-53-125.5-83.5T480-360q-83 0-154.5 30.5T200-246v46Z"
+                        />
+                    </svg>
+                    <p>Minha Conta</p>
+                </a>
+            </li>
+        </ul>
+    </section>
 </main>
