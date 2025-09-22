@@ -90,6 +90,7 @@ tbody tr:hover {
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s;
+  background: transparent;
 }
 
 .details-link:hover {
@@ -138,3 +139,63 @@ button:disabled {
 .pg-controls span {
   font-weight: 500;
 }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(800px, calc(100% - 2rem));
+  background: var(--c-surface);
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.modal-header h3 { margin: 0; color: var(--c-primary-dark); }
+
+.close-btn, .close-btn-2 {
+  background: transparent;
+  color: var(--c-text);
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 1rem 1.25rem 0.5rem 1.25rem;
+  overflow: auto;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: .75rem;
+  padding: .75rem 1.25rem 1.25rem 1.25rem;
+}
+
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; }
+.info-item { display: flex; flex-direction: column; background: #f8fdfb; border: 1px solid #e6faf3; padding: 10px 12px; border-radius: 6px; }
+.label { font-size: 10px; letter-spacing: .7px; text-transform: uppercase; color: #666; font-weight: 700; margin-bottom: 4px; }
+.value { font-size: 14px; color: #333; word-break: break-word; }
+.positive { color: #0ec093; }
+.negative { color: #e25454; }
