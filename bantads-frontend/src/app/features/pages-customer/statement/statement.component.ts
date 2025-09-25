@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 
 import { Transaction } from '../../models/transaction.model';
 import { Record } from '../../models/record.model';
-import { TransactionService } from '../../services/transaction.service';
+import { TransactionService } from '../../services/transaction/transaction.service';
 
 @Component({
   selector: 'app-statement',
