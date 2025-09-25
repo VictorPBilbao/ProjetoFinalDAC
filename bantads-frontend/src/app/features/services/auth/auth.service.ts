@@ -15,7 +15,9 @@ export class AuthService {
     { user: 'godofredo@bantads.com', password: 'godofredo', role: 'gerente' },
     { user: 'gerente', password: 'gerente', role: 'gerente' },
     { user: 'adamantio@bantads.com', password: 'adamantio', role: 'admin' },
-    { user: 'admin', password: 'admin', role: 'admin' }
+    { user: 'admin', password: 'admin', role: 'admin' },
+    { user: 'cliente', password: 'cliente', role: 'cliente' },
+    { user: 'gerente', password: 'gerente', role: 'gerente' }
   ];
 
   private saveUserInCookie(user: any): void { //save user in cookie for 24 hours

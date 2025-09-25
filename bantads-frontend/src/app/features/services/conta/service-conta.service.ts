@@ -68,7 +68,7 @@ export class ServiceContaService {
     },
   };
 
-  constructor() {}
+  constructor() { }
 
   // Login mock: valida usuário e senha e retorna sessão + conta
   login(user: string, password: string): Observable<LoginResult> {
