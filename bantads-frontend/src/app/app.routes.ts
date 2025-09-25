@@ -22,11 +22,12 @@ import { ListClientsComponent } from './features/pages-manager/list-clients/list
 import { ManagerDashboardComponent } from './features/pages-manager/manager-dashboard/manager-dashboard.component';
 import { PageNotFoundComponent } from './features/pages/page-not-found/page-not-found.component';
 import { authGuard } from './features/services/auth/auth.guard';
+import { loginGuard } from './features/services/auth/login.guard';
 
 export const routes: Routes = [
     //standard routes
     { path: '', redirectTo: '/login', pathMatch: 'full' },
-    { path: 'login', component: LoginComponent },
+    { path: 'login', component: LoginComponent, canActivate: [loginGuard] },
     { path: 'cadastro', component: RegisterComponent },
 
     // customer routes

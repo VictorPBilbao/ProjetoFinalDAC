@@ -20,7 +20,7 @@ export class DashboardAdminComponent implements OnInit {
     name: 'customScheme',
     selectable: true,
     group: ScaleType.Ordinal,
-    domain: ['#43a047', '#e53935']  // Green for positive, Red for negative
+    domain: ['#0ec093', '#e53935']  // Green for positive, Red for negative
   };
 
   constructor(private dashboardService: DashboardAdminService) { }
