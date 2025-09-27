@@ -35,7 +35,7 @@ export class RegisterComponent {
   message: string = '';
   currentStep: number = 1;
   isEmailAvailable: boolean = true;
-  isUsernameAvailable: boolean = true;
+  isUserAvailable: boolean = true;
   isCepValid: boolean = true;
   client: Cliente | undefined;
 
@@ -65,7 +65,7 @@ export class RegisterComponent {
             Swal.fire({
               icon: 'success',
               title: 'Cadastro realizado com sucesso!',
-              text: this.message,
+              text: 'Ele será enviado para aprovação por um gerente da sua região antes de poder acessar o sistema.',
               confirmButtonText: 'OK'
             });
 
@@ -212,7 +212,6 @@ export class RegisterComponent {
             confirmButtonText: 'OK'
           });
           this.isCepValid = true; // Permite seguir
-          // Não limpa o campo 'cep'
         } else {
           // Outros erros
           this.message = err.message || 'Erro ao buscar CEP. Verifique sua conexão ou tente novamente mais tarde.';
@@ -229,7 +228,65 @@ export class RegisterComponent {
     });
   }
 
-  onValidateEmail(): void {}
+  onValidateEmail(): void {
+    this.userService.verifyEmailAvailability(this.registerForm?.controls['email']?.value || '').subscribe({
+        next: (available) => {
+            this.isEmailAvailable = available;
+            if (!available) {
+                this.message = "E-mail já cadastrado. Por favor, utilize outro e-mail.";
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atenção',
+                    text: this.message,
+                    confirmButtonText: 'OK'
+                });
 
-  onValidateUsername(): void {}
+                this.registerForm?.controls['email']?.setValue(''); // Reseta o campo de e-mail
+            } else {
+                this.message = '';
+            }
+        },
+        error: (err) => {
+            this.message = 'Erro ao verificar e-mail. Verifique sua conexão ou tente novamente mais tarde.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: this.message,
+                confirmButtonText: 'OK'
+            });
+            this.registerForm?.controls['email']?.setValue(''); // Reseta o campo de e-mail
+        }
+    });
+  }
+
+  onValidateUser(): void {
+    this.userService.verifyUserByCpf(this.registerForm?.controls['cpf']?.value || '').subscribe({
+        next: (exists) => {
+            this.isUserAvailable = !exists;
+            if (exists) {
+                this.message = 'CPF já cadastrado. Por favor, utilize outro CPF.';
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atenção',
+                    text: this.message,
+                    confirmButtonText: 'OK'
+                });
+                this.registerForm?.controls['cpf']?.setValue(''); // Reseta o campo de CPF
+            } else {
+                this.message = '';
+            }
+        },
+        error: (err) => {
+            this.message = 'Erro ao verificar CPF. Verifique sua conexão ou tente novamente mais tarde.';
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: this.message,
+                confirmButtonText: 'OK'
+            });
+
+            this.registerForm?.controls['cpf']?.setValue(''); // Reseta o campo de CPF
+        }
+    });
+  }
 }

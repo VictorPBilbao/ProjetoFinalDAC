@@ -1,24 +1,14 @@
 import { Injectable } from '@angular/core';
+import { LocalStorageServiceService } from '../local-storages/local-storage-service.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly USERS = [
-    { user: 'guilherme@bantads.com', password: 'guilherme', role: 'cliente' },
-    { user: 'leonardo@bantads.com', password: 'leonardo', role: 'cliente' },
-    { user: 'victor@bantads.com', password: 'victor', role: 'cliente' },
-    { user: 'adriano@bantads.com', password: 'adriano', role: 'cliente' },
-    { user: 'vinicius@bantads.com', password: 'vinicius', role: 'cliente' },
-    { user: 'thalita@bantads.com', password: 'thalita', role: 'gerente' },
-    { user: 'ana@bantads.com', password: 'ana', role: 'gerente' },
-    { user: 'godofredo@bantads.com', password: 'godofredo', role: 'gerente' },
-    { user: 'gerente', password: 'gerente', role: 'gerente' },
-    { user: 'adamantio@bantads.com', password: 'adamantio', role: 'admin' },
-    { user: 'admin', password: 'admin', role: 'admin' },
-    { user: 'cliente', password: 'cliente', role: 'cliente' },
-    { user: 'gerente', password: 'gerente', role: 'gerente' }
-  ];
+
+  constructor(
+    private localStorageService: LocalStorageServiceService
+  ) { }
 
   private saveUserInCookie(user: any): void { //save user in cookie for 24 hours
     const expires = new Date(); //set expiration time to 24 hours
@@ -33,11 +23,17 @@ export class AuthService {
   }
 
   login(user: string, password: string): boolean { //find user in USERS array
-    const foundUser = this.USERS.find(u => u.user === user && u.password === password); //check if user exists
+    // busca todos os usuários no localStorage
+    const users = this.localStorageService.getUsers();
+
+    // procura se existe um usuário que bate com email/username + senha
+    const foundUser = users.find(u => u.user === user && u.password === password);
+
     if (foundUser) {
-      this.saveUserInCookie(foundUser); //save user in cookie
+      this.saveUserInCookie(foundUser); // salva user em cookie
       return true;
     }
+
     return false;
   }
 

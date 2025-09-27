@@ -17,34 +17,23 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td>Adriano</td>
-        <td>123.456.789-00</td>
-        <td>adriano.gerente&#64;bantads.com</td>
-        <td>(11) 98765-4321</td>
+      <tr *ngFor="let manager of managers">
+        <td>{{ manager.name }}</td>
+        <td>{{ manager.cpf }}</td>
+        <td>{{ manager.email }}</td>
+        <td>{{ manager.telephone }}</td>
         <td class="actions">
-          <a class="edit-button" routerLink="/admin/gerente/1">
+          <a class="edit-button" [routerLink]="['/admin/gerente', manager.id]">
             <i class="fas fa-edit"></i> Editar
           </a>
-          <button class="delete-button">
+          <button class="delete-button" (click)="deleteManager(manager.id)">
             <i class="fas fa-trash-alt"></i> Remover
           </button>
         </td>
       </tr>
-      <tr>
-        <td>Maria</td>
-        <td>987.654.321-11</td>
-        <td>maria.gerente&#64;bantads.com</td>
-        <td>(11) 12345-6789</td>
-        <td class="actions">
-          <a class="edit-button" routerLink="/admin/gerente/2">
-            <i class="fas fa-edit"></i> Editar
-          </a>
-          <button class="delete-button">
-            <i class="fas fa-trash-alt"></i> Remover
-          </button>
-        </td>
+      <tr *ngIf="managers.length === 0">
+        <td colspan="5">Nenhum gerente cadastrado.</td>
       </tr>
-      </tbody>
+    </tbody>
   </table>
 </div>

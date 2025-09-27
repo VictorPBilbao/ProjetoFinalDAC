@@ -35,7 +35,7 @@
             <button type="button" class="details-link" (click)="openModal(cliente)">Detalhes</button>
           </td>
         </tr>
-        <tr *ngIf="filteredClients.length === 0">
+        <tr *ngIf="pgClients.length === 0">
           <td colspan="7" class="no-results">Nenhum cliente encontrado.</td>
         </tr>
       </tbody>

@@ -19,9 +19,10 @@
               placeholder="CPF"
               maxlength="14"
               required
-              mask="000.000.000-00">
+              mask="000.000.000-00"
+              (blur)="onValidateUser()">
             <input type="email" name="email" ngModel placeholder="E-mail" required (blur)="onValidateEmail()">
-            <input type="tel" name="telefone" ngModel placeholder="Telefone" maxlength="15" required>
+            <input type="tel" name="telefone" ngModel placeholder="Telefone" maxlength="15" mask="(00) 00000-0000" required>
             <input
                 id="salario"
                 type="text"
@@ -37,7 +38,6 @@
 
           <!-- COLUNA 2 - ENDEREÇO -->
           <div class="register-form-item flex flex-column">
-            <input type="text" name="tipo" ngModel placeholder="Tipo (Rua, Av, etc)" required>
             <input
               type="text"
               name="cep"
@@ -95,7 +95,7 @@
           <div class="regiter-btn flex items-center justify-center" style="gap: 20px; margin-top: 20px;">
             <a type="button" class="btn btn-primary" routerLink="/">Voltar</a>
             <button type="submit" class="btn btn-primary"
-              [disabled]="registerForm.invalid || !isCepValid || !isEmailAvailable">
+              [disabled]="registerForm.invalid || !isCepValid || !isEmailAvailable || !isUserAvailable">
               CADASTRAR
             </button>
           </div>

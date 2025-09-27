@@ -28,13 +28,14 @@ export class ListClientsComponent implements OnInit {
   modalOpen = false;
   selectedClient?: Cliente;
 
-  constructor(private clientService: ClientService) {
-    this.allClients = this.clientService.getClients();
-  }
+  constructor(private clientService: ClientService) { }
 
   ngOnInit(): void {
-    this.allClients.sort((a, b) => a.nome.localeCompare(b.nome));
-    this.filterClients();
+    this.clientService.getClients().subscribe(clients => {
+      this.pgClients = clients;
+    });
+
+    this.pgClients.sort((a, b) => a.nome.localeCompare(b.nome));
   }
 
   filterClients(): void {

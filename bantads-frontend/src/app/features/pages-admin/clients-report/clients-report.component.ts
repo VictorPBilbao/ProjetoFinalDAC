@@ -24,11 +24,13 @@ export class ClientsReportComponent implements OnInit {
   itmsPerPg: number = 7;
   totalPgs: number = 0;
 
-  constructor(private clientService: ClientService) {
-    this.allClients = this.clientService.getClients();
-  }
+  constructor(private clientService: ClientService) { }
 
   ngOnInit(): void {
+    this.clientService.getClients().subscribe(clients => {
+      this.allClients = clients;
+    });
+
     this.allClients.sort((a, b) => a.nome.localeCompare(b.nome));
     this.filterClients();
   }
