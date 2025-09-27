@@ -1,17 +1,38 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { from } from 'rxjs';
+import { Manager } from '../../models/manager.model';
+import { ManagerService } from '../../services/manager/manager.service';
 
 @Component({
   selector: 'app-manager-list',
-  imports: [
-    CommonModule,
-    RouterLink
-  ],
+  standalone: true,
+  imports: [CommonModule, RouterLink],
   templateUrl: './manager-list.component.html',
-  styleUrl: './manager-list.component.css'
+  styleUrls: ['./manager-list.component.css']
 })
-export class ManagerListComponent {
+export class ManagerListComponent implements OnInit {
+  managers: Manager[] = [];
 
+  constructor(
+    private managerService: ManagerService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.loadManagers();
+  }
+
+  loadManagers(): void {
+    this.managerService.getManagers().subscribe((data: Manager[]) => {
+      this.managers = data;
+    });
+  }
+
+  deleteManager(managerId: string): void {
+    this.managerService.deleteManager(managerId).subscribe(() => {
+      // Recarrega a lista depois de deletar
+      this.loadManagers();
+    });
+  }
 }

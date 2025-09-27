@@ -1,173 +1,146 @@
 import { Injectable } from '@angular/core';
 import { Cliente } from '../../models/cliente.model';
-import { DashboardAdminService } from '../admin/dashboard-admin.service';
 import { Manager } from '../../models/manager.model';
-
-// This service simulates backend behavior for manager approvals (R9, R10, R11)
-// It stores pending clients separately until approved or rejected.
-// Later this should be replaced by HTTP calls + SAGA orchestration.
+import { LocalStorageServiceService } from '../../services/local-storages/local-storage-service.service';
+import { Observable, of } from 'rxjs';
+import { delay } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class ManagerService {
-    private readonly PENDING_KEY = 'pendingClients';
-    private readonly CLIENTS_KEY = 'clients';
+  constructor(
+    private storage: LocalStorageServiceService
+  ) { }
 
-    constructor(private readonly dashboardAdmin: DashboardAdminService) { }
+  getPending(): Cliente[] {
+    return this.storage.getClientesPendentes();
+  }
 
-    // Seed some pending clients if none exist (mock for prototype)
-    private ensureSeed(): void {
-        const existing = localStorage.getItem(this.PENDING_KEY);
-        if (!existing) {
-            const seed: Cliente[] = [
-                {
-                    id: 'p1',
-                    nome: 'Novo Cliente 1',
-                    email: 'novo1@example.com',
-                    cpf: '123.111.222-33',
-                    telefone: '(41) 99999-0001',
-                    salario: 3500,
-                    limite: 0,
-                    saldo: 0,
-                    manager: undefined as any,
-                    endereco: {
-                        tipo: 'Rua',
-                        logradouro: 'Alpha',
-                        bairro: 'Centro',
-                        numero: '10',
-                        cep: '80000-000',
-                        cidade: 'Curitiba',
-                        estado: 'PR',
-                    },
-                    agencia: '',
-                    conta: '',
-                    criadoEm: new Date().toISOString(),
-                },
-                {
-                    id: 'p2',
-                    nome: 'Novo Cliente 2',
-                    email: 'novo2@example.com',
-                    cpf: '456.222.333-44',
-                    telefone: '(41) 99999-0002',
-                    salario: 1200,
-                    limite: 0,
-                    saldo: 0,
-                    manager: undefined as any,
-                    endereco: {
-                        tipo: 'Rua',
-                        logradouro: 'Beta',
-                        bairro: 'Centro',
-                        numero: '22',
-                        cep: '80000-001',
-                        cidade: 'Curitiba',
-                        estado: 'PR',
-                    },
-                    agencia: '',
-                    conta: '',
-                    criadoEm: new Date().toISOString(),
-                },
-            ];
-            localStorage.setItem(this.PENDING_KEY, JSON.stringify(seed));
-        }
+  approve(clientId: string): { ok: boolean; message: string } {
+    const pending = this.getPending();
+    const idx = pending.findIndex(c => c.id === clientId);
+    if (idx === -1) {
+      return { ok: false, message: 'Cliente não encontrado nos pendentes.' };
     }
+    const client = pending[idx];
 
-    getPending(): Cliente[] {
-        this.ensureSeed();
-        const raw = localStorage.getItem(this.PENDING_KEY);
-        return raw ? JSON.parse(raw) : [];
-    }
+    // calcular limite: salario >= 2000 => limite = salario / 2
+    client.limite = client.salario >= 2000 ? client.salario / 2 : 0;
 
-    private savePending(list: Cliente[]): void {
-        localStorage.setItem(this.PENDING_KEY, JSON.stringify(list));
-    }
+    // escolher manager com menos clientes
+    const managers = this.storage.getManagers();
+    const clients = this.storage.getClientes();
+    const managerClientCounts: Record<string, number> = {};
+    managers.forEach(m => {
+      if (m.id) managerClientCounts[m.id] = 0;
+    });
+    clients.forEach(c => {
+      if (c.manager?.id) {
+        managerClientCounts[c.manager.id] = (managerClientCounts[c.manager.id] || 0) + 1;
+      }
+    });
+    const sortedManagers = [...managers].sort(
+      (a, b) =>
+        (managerClientCounts[a.id || ''] || 0) - (managerClientCounts[b.id || ''] || 0)
+    );
+    const chosen = sortedManagers[0];
 
-    private saveClients(list: Cliente[]): void {
-        localStorage.setItem(this.CLIENTS_KEY, JSON.stringify(list));
-    }
+    // gerar numero de conta unico (4 digitos)
+    let conta: string;
+    const existingContas = new Set(clients.map(c => c.conta));
+    do {
+      conta = Math.floor(1000 + Math.random() * 9000).toString();
+    } while (existingContas.has(conta));
 
-    approve(clientId: string): { ok: boolean; message: string } {
-        const pending = this.getPending();
-        const idx = pending.findIndex((c) => c.id === clientId);
-        if (idx === -1) {
-            return {
-                ok: false,
-                message: 'Cliente não encontrado nos pendentes.',
-            };
-        }
-        const client = pending[idx];
+    client.manager = chosen;
+    client.conta = conta;
+    client.agencia = '0001';
+    client.saldo = 0;
 
-        // calculate limit: >= 2000 => limit = salario / 2
-        const limit = client.salario >= 2000 ? client.salario / 2 : 0;
+    // adiciona ao array oficial de clientes
+    this.storage.approveCliente(client, client.telefone, client.manager.id); // telephone é a senha temporária
 
-        // find manager with fewer clients
-        const managers = this.dashboardAdmin.getManagers();
-        const clients = this.dashboardAdmin.getClients();
-        const managerClientCounts: Record<string, number> = {};
-        managers.forEach((m) => {
-            if (m.id) {
-                managerClientCounts[m.id] = 0;
-            }
-        });
-        clients.forEach((c) => {
-            if (c.manager?.id) {
-                managerClientCounts[c.manager.id] =
-                    (managerClientCounts[c.manager.id] || 0) + 1;
-            }
-        });
+    console.log(`[APROVACAO] Cliente ${client.nome} aprovado. Conta: ${client.conta}`);
 
-        const sortedManagers = [...managers].sort(
-            (a, b) =>
-                (managerClientCounts[a.id || ''] || 0) -
-                (managerClientCounts[b.id || ''] || 0)
-        );
-        const chosen = sortedManagers[0];
+    return { ok: true, message: 'Cliente aprovado com sucesso.' };
+  }
 
-        // generate 4-digit account number unique (simple attempt)
-        let conta: string;
-        const existingContas = new Set(clients.map((c) => c.conta));
-        do {
-            conta = Math.floor(1000 + Math.random() * 9000).toString();
-        } while (existingContas.has(conta));
+  reject(clientId: string, reason: string): { ok: boolean; message: string } {
+    if (!reason?.trim()) return { ok: false, message: 'Motivo é obrigatório.' };
 
-        client.limite = limit;
-        client.manager = chosen;
-        client.conta = conta;
-        client.agencia = '0001';
-        client.saldo = 0;
+    const pending = this.getPending();
+    const idx = pending.findIndex(c => c.id === clientId);
+    if (idx === -1) return { ok: false, message: 'Cliente não encontrado nos pendentes.' };
 
-        // Add to official clients list
-        const updatedClients = [...clients, client];
-        this.saveClients(updatedClients);
+    console.log(`[REJEICAO] Cliente ${pending[idx].nome} rejeitado. Motivo: ${reason}`);
 
-        // Remove from pending
-        pending.splice(idx, 1);
-        this.savePending(pending);
+    return { ok: true, message: `Cliente ${pending[idx].nome} rejeitado e removido.` };
+  }
 
-        // simulate sending email with random password (not stored here)
-        console.log(
-            `[APROVACAO] Cliente ${client.nome} aprovado. Conta: ${client.conta}`
-        );
+  // ---------------- CREATE ----------------
+  createManager(manager: Manager): Observable<any> {
+    // Gera ID simples
+    const newManager: Manager = {
+      ...manager,
+      id: Date.now().toString()
+    };
 
-        return { ok: true, message: 'Cliente aprovado com sucesso.' };
-    }
+    // Salva no localStorage
+    this.storage.addManager(newManager);
 
-    reject(clientId: string, reason: string): { ok: boolean; message: string } {
-        if (!reason?.trim()) {
-            return { ok: false, message: 'Motivo é obrigatório.' };
-        }
-        const pending = this.getPending();
-        const idx = pending.findIndex((c) => c.id === clientId);
-        if (idx === -1) {
-            return {
-                ok: false,
-                message: 'Cliente não encontrado nos pendentes.',
-            };
-        }
-        const client = pending[idx];
-        pending.splice(idx, 1);
-        this.savePending(pending);
-        console.log(
-            `[REJEICAO] Cliente ${client.nome} rejeitado. Motivo: ${reason}`
-        );
-        return { ok: true, message: 'Cliente rejeitado e removido.' };
-    }
+    // Simula resposta da API
+    const response = {
+      success: true,
+      message: 'Gerente criado com sucesso!',
+      data: newManager
+    };
+
+    return of(response).pipe(delay(1000)); // simula delay
+  }
+
+  verifyManagerByCPF(cpf: string): Observable<{ exists: boolean }> {
+    const exists = this.storage.getManagers().some(m => m.cpf === cpf);
+    return of({ exists }).pipe(delay(500));
+  }
+
+  // ---------------- READ ----------------
+  getManagers(): Observable<Manager[]> {
+    const managers = this.storage.getManagers();
+    return of(managers).pipe(delay(500));
+  }
+
+  getManagerById(managerId: string): Observable<Manager | undefined> {
+    const manager = this.storage.getManagers().find(m => m.id === managerId);
+    return of(manager).pipe(delay(500));
+  }
+
+  // ---------------- UPDATE ----------------
+  updateManager(updated: Manager): Observable<any> {
+    const managers = this.storage.getManagers().map(m =>
+      m.id === updated.id ? { ...m, ...updated } : m
+    );
+    // Salva de volta
+    localStorage.setItem('managers', JSON.stringify(managers));
+
+    const response = {
+      success: true,
+      message: 'Gerente atualizado com sucesso!',
+      data: updated
+    };
+
+    return of(response).pipe(delay(1000));
+  }
+
+  // ---------------- DELETE ----------------
+  deleteManager(managerId: string): Observable<any> {
+    const managers = this.storage.getManagers().filter(m => m.id !== managerId);
+    localStorage.setItem('managers', JSON.stringify(managers));
+
+    const response = {
+      success: true,
+      message: 'Gerente removido com sucesso!',
+      id: managerId
+    };
+
+    return of(response).pipe(delay(1000));
+  }
 }
