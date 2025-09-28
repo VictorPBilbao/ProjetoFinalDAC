@@ -5,6 +5,9 @@ import { CommonModule } from '@angular/common';
 import { Transaction } from '../../models/transaction.model';
 import { Record } from '../../models/record.model';
 import { TransactionService } from '../../services/transaction/transaction.service';
+import { LoggedClientService } from '../../services/logged-client/logged-client.service';
+import { Cliente } from '../../models/cliente.model';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-statement',
@@ -26,9 +29,24 @@ export class StatementComponent {
   totalPgs: number = 0;
 
   private initialBalance = 5000;
+  cliente: Cliente | null = null;
+  private sub?: Subscription;
 
-  constructor(private transactionService: TransactionService) {
+  constructor(private transactionService: TransactionService, private loggedClient: LoggedClientService) {
     this.allTransactions = this.transactionService.getTransactions();
+    this.sub = this.loggedClient.cliente$.subscribe(c => {
+      this.cliente = c;
+      // opcional: filtrar transações por conta/cliente se o serviço tiver essa informação
+      // não filtrar por conta porque o modelo Transaction atual não contém campos de conta
+      // mantemos a inscrição para futuras necessidades
+      if (c) {
+        this.allTransactions = this.transactionService.getTransactions();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
   }
 
   getStatement() {

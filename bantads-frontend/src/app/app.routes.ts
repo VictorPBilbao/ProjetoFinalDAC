@@ -14,6 +14,7 @@ import { StatementComponent } from './features/pages-customer/statement/statemen
 import { UserDashboardComponent } from './features/pages-customer/user-dashboard/user-dashboard.component';
 import { UserDetailsComponent } from './features/pages-customer/user-details/user-details.component';
 import { WhithdrawalComponent } from './features/pages-customer/whithdrawal/whithdrawal.component';
+import { TransferComponent } from './features/pages-customer/transfer/transfer.component';
 import { ApprovalsComponent } from './features/pages-manager/approvals/approvals.component';
 import { BestClientsListViewComponent } from './features/pages-manager/best-clients-list-view/best-clients-list-view.component';
 import { ConsultarClienteComponent } from './features/pages-manager/consultar-cliente/consultar-cliente.component';
@@ -55,6 +56,12 @@ export const routes: Routes = [
             {
                 path: 'saque',
                 component: WhithdrawalComponent,
+                canActivate: [authGuard],
+                data: { role: ['cliente'] },
+            },
+            {
+                path: 'transferencia',
+                component: TransferComponent,
                 canActivate: [authGuard],
                 data: { role: ['cliente'] },
             },

@@ -37,13 +37,34 @@ export class AuthService {
             return true;
         }
 
-        return false;
+
+    if (foundUser) {
+      this.saveUserInCookie(foundUser); // salva user em cookie
+      // se for cliente, atualiza o localStorage para que components saibam qual cliente está ativo
+      try {
+        if (foundUser.role === 'cliente') {
+          localStorage.setItem('currentClientEmail', foundUser.user);
+        }
+        // notifica os componentes que escutam mudanças no cliente
+        window.dispatchEvent(new Event('clientUpdated'));
+      } catch {
+        // noop
+      }
+      return true;
     }
 
-    logout(): void {
-        //remove user cookie
-        this.removeUserCookie();
+    return false;
+  }
+
+  logout(): void { //remove user cookie
+    this.removeUserCookie();
+    try {
+      localStorage.removeItem('currentClientEmail');
+      window.dispatchEvent(new Event('clientUpdated'));
+    } catch {
+      // noop
     }
+  }
 
     getUser(): any {
         //get user from cookie

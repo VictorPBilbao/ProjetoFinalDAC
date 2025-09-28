@@ -3,13 +3,13 @@
 	<main class="deposit-main">
 		<div class="page-header">
 			<h1>Saque</h1>
-			<span class="last-access">Último acesso: {{ (cliente$ | async)?.criadoEm | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+			<span class="last-access">Último acesso: {{ (lastAccess$ | async) | date:'dd/MM/yyyy HH:mm:ss' }}</span>
 		</div>
 
 		<section class="content-grid">
 
 			<div class="main-content">
-				<section class="card account-info" *ngIf="cliente$ | async as cliente">
+				<section class="card account-info" *ngIf="cliente">
 					<h2>Informações da Conta</h2>
 					<div class="info-row"><span>Agência</span><strong>{{ cliente.agencia }}</strong></div>
 					<div class="info-row"><span>Conta Corrente</span><strong>{{ cliente.conta }}</strong></div>
