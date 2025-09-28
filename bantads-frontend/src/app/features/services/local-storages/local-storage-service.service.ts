@@ -8,6 +8,7 @@ export interface AuthUser {
     user: string; // email ou username
     password: string; // senha
     role: 'cliente' | 'gerente' | 'admin';
+    lastAccess?: string; // ISO date string
 }
 
 export interface RejectedClient {
@@ -65,18 +66,25 @@ export class LocalStorageServiceService {
 
     addUser(user: AuthUser): void {
         const users = this.getUsers();
+        user.lastAccess = new Date().toISOString();
         users.push(user);
         this.setData(this.USERS_KEY, users);
     }
 
     // ---------------- Cliente ----------------
     getClientes(): Cliente[] {
-        return this.getData<Cliente>('clientes');
+        const allClients = this.getData<Cliente>('clientes');
+        return allClients.filter((c) => c.agencia && c.conta);
     }
 
     getClientesPendentes(): Cliente[] {
         const allClients = this.getData<Cliente>('clientes');
         return allClients.filter((c) => !c.agencia && !c.conta);
+    }
+
+    getClienteByUsername(username: string): Cliente | undefined {
+        const clientes = this.getClientes();
+        return clientes.find((c) => c.email === username);
     }
 
     addCliente(cliente: Cliente): void {

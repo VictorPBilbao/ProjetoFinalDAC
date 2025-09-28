@@ -3,12 +3,30 @@ import { Cliente } from '../../models/cliente.model';
 import { LocalStorageServiceService } from '../../services/local-storages/local-storage-service.service';
 import { Observable, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable({
     providedIn: 'root',
 })
 export class ClientService {
-    constructor(private storage: LocalStorageServiceService) {}
+    constructor(
+        private storage: LocalStorageServiceService,
+        private authService: AuthService
+    ) {}
+
+    getLoggedClient(): Cliente | undefined {
+        const user = this.authService.getUser();
+        if (user && user.role === 'cliente') {
+            return this.storage.getClienteByUsername(user.user);
+        }
+
+        return undefined;
+    }
+
+    getLastAccess(): string {
+        const user = this.authService.getUser();
+        return user?.lastAccess;
+    }
 
     getClients(): Observable<Cliente[]> {
         return of(this.storage.getClientes()).pipe(delay(500));
