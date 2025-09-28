@@ -2,13 +2,15 @@ import { Injectable } from '@angular/core';
 import { LocalStorageServiceService } from '../local-storages/local-storage-service.service';
 
 @Injectable({
-    providedIn: 'root',
+    providedIn: 'root'
 })
 export class AuthService {
-    constructor(private localStorageService: LocalStorageServiceService) {}
 
-    private saveUserInCookie(user: any): void {
-        //save user in cookie for 24 hours
+    constructor(
+        private localStorageService: LocalStorageServiceService
+    ) { }
+
+    private saveUserInCookie(user: any): void { //save user in cookie for 24 hours
         const expires = new Date(); //set expiration time to 24 hours
         expires.setTime(expires.getTime() + 24 * 60 * 60 * 1000);
 
@@ -16,58 +18,30 @@ export class AuthService {
         document.cookie = `user=${userString}; path=/; secure; samesite=strict; expires=${expires.toUTCString()}`; //set cookie
     }
 
-    private removeUserCookie(): void {
-        //remove user cookie
-        document.cookie =
-            'user=; path=/; secure; samesite=strict; expires=Thu, 01 Jan 1970 00:00:00 UTC;'; //set cookie expiration to past date
+    private removeUserCookie(): void { //remove user cookie
+        document.cookie = 'user=; path=/; secure; samesite=strict; expires=Thu, 01 Jan 1970 00:00:00 UTC;'; //set cookie expiration to past date
     }
 
-    login(user: string, password: string): boolean {
-        //find user in USERS array
+    login(user: string, password: string): boolean { //find user in USERS array
         // busca todos os usuários no localStorage
         const users = this.localStorageService.getUsers();
 
         // procura se existe um usuário que bate com email/username + senha
-        const foundUser = users.find(
-            (u) => u.user === user && u.password === password
-        );
+        const foundUser = users.find(u => u.user === user && u.password === password);
 
         if (foundUser) {
             this.saveUserInCookie(foundUser); // salva user em cookie
             return true;
         }
 
-
-    if (foundUser) {
-      this.saveUserInCookie(foundUser); // salva user em cookie
-      // se for cliente, atualiza o localStorage para que components saibam qual cliente está ativo
-      try {
-        if (foundUser.role === 'cliente') {
-          localStorage.setItem('currentClientEmail', foundUser.user);
-        }
-        // notifica os componentes que escutam mudanças no cliente
-        window.dispatchEvent(new Event('clientUpdated'));
-      } catch {
-        // noop
-      }
-      return true;
+        return false;
     }
 
-    return false;
-  }
-
-  logout(): void { //remove user cookie
-    this.removeUserCookie();
-    try {
-      localStorage.removeItem('currentClientEmail');
-      window.dispatchEvent(new Event('clientUpdated'));
-    } catch {
-      // noop
+    logout(): void { //remove user cookie
+        this.removeUserCookie();
     }
-  }
 
-    getUser(): any {
-        //get user from cookie
+    getUser(): any { //get user from cookie
         const cookies = document.cookie.split(';');
         for (const cookie of cookies) {
             const [key, value] = cookie.trim().split('=');
@@ -83,14 +57,12 @@ export class AuthService {
         return null;
     }
 
-    getUserRole(): string | null {
-        //get user role from cookie
+    getUserRole(): string | null { //get user role from cookie
         const user = this.getUser();
         return user ? user.role : null;
     }
 
-    isAuthenticated(): boolean {
-        //check if user cookie exists
+    isAuthenticated(): boolean { //check if user cookie exists
         return !!this.getUser();
     }
 }
