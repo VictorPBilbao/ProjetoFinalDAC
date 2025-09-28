@@ -19,6 +19,10 @@ export class LoggedClientService {
     private authService: AuthService
   ) {
     this.init();
+    // quando algum login/logout externo alterar o currentClientEmail, re-calculamos
+    try {
+      window.addEventListener('clientUpdated', () => this.init());
+    } catch { /* noop */ }
   }
 
   private init() {

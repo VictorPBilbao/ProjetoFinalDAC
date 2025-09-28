@@ -132,6 +132,11 @@ export class ServiceContaService {
   }
 
   private saveSession(session: AuthSession) {
-    try { localStorage.setItem(AUTH_KEY, JSON.stringify(session)); } catch { /* noop */ }
+    try {
+      localStorage.setItem(AUTH_KEY, JSON.stringify(session));
+      // mantém também a referência do cliente atual para a UI
+      try { localStorage.setItem('currentClientEmail', session.user); } catch { /* noop */ }
+      try { window.dispatchEvent(new Event('clientUpdated')); } catch { /* noop */ }
+    } catch { /* noop */ }
   }
 }

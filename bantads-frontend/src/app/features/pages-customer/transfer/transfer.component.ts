@@ -7,6 +7,8 @@ import { Cliente } from '../../models/cliente.model';
 import { Manager } from '../../models/manager.model';
 import { LoggedClientService } from '../../services/logged-client/logged-client.service';
 import { Observable, Subscription } from 'rxjs';
+import { LocalStorageServiceService } from '../../services/local-storages/local-storage-service.service';
+import { TransactionService } from '../../services/transaction/transaction.service';
 
 @Component({
   selector: 'app-transfer',
@@ -33,7 +35,9 @@ export class TransferComponent {
 
   lastTransfer: { destinoConta: string; valor: number; timestamp: string } | null = null;
 
-  constructor(private loggedClient: LoggedClientService) {
+  constructor(private loggedClient: LoggedClientService,
+              private storageService: LocalStorageServiceService,
+              private transactionService: TransactionService) {
     this.cliente$ = this.loggedClient.cliente$;
     this.cliente$.subscribe(c => {
       this.cliente = c;
@@ -71,9 +75,36 @@ export class TransferComponent {
 
     // Executa transferência (somente no frontend - mock)
     if (this.cliente) {
-      const updated = { ...this.cliente, saldo: this.cliente.saldo - Number(valor) } as Cliente;
-      this.loggedClient.updateClient(updated);
-      this.cliente = updated;
+      const debitAmount = Number(valor);
+
+      // debita conta do cliente logado
+      const updatedOrigin = { ...this.cliente, saldo: this.cliente.saldo - debitAmount } as Cliente;
+      this.loggedClient.updateClient(updatedOrigin);
+      this.cliente = updatedOrigin;
+
+      // tenta localizar cliente destino por número da conta
+      const allClientes = this.storageService.getClientes();
+      const destino = allClientes.find(c => c.conta === contaDestino);
+
+      if (destino) {
+        const updatedDestino = { ...destino, saldo: (destino.saldo ?? 0) + debitAmount } as Cliente;
+        // persiste destino e origem
+        this.storageService.updateCliente(updatedDestino);
+        this.storageService.updateCliente(updatedOrigin);
+        // registra transações (origem negativa, destino positiva)
+        try {
+          this.transactionService.addTransaction({ dateTime: new Date(), operation: 'Transferencia', fromOrToClient: destino.nome, amount: -debitAmount } as any);
+          this.transactionService.addTransaction({ dateTime: new Date(), operation: 'Transferencia', fromOrToClient: this.cliente.nome, amount: debitAmount } as any);
+        } catch { /* noop */ }
+        // notifica mudanças globais
+        try { window.dispatchEvent(new Event('clientUpdated')); } catch { /* noop */ }
+      } else {
+        // conta destino não encontrada entre clientes — ainda persiste a origem e registra a transação de saída
+        this.storageService.updateCliente(updatedOrigin);
+        try {
+          this.transactionService.addTransaction({ dateTime: new Date(), operation: 'Transferencia', fromOrToClient: contaDestino, amount: -debitAmount } as any);
+        } catch { /* noop */ }
+      }
     }
     const now = new Date().toISOString();
     this.lastTransfer = { destinoConta: contaDestino, valor: Number(valor), timestamp: now };
