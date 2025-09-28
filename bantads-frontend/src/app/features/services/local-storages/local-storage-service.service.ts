@@ -225,6 +225,21 @@ export class LocalStorageServiceService {
         this.setData('transactions', transactions);
     }
 
+    updateTransaction(updatedTransaction: Transaction): void {
+        const transactions = this.getTransactions();
+        const idx = transactions.findIndex((t) => t.id === updatedTransaction.id);
+        if (idx !== -1) {
+            transactions[idx] = updatedTransaction;
+            this.setData('transactions', transactions);
+        }
+    }
+
+    deleteTransaction(transactionId: string): void {
+        let transactions = this.getTransactions();
+        transactions = transactions.filter((t) => t.id !== transactionId);
+        this.setData('transactions', transactions);
+    }
+
     // ---------------- Record ----------------
     getRecords(): Record[] {
         return this.getData<Record>('records');

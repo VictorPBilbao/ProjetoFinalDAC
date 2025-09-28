@@ -46,38 +46,45 @@ export class TransactionService {
   private seedInitialData(): void {
     const initialTransactions: Transaction[] = [
       {
+        id: '1',
         dateTime: new Date('2025-08-01T10:00:00'),
         operation: 'Deposito',
         amount: 1500,
       },
       {
+        id: '2',
         dateTime: new Date('2025-08-01T14:30:00'),
         operation: 'Saque',
         amount: -50,
       },
       {
+        id: '3',
         dateTime: new Date('2025-08-03T11:20:00'),
         operation: 'Transferencia',
         fromOrToClient: 'Fausto Silva',
         amount: -300,
       },
       {
+        id: '4',
         dateTime: new Date('2025-08-05T09:00:00'),
         operation: 'Saque',
         amount: -100,
       },
       {
+        id: '5',
         dateTime: new Date('2025-08-05T16:45:00'),
         operation: 'Transferencia',
         fromOrToClient: 'Geraldo Alckmin',
         amount: 850,
       },
       {
+        id: '6',
         dateTime: new Date('2025-08-08T12:00:00'),
         operation: 'Deposito',
         amount: 200,
       },
       {
+        id: '7',
         dateTime: new Date('2025-08-10T18:00:00'),
         operation: 'Saque',
         amount: -200,
