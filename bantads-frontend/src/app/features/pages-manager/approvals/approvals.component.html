@@ -27,6 +27,7 @@
                 <tr>
                     <th>CPF</th>
                     <th>Nome</th>
+                    <th>Email</th>
                     <th>Salário</th>
                     <th>Cidade</th>
                     <th>Estado</th>
@@ -38,6 +39,7 @@
                 <tr *ngFor="let c of filtered">
                     <td>{{ c.cpf }}</td>
                     <td>{{ c.nome }}</td>
+                    <td>{{ c.email }}</td>
                     <td>
                         {{ c.salario | currency : "BRL" : "symbol" : "1.2-2" }}
                     </td>
@@ -58,7 +60,7 @@
                     </td>
                 </tr>
                 <tr class="reject-row" *ngFor="let c of filtered">
-                    <td colspan="7" *ngIf="rejectingId === c.id">
+                    <td colspan="8" *ngIf="rejectingId === c.id">
                         <div class="reject-box">
                             <label>Motivo da recusa:</label>
                             <textarea

@@ -1,4 +1,5 @@
-import { Component, OnDestroy } from '@angular/core';
+
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
     FormBuilder,
@@ -7,6 +8,7 @@ import {
     Validators,
 } from '@angular/forms';
 import { Cliente } from '../../models/cliente.model';
+
 import { Manager } from '../../models/manager.model';
 import { LoggedClientService } from '../../services/logged-client/logged-client.service';
 import { Subscription } from 'rxjs';
@@ -18,12 +20,14 @@ import { Subscription } from 'rxjs';
     templateUrl: './user-details.component.html',
     styleUrl: './user-details.component.css',
 })
+
 export class UserDetailsComponent implements OnDestroy {
     cliente!: Cliente | null;
     form!: FormGroup;
     editMode = false;
     saved = false;
     limiteOriginal!: number;
+
     private sub?: Subscription;
 
     constructor(private fb: FormBuilder, private loggedClient: LoggedClientService) {
@@ -46,18 +50,20 @@ export class UserDetailsComponent implements OnDestroy {
     }
 
     private buildForm() {
+
         const c = this.cliente ?? {
             id: '', nome: '', email: '', cpf: '', telefone: '', salario: 0, limite: 0, saldo: 0,
             manager: { id: '', cpf: '', name: '', email: '', telephone: '' } as Manager,
             endereco: { tipo: '', logradouro: '', bairro: '', numero: '', complemento: '', cep: '', cidade: '', estado: '' },
             agencia: '', conta: '', criadoEm: new Date().toISOString()
         };
-
+      
         this.form = this.fb.group({
             nome: [
                 c.nome,
                 [Validators.required, Validators.minLength(3)],
             ],
+
             email: [
                 c.email,
                 [Validators.required, Validators.email],
@@ -69,6 +75,7 @@ export class UserDetailsComponent implements OnDestroy {
                 [Validators.required, Validators.min(0)],
             ],
             endereco: this.fb.group({
+
                 tipo: [c.endereco.tipo, Validators.required],
                 logradouro: [
                     c.endereco.logradouro,
@@ -77,6 +84,7 @@ export class UserDetailsComponent implements OnDestroy {
                 numero: [c.endereco.numero, Validators.required],
                 complemento: [c.endereco.complemento],
                 cep: [
+
                     c.endereco.cep,
                     [Validators.required, Validators.pattern(/\d{5}-?\d{3}/)],
                 ],
@@ -93,7 +101,10 @@ export class UserDetailsComponent implements OnDestroy {
     toggleEdit() {
         this.editMode = !this.editMode;
         this.saved = false;
+        this.cepError = null;
+
         if (!this.editMode) {
+
             const c = this.cliente ?? {
                 nome: '', email: '', cpf: '', telefone: '', salario: 0, endereco: { tipo: '', logradouro: '', numero: '', complemento: '', cep: '', cidade: '', estado: '' }
             };
@@ -116,6 +127,7 @@ export class UserDetailsComponent implements OnDestroy {
 
         const valores = this.form.getRawValue(); // inclui CPF desabilitado
 
+
         if (!this.cliente) return;
 
         // Atualiza campos editáveis
@@ -124,27 +136,35 @@ export class UserDetailsComponent implements OnDestroy {
         this.cliente.telefone = valores.telefone;
 
         const salarioAnterior = this.cliente.salario;
-        this.cliente.salario = valores.salario;
-        this.cliente.endereco = { ...valores.endereco };
+
+        // Cria um cliente atualizado
+        const clienteAtualizado: Cliente = {
+            ...this.cliente,
+            nome: valores.nome,
+            email: valores.email,
+            telefone: valores.telefone,
+            salario: valores.salario,
+            endereco: { ...valores.endereco },
+        };
 
         // Regra de recálculo de limite quando salário muda
-        if (salarioAnterior !== this.cliente.salario) {
-            let novoLimite = this.calcularLimite(this.cliente.salario);
+        if (salarioAnterior !== clienteAtualizado.salario) {
+            let novoLimite = this.calcularLimite(clienteAtualizado.salario);
             // Se o novo limite for menor que o saldo negativo atual, ajusta
             if (
-                this.cliente.saldo < 0 &&
-                novoLimite < Math.abs(this.cliente.saldo)
+                clienteAtualizado.saldo < 0 &&
+                novoLimite < Math.abs(clienteAtualizado.saldo)
             ) {
-                novoLimite = Math.abs(this.cliente.saldo);
+                novoLimite = Math.abs(clienteAtualizado.saldo);
             }
-            this.cliente.limite = novoLimite;
+            clienteAtualizado.limite = novoLimite;
         }
+
 
         this.saved = true;
         this.editMode = false;
         // Persiste a atualização no serviço central
         if (this.cliente) this.loggedClient.updateClient(this.cliente);
-    }
 
     private calcularLimite(salario: number): number {
         // Conforme R4: Cliente com salário ≥ R$2.000,00 tem limite igual a metade do salário
@@ -158,7 +178,9 @@ export class UserDetailsComponent implements OnDestroy {
         return this.form.get('endereco') as FormGroup;
     }
 
+
     ngOnDestroy(): void {
         this.sub?.unsubscribe();
+
     }
 }
