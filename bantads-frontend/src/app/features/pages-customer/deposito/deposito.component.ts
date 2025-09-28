@@ -72,7 +72,13 @@ export class DepositoComponent {
         this.clientService.updateClient(updated);
 
         // registra transação localmente
-        const tx: Transaction = { dateTime: new Date(), operation: 'Deposito', fromOrToClient: updated.nome ?? updated.email, amount: Number(valor) };
+        const tx: Transaction = {
+            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2), // Gera um id único
+            dateTime: new Date(),
+            operation: 'Deposito',
+            fromOrToClient: updated.nome ?? updated.email,
+            amount: Number(valor)
+        };
         try {
             this.cli.addTransaction(tx);
         } catch (e) {
