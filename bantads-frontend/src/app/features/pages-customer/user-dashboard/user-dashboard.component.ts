@@ -1,8 +1,9 @@
 import { DecimalPipe, NgStyle } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 
 import { Cliente } from '../../models/cliente.model';
-import { AuthService } from '../../services/auth/auth.service';
+import { LoggedClientService } from '../../services/logged-client/logged-client.service';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-user-dashboard',
@@ -10,14 +11,19 @@ import { AuthService } from '../../services/auth/auth.service';
     templateUrl: './user-dashboard.component.html',
     styleUrl: './user-dashboard.component.css',
 })
-export class UserDashboardComponent {
-    user!: Cliente;
-    balance!: number;
-    // monthlyDeposit!: number;
+export class UserDashboardComponent implements OnDestroy {
+    user: Cliente | null = null;
+    balance: number = 0;
+    private sub?: Subscription;
 
-    constructor(private authService: AuthService) {
-        this.user = authService.getUser();
-        this.balance = this.user.saldo ? this.user.saldo : 0;
-        console.log(this.user);
+    constructor(private loggedClient: LoggedClientService) {
+        this.sub = this.loggedClient.cliente$.subscribe(c => {
+            this.user = c;
+            this.balance = c?.saldo ?? 0;
+        });
+    }
+
+    ngOnDestroy(): void {
+        this.sub?.unsubscribe();
     }
 }

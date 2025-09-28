@@ -24,6 +24,7 @@ export interface AuthSession {
   user: string; // email
   role: UserRole;
   token: string; // token mock
+  lastAccess?: string; // ISO date
 }
 
 export interface LoginResult {
@@ -95,6 +96,18 @@ export class ServiceContaService {
     try { localStorage.removeItem(AUTH_KEY); } catch { /* noop */ }
   }
 
+  updateLastAccess(dateIso?: string) {
+    try {
+      const raw = localStorage.getItem(AUTH_KEY);
+      if (!raw) return;
+      const session = JSON.parse(raw) as AuthSession;
+      session.lastAccess = dateIso ?? new Date().toISOString();
+      this.saveSession(session);
+    } catch {
+      // noop
+    }
+  }
+
   isAuthenticated(): boolean {
     return !!this.getSession();
   }
@@ -119,6 +132,11 @@ export class ServiceContaService {
   }
 
   private saveSession(session: AuthSession) {
-    try { localStorage.setItem(AUTH_KEY, JSON.stringify(session)); } catch { /* noop */ }
+    try {
+      localStorage.setItem(AUTH_KEY, JSON.stringify(session));
+      // mantém também a referência do cliente atual para a UI
+      try { localStorage.setItem('currentClientEmail', session.user); } catch { /* noop */ }
+      try { window.dispatchEvent(new Event('clientUpdated')); } catch { /* noop */ }
+    } catch { /* noop */ }
   }
 }

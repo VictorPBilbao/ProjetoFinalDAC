@@ -63,6 +63,16 @@
       </li>
 
       <li class="nav-item" *ngIf="clientLinksVisible">
+        <a class="nav-link flex items-center gap-2 menu-padding" routerLink="/cliente/transferencia" routerLinkActive="active">
+          <!-- Transfer -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M7 7h10v3l4-4-4-4v3H7v2zm10 10H7v-3l-4 4 4 4v-3h10v-2z" />
+          </svg>
+          <p class="nav-link-text">Transferência</p>
+        </a>
+      </li>
+
+      <li class="nav-item" *ngIf="clientLinksVisible">
         <a class="nav-link flex items-center gap-2 menu-padding" routerLink="/cliente/detalhes"
           routerLinkActive="active">
           <!-- User -->
