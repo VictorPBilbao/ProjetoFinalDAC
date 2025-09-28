@@ -1,7 +1,7 @@
 <main class="deposit-main">
   <div class="page-header">
     <h1>Depósito</h1>
-    <span class="last-access">Último acesso: {{ (cliente$ | async)?.criadoEm | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+    <span class="last-access">Último acesso: {{ (lastAccess$ | async) | date:'dd/MM/yyyy HH:mm:ss' }}</span>
   </div>
 
   <section class="content-grid">
@@ -24,19 +24,19 @@
 
       <section class="card deposit-form">
         <h2>Realizar Depósito</h2>
-        <form>
+        <form [formGroup]="form" (ngSubmit)="submit()">
           <div class="form-grid">
             <div class="form-group">
               <label for="agencia">Agência</label>
-              <input id="agencia" type="text" name="agencia" [value]="(cliente$ | async)?.agencia ?? ''" />
+              <input id="agencia" type="text" formControlName="agencia" />
             </div>
             <div class="form-group">
               <label for="conta">Conta Corrente</label>
-              <input id="conta" type="text" name="conta" [value]="(cliente$ | async)?.conta ?? ''" />
+              <input id="conta" type="text" formControlName="conta" />
             </div>
             <div class="form-group">
               <label for="valor">Valor</label>
-              <input id="valor" type="number" name="valor" placeholder="0,00" />
+              <input id="valor" type="number" formControlName="valor" placeholder="0,00" />
             </div>
             <div class="form-group">
               <label for="id1">Identificador 1</label>
@@ -52,9 +52,10 @@
             </div>
           </div>
           <div class="actions">
-            <button type="submit" class="btn-primary">Continuar</button>
-            <button type="reset" class="btn-outline">Limpar</button>
+            <button type="submit" class="btn-primary" [disabled]="form.invalid">Continuar</button>
+            <button type="button" class="btn-outline" (click)="resetForm()">Limpar</button>
           </div>
+          <p *ngIf="message" [class.msg-success]="message.type==='success'" [class.msg-error]="message.type==='error'">{{ message.text }}</p>
         </form>
       </section>
     </div>

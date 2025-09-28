@@ -3,7 +3,7 @@
 	<main class="deposit-main">
 		<div class="page-header">
 			<h1>Saque</h1>
-			<span class="last-access">Último acesso: {{ cliente?.criadoEm | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+			<span class="last-access">Último acesso: {{ (lastAccess$ | async) | date:'dd/MM/yyyy HH:mm:ss' }}</span>
 		</div>
 
 		<section class="content-grid">

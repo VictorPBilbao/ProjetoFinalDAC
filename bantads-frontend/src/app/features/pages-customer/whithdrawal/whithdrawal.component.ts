@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -14,15 +14,23 @@ import { Observable, Subscription } from 'rxjs';
   templateUrl: './whithdrawal.component.html',
   styleUrls: ['./whithdrawal.component.css']
 })
-export class WhithdrawalComponent {
+export class WhithdrawalComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
 
   cliente$!: Observable<Cliente | null>;
   cliente: Cliente | null = null;
+  lastAccess$!: import('rxjs').Observable<string | null>;
   private clienteSub?: Subscription;
 
   constructor(private loggedClient: LoggedClientService) {
     this.cliente$ = this.loggedClient.cliente$;
+    this.lastAccess$ = this.loggedClient.lastAccess$;
+  }
+
+  ngOnInit(): void {
+    // marca o último acesso ao entrar na página
+    this.loggedClient.touchLastAccess();
+
     this.clienteSub = this.cliente$.subscribe(c => {
       this.cliente = c;
       // Preenche automaticamente agência/conta no formulário quando o cliente estiver disponível

@@ -10,6 +10,8 @@ import { LocalStorageServiceService } from '../local-storages/local-storage-serv
 export class LoggedClientService {
   private readonly _cliente$ = new BehaviorSubject<Cliente | null>(null);
   cliente$ = this._cliente$.asObservable();
+  private readonly _lastAccess$ = new BehaviorSubject<string | null>(null);
+  lastAccess$ = this._lastAccess$.asObservable();
 
   constructor(
     private contaService: ServiceContaService,
@@ -35,6 +37,7 @@ export class LoggedClientService {
 
     if (!userEmail) {
       this._cliente$.next(null);
+      this._lastAccess$.next(null);
       return;
     }
 
@@ -43,6 +46,11 @@ export class LoggedClientService {
     const found = clientes.find(c => c.email?.toLowerCase() === userEmail!.toLowerCase());
     if (found) {
       this._cliente$.next(found);
+      // atualiza lastAccess se disponível na sessão
+      const session = this.contaService.getSession();
+      const last = session?.lastAccess ?? new Date().toISOString();
+      this._lastAccess$.next(last);
+      this.contaService.updateLastAccess(last);
       return;
     }
 
@@ -74,6 +82,9 @@ export class LoggedClientService {
       };
 
       this._cliente$.next(minimal);
+      const last = this.contaService.getSession()?.lastAccess ?? new Date().toISOString();
+      this._lastAccess$.next(last);
+      this.contaService.updateLastAccess(last);
       return;
     }
 
@@ -85,6 +96,9 @@ export class LoggedClientService {
         return db - da; // decrescente
       });
       this._cliente$.next(sorted[0]);
+      const last = this.contaService.getSession()?.lastAccess ?? new Date().toISOString();
+      this._lastAccess$.next(last);
+      this.contaService.updateLastAccess(last);
       return;
     }
 
@@ -99,5 +113,15 @@ export class LoggedClientService {
   updateClient(updated: Cliente) {
     this.storage.updateCliente(updated);
     this._cliente$.next(updated);
+  }
+
+  /**
+   * Atualiza o último acesso para o momento atual (ou para um ISO fornecido).
+   * Emite via lastAccess$ e persiste na sessão através do ServiceContaService.
+   */
+  touchLastAccess(dateIso?: string) {
+    const last = dateIso ?? new Date().toISOString();
+    this._lastAccess$.next(last);
+    this.contaService.updateLastAccess(last);
   }
 }

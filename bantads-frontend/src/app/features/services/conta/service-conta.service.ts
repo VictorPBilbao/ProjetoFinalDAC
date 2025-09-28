@@ -24,6 +24,7 @@ export interface AuthSession {
   user: string; // email
   role: UserRole;
   token: string; // token mock
+  lastAccess?: string; // ISO date
 }
 
 export interface LoginResult {
@@ -93,6 +94,18 @@ export class ServiceContaService {
 
   logout(): void {
     try { localStorage.removeItem(AUTH_KEY); } catch { /* noop */ }
+  }
+
+  updateLastAccess(dateIso?: string) {
+    try {
+      const raw = localStorage.getItem(AUTH_KEY);
+      if (!raw) return;
+      const session = JSON.parse(raw) as AuthSession;
+      session.lastAccess = dateIso ?? new Date().toISOString();
+      this.saveSession(session);
+    } catch {
+      // noop
+    }
   }
 
   isAuthenticated(): boolean {

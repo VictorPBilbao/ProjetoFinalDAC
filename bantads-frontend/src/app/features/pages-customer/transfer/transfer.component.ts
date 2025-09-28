@@ -20,6 +20,7 @@ export class TransferComponent {
 
   cliente$!: Observable<Cliente | null>;
   cliente: Cliente | null = null;
+  lastAccess$!: Observable<string | null>;
 
   form: FormGroup = this.fb.group({
     agencia: ['', [Validators.required]],
@@ -40,6 +41,7 @@ export class TransferComponent {
         this.form.patchValue({ agencia: c.agencia ?? '', conta: c.conta ?? '' });
       }
     });
+    this.lastAccess$ = this.loggedClient.lastAccess$;
   }
 
   ngOnDestroy(): void {
