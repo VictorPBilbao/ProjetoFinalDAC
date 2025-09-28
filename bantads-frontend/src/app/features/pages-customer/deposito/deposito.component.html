@@ -6,18 +6,18 @@
 
   <section class="content-grid">
     <div class="main-content">
-      <section class="card account-info">
+      <section class="card account-info" *ngIf="cliente$ | async as cliente">
         <h2>Informações da Conta</h2>
-        <div class="info-row"><span>Agência</span><strong>756-0</strong></div>
-        <div class="info-row"><span>Conta Corrente</span><strong>97193-6</strong></div>
+  <div class="info-row"><span>Agência</span><strong>{{ cliente.agencia }}</strong></div>
+  <div class="info-row"><span>Conta Corrente</span><strong>{{ cliente.conta }}</strong></div>
         <div class="balances">
           <div class="balance-item">
             <span>Saldo</span>
-            <strong class="negative">R$ 82,42</strong>
+            <strong [class.negative]="cliente.saldo < 0" [class.positive]="cliente.saldo >= 0">{{ cliente.saldo | currency:'BRL':'symbol':'1.2-2' }}</strong>
           </div>
           <div class="balance-item">
             <span>Limite</span>
-            <strong class="positive">R$ 100,00</strong>
+            <strong class="positive">{{ cliente.limite | currency:'BRL':'symbol':'1.2-2' }}</strong>
           </div>
         </div>
       </section>
@@ -28,11 +28,11 @@
           <div class="form-grid">
             <div class="form-group">
               <label for="agencia">Agência</label>
-              <input id="agencia" type="text" name="agencia" />
+              <input id="agencia" type="text" name="agencia" [value]="(cliente$ | async)?.agencia ?? ''" />
             </div>
             <div class="form-group">
               <label for="conta">Conta Corrente</label>
-              <input id="conta" type="text" name="conta" />
+              <input id="conta" type="text" name="conta" [value]="(cliente$ | async)?.conta ?? ''" />
             </div>
             <div class="form-group">
               <label for="valor">Valor</label>

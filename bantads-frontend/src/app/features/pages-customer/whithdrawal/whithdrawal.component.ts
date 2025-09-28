@@ -1,10 +1,11 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { BehaviorSubject } from 'rxjs';
 import { Cliente } from '../../models/cliente.model';
 import { Manager } from '../../models/manager.model';
+import { LoggedClientService } from '../../services/logged-client/logged-client.service';
+import { Observable, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-whithdrawal',
@@ -16,33 +17,24 @@ import { Manager } from '../../models/manager.model';
 export class WhithdrawalComponent {
   private fb = inject(FormBuilder);
 
-  // Estado mockado de cliente apenas no frontend
-  private readonly _cliente$ = new BehaviorSubject<Cliente>({
-    id: '1',
-    nome: 'Cliente Exemplo',
-    email: 'cliente@example.com',
-    cpf: '00000000000',
-    telefone: '(41) 99999-0000',
-    salario: 2000,
-    limite: 100.0,
-    saldo: -82.42,
-    manager: { id: 'm1', cpf: '11122233344', name: 'Gerente Exemplo', email: 'gerente@example.com', telephone: '(41) 98888-0000' } as Manager,
-    endereco: {
-      tipo: 'Rua',
-      logradouro: 'Exemplo',
-      bairro: 'Centro',
-      numero: '123',
-      cep: '80000-000',
-      cidade: 'Curitiba',
-      estado: 'PR',
-    },
-    agencia: '756-0',
-    conta: '97193-6',
-    criadoEm: new Date().toISOString(),
-  });
+  cliente$!: Observable<Cliente | null>;
+  cliente: Cliente | null = null;
+  private clienteSub?: Subscription;
 
-  cliente$ = this._cliente$.asObservable();
-  get cliente(): Cliente { return this._cliente$.value; }
+  constructor(private loggedClient: LoggedClientService) {
+    this.cliente$ = this.loggedClient.cliente$;
+    this.clienteSub = this.cliente$.subscribe(c => {
+      this.cliente = c;
+      // Preenche automaticamente agência/conta no formulário quando o cliente estiver disponível
+      if (c) {
+        this.form.patchValue({ agencia: c.agencia ?? '', conta: c.conta ?? '' });
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.clienteSub?.unsubscribe();
+  }
 
   form: FormGroup = this.fb.group({
     agencia: ['', [Validators.required]],
@@ -61,20 +53,24 @@ export class WhithdrawalComponent {
     const { agencia, conta, valor } = this.form.value as { agencia: string; conta: string; valor: number };
 
     // Regra: não sacar de outra conta
-    if (agencia !== this.cliente.agencia || conta !== this.cliente.conta) {
+    if (!this.cliente || agencia !== this.cliente.agencia || conta !== this.cliente.conta) {
       this.message = { type: 'error', text: 'Você não pode sacar de outra conta.' };
       return;
     }
 
     // Regra: saldo suficiente considerando limite
-    const disponivel = this.cliente.saldo + this.cliente.limite;
+    const disponivel = (this.cliente?.saldo ?? 0) + (this.cliente?.limite ?? 0);
     if (valor > disponivel) {
       this.message = { type: 'error', text: 'Saldo insuficiente considerando o limite.' };
       return;
     }
 
     // Atualiza saldo localmente (frontend-only)
-    this._cliente$.next({ ...this.cliente, saldo: this.cliente.saldo - Number(valor) });
+    if (this.cliente) {
+      const updated = { ...this.cliente, saldo: this.cliente.saldo - Number(valor) } as Cliente;
+      this.loggedClient.updateClient(updated);
+      this.cliente = updated;
+    }
     this.message = { type: 'success', text: 'Saque realizado com sucesso.' };
     this.form.patchValue({ valor: null });
   }

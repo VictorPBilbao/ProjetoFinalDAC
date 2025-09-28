@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
     FormBuilder,
@@ -8,6 +8,8 @@ import {
 } from '@angular/forms';
 import { Cliente } from '../../models/cliente.model';
 import { Manager } from '../../models/manager.model';
+import { LoggedClientService } from '../../services/logged-client/logged-client.service';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-user-details',
@@ -16,98 +18,92 @@ import { Manager } from '../../models/manager.model';
     templateUrl: './user-details.component.html',
     styleUrl: './user-details.component.css',
 })
-export class UserDetailsComponent {
-    cliente!: Cliente;
+export class UserDetailsComponent implements OnDestroy {
+    cliente!: Cliente | null;
     form!: FormGroup;
     editMode = false;
     saved = false;
     limiteOriginal!: number;
+    private sub?: Subscription;
 
-    constructor(private fb: FormBuilder) {
-        // Mock inicial do cliente
-        this.cliente = {
-            id: '1',
-            nome: 'João Silva',
-            email: 'joao.silva@example.com',
-            cpf: '123.456.789-00',
-            telefone: '(11) 98888-7777',
-            salario: 5000,
-            limite: 5000 * 0.5,
-            saldo: -500,
-            manager: {
-                id: 'g1',
-                name: 'Carlos Pereira',
-                cpf: '999.888.777-11',
-                email: 'carlos.p@bank.com',
-                telephone: '(11) 91111-2222',
-            },
-            endereco: {
-                tipo: 'Rua',
-                logradouro: 'das Flores',
-                bairro: 'Jardim Primavera',
-                numero: '123',
-                complemento: 'Apto 45',
-                cep: '01000-000',
-                cidade: 'São Paulo',
-                estado: 'SP',
-            },
-            agencia: '0001',
-            conta: '123456-7',
-            criadoEm: new Date().toISOString(),
-        };
-
-        this.buildForm();
+    constructor(private fb: FormBuilder, private loggedClient: LoggedClientService) {
+        this.sub = this.loggedClient.cliente$.subscribe(c => {
+            this.cliente = c;
+            // inicializa o form com os valores do cliente quando disponível
+            if (c) {
+                this.buildForm();
+                this.form.patchValue({
+                    nome: c.nome,
+                    email: c.email,
+                    cpf: c.cpf,
+                    telefone: c.telefone,
+                    salario: c.salario,
+                    endereco: { ...c.endereco }
+                });
+                this.limiteOriginal = c.limite;
+            }
+        });
     }
 
     private buildForm() {
+        const c = this.cliente ?? {
+            id: '', nome: '', email: '', cpf: '', telefone: '', salario: 0, limite: 0, saldo: 0,
+            manager: { id: '', cpf: '', name: '', email: '', telephone: '' } as Manager,
+            endereco: { tipo: '', logradouro: '', bairro: '', numero: '', complemento: '', cep: '', cidade: '', estado: '' },
+            agencia: '', conta: '', criadoEm: new Date().toISOString()
+        };
+
         this.form = this.fb.group({
             nome: [
-                this.cliente.nome,
+                c.nome,
                 [Validators.required, Validators.minLength(3)],
             ],
             email: [
-                this.cliente.email,
+                c.email,
                 [Validators.required, Validators.email],
             ],
-            cpf: [{ value: this.cliente.cpf, disabled: true }],
-            telefone: [this.cliente.telefone, [Validators.required]],
+            cpf: [{ value: c.cpf, disabled: true }],
+            telefone: [c.telefone, [Validators.required]],
             salario: [
-                this.cliente.salario,
+                c.salario,
                 [Validators.required, Validators.min(0)],
             ],
             endereco: this.fb.group({
-                tipo: [this.cliente.endereco.tipo, Validators.required],
+                tipo: [c.endereco.tipo, Validators.required],
                 logradouro: [
-                    this.cliente.endereco.logradouro,
+                    c.endereco.logradouro,
                     Validators.required,
                 ],
-                numero: [this.cliente.endereco.numero, Validators.required],
-                complemento: [this.cliente.endereco.complemento],
+                numero: [c.endereco.numero, Validators.required],
+                complemento: [c.endereco.complemento],
                 cep: [
-                    this.cliente.endereco.cep,
+                    c.endereco.cep,
                     [Validators.required, Validators.pattern(/\d{5}-?\d{3}/)],
                 ],
-                cidade: [this.cliente.endereco.cidade, Validators.required],
+                cidade: [c.endereco.cidade, Validators.required],
                 estado: [
-                    this.cliente.endereco.estado,
+                    c.endereco.estado,
                     [Validators.required, Validators.maxLength(2)],
                 ],
             }),
         });
-        this.limiteOriginal = this.cliente.limite;
+        this.limiteOriginal = c.limite;
     }
 
     toggleEdit() {
         this.editMode = !this.editMode;
         this.saved = false;
         if (!this.editMode) {
+            const c = this.cliente ?? {
+                nome: '', email: '', cpf: '', telefone: '', salario: 0, endereco: { tipo: '', logradouro: '', numero: '', complemento: '', cep: '', cidade: '', estado: '' }
+            };
             this.form.reset({
-                nome: this.cliente.nome,
-                email: this.cliente.email,
-                cpf: this.cliente.cpf,
-                telefone: this.cliente.telefone,
-                salario: this.cliente.salario,
-                endereco: { ...this.cliente.endereco },
+                nome: c.nome,
+                email: c.email,
+                cpf: c.cpf,
+                telefone: c.telefone,
+                salario: c.salario,
+                endereco: { ...c.endereco },
             });
         }
     }
@@ -119,6 +115,8 @@ export class UserDetailsComponent {
         }
 
         const valores = this.form.getRawValue(); // inclui CPF desabilitado
+
+        if (!this.cliente) return;
 
         // Atualiza campos editáveis
         this.cliente.nome = valores.nome;
@@ -144,6 +142,8 @@ export class UserDetailsComponent {
 
         this.saved = true;
         this.editMode = false;
+        // Persiste a atualização no serviço central
+        if (this.cliente) this.loggedClient.updateClient(this.cliente);
     }
 
     private calcularLimite(salario: number): number {
@@ -156,5 +156,9 @@ export class UserDetailsComponent {
 
     get enderecoGroup() {
         return this.form.get('endereco') as FormGroup;
+    }
+
+    ngOnDestroy(): void {
+        this.sub?.unsubscribe();
     }
 }
