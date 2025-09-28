@@ -1,7 +1,7 @@
 <main class="deposit-main">
   <div class="page-header">
     <h1>Depósito</h1>
-    <span class="last-access">Último acesso: 17/08/2025 20:10:54</span>
+    <span class="last-access">Último acesso: {{ (cliente$ | async)?.criadoEm | date:'dd/MM/yyyy HH:mm:ss' }}</span>
   </div>
 
   <section class="content-grid">
