@@ -72,7 +72,7 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
                 id: crypto.randomUUID(),
                 clientId: this.cliente.id,
                 operation: 'Saque',
-                amount: valor,
+                amount: -valor,
                 dateTime: new Date(),
             }
             this.transactionService.addTransaction(this.transaction);
