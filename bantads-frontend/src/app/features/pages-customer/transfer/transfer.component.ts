@@ -2,10 +2,10 @@ import { Component, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { BehaviorSubject } from 'rxjs';
+// ...existing code...
 import { Cliente } from '../../models/cliente.model';
 import { Manager } from '../../models/manager.model';
-import { Observable, Subscription } from 'rxjs';
+import { Observable, Subscription, of } from 'rxjs';
 import { LocalStorageServiceService } from '../../services/local-storages/local-storage-service.service';
 import { TransactionService } from '../../services/transaction/transaction.service';
 import { ClientService } from '../../services/client/client.service';
@@ -17,7 +17,7 @@ import { ClientService } from '../../services/client/client.service';
     templateUrl: './transfer.component.html',
     styleUrls: ['./transfer.component.css']
 })
-export class TransferComponent {
+export class TransferComponent implements OnDestroy {
     private fb = inject(FormBuilder);
 
     cliente$!: Observable<Cliente | null>;
@@ -39,9 +39,15 @@ export class TransferComponent {
         private storageService: LocalStorageServiceService,
         private transactionService: TransactionService) { }
 
-    onInit(): void {
+    ngOnInit(): void {
         this.cliente = this.clientService.getLoggedClient() || null;
         this.lastAccess$ = this.clientService.getLastAccess();
+        // expõe como observable para o template
+        this.cliente$ = of(this.cliente);
+        // preenche os campos de origem com os dados do cliente logado
+        if (this.cliente) {
+            this.form.patchValue({ agencia: this.cliente.agencia, conta: this.cliente.conta });
+        }
     }
 
     ngOnDestroy(): void {
