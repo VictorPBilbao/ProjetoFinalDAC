@@ -1,76 +1,61 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+
 import { Cliente } from '../../models/cliente.model';
-import { DashboardAdminService } from '../../services/admin/dashboard-admin.service';
+import { ClientService } from '../../services/client/client.service';
 
 @Component({
-  selector: 'app-consultar-cliente',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './consultar-cliente.component.html',
-  styleUrls: ['./consultar-cliente.component.css']
+    selector: 'app-consultar-cliente',
+    standalone: true,
+    imports: [CommonModule, FormsModule, RouterLink],
+    templateUrl: './consultar-cliente.component.html',
+    styleUrls: ['./consultar-cliente.component.css'],
 })
 export class ConsultarClienteComponent implements OnInit {
-  searchTerm: string = '';
-  clients: Cliente[] = [];
-  filteredClients: Cliente[] = [];
-  selectedClient?: Cliente;
-  loading = false;
-  notFound = false;
-  defaultDate = new Date().toISOString();
+    allClients: Cliente[] = [];
+    foundClient: Cliente | null = null;
+    search: string = '';
+    feedbackMessage: string = '';
 
-  constructor(private dashboardAdminService: DashboardAdminService) { }
+    constructor(private clientService: ClientService) {}
 
-  ngOnInit(): void {
-    this.loadClients();
-  }
-
-  loadClients(): void {
-    this.clients = this.dashboardAdminService.getClients();
-    this.filteredClients = [...this.clients];
-  }
-
-  normalizeCpf(value: string): string {
-    return value.replace(/\D/g, '');
-  }
-
-  onSearch(): void {
-    const term = this.searchTerm.trim().toLowerCase();
-    if (!term) {
-      this.filteredClients = [...this.clients];
-      this.selectedClient = undefined;
-      this.notFound = false;
-      return;
+    ngOnInit(): void {
+        this.clientService.getClients().subscribe({
+            next: (clients) => {
+                this.allClients = clients.sort((a, b) =>
+                    a.nome.localeCompare(b.nome)
+                );
+            },
+            error: () => {
+                this.feedbackMessage = 'Erro ao carregar clientes.';
+            },
+        });
     }
-    // Busca por cpf, nome, email ou conta
-    this.filteredClients = this.clients.filter(c => {
-      const cpf = this.normalizeCpf(c.cpf);
-      const termDigits = this.normalizeCpf(term);
-      return (
-        c.nome.toLowerCase().includes(term) ||
-        c.email?.toLowerCase().includes(term) ||
-        cpf.includes(termDigits) ||
-        c.conta?.toLowerCase().includes(term) ||
-        c.id === term
-      );
-    });
-    this.notFound = this.filteredClients.length === 0;
-    if (this.filteredClients.length === 1) {
-      this.selectClient(this.filteredClients[0]);
-    } else {
-      this.selectedClient = undefined;
+
+    findClient(): void {
+        const term = this.search.trim().toLowerCase();
+
+        if (!term) {
+            this.foundClient = null;
+            this.feedbackMessage = '';
+            return;
+        }
+
+        const result = this.allClients.find(
+            (client) =>
+                client.nome.toLowerCase().includes(term) ||
+                client.cpf.replace(/[.-]/g, '') === term.replace(/[.-]/g, '')
+        );
+
+        if (result) {
+            this.foundClient = result;
+            this.feedbackMessage = '';
+        } else {
+            this.foundClient = null;
+            this.feedbackMessage =
+                'Nenhum cliente encontrado com os dados informados.';
+        }
     }
-  }
-
-  selectClient(c: Cliente): void {
-    this.selectedClient = c;
-  }
-
-  clearSearch(): void {
-    this.searchTerm = '';
-    this.filteredClients = [...this.clients];
-    this.selectedClient = undefined;
-    this.notFound = false;
-  }
 }

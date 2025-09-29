@@ -1,39 +1,45 @@
 <div class="manager-list-container">
-  <div class="header">
-    <h2>Gerentes</h2>
-    <a class="new-manager-button" routerLink="/admin/gerente/novo">
-      <i class="fas fa-plus"></i> Novo Gerente
-    </a>
-  </div>
+    <div class="header">
+        <h2>Gerentes</h2>
+        <a class="new-manager-button" routerLink="/admin/gerente/novo">
+            <i class="fas fa-plus"></i> Novo Gerente
+        </a>
+    </div>
 
-  <table class="manager-table">
-    <thead>
-      <tr>
-        <th>Nome</th>
-        <th>CPF</th>
-        <th>E-mail</th>
-        <th>Telefone</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let manager of managers">
-        <td>{{ manager.name }}</td>
-        <td>{{ manager.cpf }}</td>
-        <td>{{ manager.email }}</td>
-        <td>{{ manager.telephone }}</td>
-        <td class="actions">
-          <a class="edit-button" [routerLink]="['/admin/gerente', manager.id]">
-            <i class="fas fa-edit"></i> Editar
-          </a>
-          <button class="delete-button" (click)="deleteManager(manager.id)">
-            <i class="fas fa-trash-alt"></i> Remover
-          </button>
-        </td>
-      </tr>
-      <tr *ngIf="managers.length === 0">
-        <td colspan="5">Nenhum gerente cadastrado.</td>
-      </tr>
-    </tbody>
-  </table>
+    <table class="manager-table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>E-mail</th>
+                <th>Telefone</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let manager of managers">
+                <td>{{ manager.name }}</td>
+                <td>{{ manager.cpf }}</td>
+                <td>{{ manager.email }}</td>
+                <td>{{ manager.telephone }}</td>
+                <td class="actions">
+                    <a
+                        class="edit-button"
+                        [routerLink]="['/admin/gerente', manager.id]"
+                    >
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <button
+                        class="delete-button"
+                        (click)="deleteManager(manager.id)"
+                    >
+                        <i class="fas fa-trash-alt"></i> Remover
+                    </button>
+                </td>
+            </tr>
+            <tr *ngIf="managers.length === 0">
+                <td colspan="5">Nenhum gerente cadastrado.</td>
+            </tr>
+        </tbody>
+    </table>
 </div>

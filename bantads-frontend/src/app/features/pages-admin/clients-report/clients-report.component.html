@@ -1,57 +1,61 @@
 <div class="client-container">
-  <h2>Relatório de Clientes</h2>
+    <h2>Relatório de Clientes</h2>
 
-  <div class="search-bar">
-    <input
-      type="text"
-      placeholder="Pesquisar por nome ou CPF..."
-      [(ngModel)]="search"
-      (input)="filterClients()"
-    />
-  </div>
+    <div class="search-bar">
+        <input
+            type="text"
+            placeholder="Pesquisar por nome ou CPF..."
+            [(ngModel)]="search"
+            (input)="filterClients()"
+        />
+    </div>
 
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>CPF</th>
-          <th>Nome</th>
-          <th>Salário</th>
-          <th>Nº da Conta</th>
-          <th>Saldo</th>
-          <th>Limite</th>
-          <th>CPF Gerente</th>
-          <th>Gerente</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let cliente of pgClients">
-          <td>{{ cliente.cpf }}</td>
-          <td>{{ cliente.nome }}</td>
-          <td>{{ cliente.salario | currency : "BRL" }}</td>
-          <td>{{ cliente.conta }}</td>
-          <td>{{ cliente.saldo | currency : "BRL" }}</td>
-          <td>{{ cliente.limite | currency : "BRL" }}</td>
-          <td>{{ cliente.manager.cpf }}</td>
-          <td>{{ cliente.manager.name }}</td>
-        </tr>
-        <tr *ngIf="filteredClients.length === 0">
-          <td colspan="7" class="no-results">Nenhum cliente encontrado.</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>CPF</th>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Salário</th>
+                    <th>Nº da Conta</th>
+                    <th>Saldo</th>
+                    <th>Limite</th>
+                    <th>CPF Gerente</th>
+                    <th>Gerente</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let cliente of pgClients">
+                    <td>{{ cliente.cpf }}</td>
+                    <td>{{ cliente.nome }}</td>
+                    <td>{{ cliente.email }}</td>
+                    <td>{{ cliente.salario | currency : "BRL" }}</td>
+                    <td>{{ cliente.conta }}</td>
+                    <td>{{ cliente.saldo | currency : "BRL" }}</td>
+                    <td>{{ cliente.limite | currency : "BRL" }}</td>
+                    <td>{{ cliente.manager.cpf }}</td>
+                    <td>{{ cliente.manager.name }}</td>
+                </tr>
+                <tr *ngIf="filteredClients.length === 0">
+                    <td colspan="7" class="no-results">
+                        Nenhum cliente encontrado.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-  <!-- Controle de Paginação -->
-  <div class="pg-controls" *ngIf="totalPgs > 1">
-    <button (click)="previousPg()" [disabled]="currentPg === 1">
-      &laquo; Anterior
-    </button>
+    <!-- Controle de Paginação -->
+    <div class="pg-controls" *ngIf="totalPgs > 1">
+        <button (click)="previousPg()" [disabled]="currentPg === 1">
+            &laquo; Anterior
+        </button>
 
-    <span>Pagina {{ currentPg }} de {{ totalPgs }}</span>
+        <span>Pagina {{ currentPg }} de {{ totalPgs }}</span>
 
-    <button (click)="nextPg()" [disabled]="currentPg === totalPgs">
-      &raquo; Próxima
-    </button>
-  </div>
+        <button (click)="nextPg()" [disabled]="currentPg === totalPgs">
+            &raquo; Próxima
+        </button>
+    </div>
 </div>

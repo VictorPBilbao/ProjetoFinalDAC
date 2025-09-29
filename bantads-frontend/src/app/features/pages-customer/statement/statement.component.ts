@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core'; // Adicione OnInit
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -8,6 +8,7 @@ import { TransactionService } from '../../services/transaction/transaction.servi
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
 import { Subscription } from 'rxjs';
+import Swal from 'sweetalert2';
 
 @Component({
     selector: 'app-statement',
@@ -16,7 +17,8 @@ import { Subscription } from 'rxjs';
     templateUrl: './statement.component.html',
     styleUrl: './statement.component.css',
 })
-export class StatementComponent {
+export class StatementComponent implements OnInit {
+    // Implemente OnInit
     beginDate: string = '';
     endDate: string = '';
 
@@ -34,9 +36,10 @@ export class StatementComponent {
 
     constructor(
         private transactionService: TransactionService,
-        private clientService: ClientService) { }
+        private clientService: ClientService
+    ) {}
 
-    onInit(): void {
+    ngOnInit(): void {
         this.cliente = this.clientService.getLoggedClient() || null;
         this.allTransactions = this.transactionService.getTransactions();
         this.initialBalance = this.cliente?.saldo ?? 0;
@@ -48,14 +51,24 @@ export class StatementComponent {
 
     getStatement() {
         if (!this.beginDate || !this.endDate) {
-            alert('Por favor, preencha as datas de inicio e fim.');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Atenção',
+                text: 'Por favor, preencha as datas de início e fim.',
+                confirmButtonColor: '#0ec093',
+            });
             return;
         }
         const beginDateFilter = new Date(this.beginDate + 'T00:00:00');
         const endDateFilter = new Date(this.endDate + 'T23:59:59');
 
         if (beginDateFilter > endDateFilter) {
-            alert('A data de inicio não pode ser após a data de fim.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Datas Inválidas',
+                text: 'A data de início não pode ser posterior à data de fim.',
+                confirmButtonColor: '#0ec093',
+            });
             return;
         }
         this.executeStatement(beginDateFilter, endDateFilter);
