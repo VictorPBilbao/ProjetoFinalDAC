@@ -73,8 +73,7 @@ export class LocalStorageServiceService {
 
     // ---------------- Cliente ----------------
     getClientes(): Cliente[] {
-        const allClients = this.getData<Cliente>('clientes');
-        return allClients.filter((c) => c.agencia && c.conta);
+        return this.getData<Cliente>('clientes');
     }
 
     getClientesPendentes(): Cliente[] {
@@ -132,7 +131,7 @@ export class LocalStorageServiceService {
         password: string,
         managerId: string
     ): void {
-        const clientes = this.getClientes();
+        const clientes = this.getClientesPendentes();
         const cliente = clientes.find((c) => c.id === pendingCliente.id);
 
         if (!cliente) {
