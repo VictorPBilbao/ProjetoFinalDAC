@@ -65,3 +65,9 @@ a:hover {
     color: white;
     transition: 200ms;
 }
+
+li a img {
+    height: 80px; 
+    width: auto;  
+    object-fit: contain; 
+}
