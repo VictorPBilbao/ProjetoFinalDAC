@@ -17,7 +17,7 @@
 }
 
 .client-container {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: var(--space-lg) auto;
   padding: var(--space-lg);
   background-color: var(--c-background);
