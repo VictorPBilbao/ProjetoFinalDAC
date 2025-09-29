@@ -5,11 +5,12 @@ import { Cliente } from '../../models/cliente.model';
 import { Subscription } from 'rxjs';
 import { ClientService } from '../../services/client/client.service';
 import { TransactionService } from '../../services/transaction/transaction.service';
+import { RouterModule } from '@angular/router';
 
 @Component({
     selector: 'app-user-dashboard',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, RouterModule],
     templateUrl: './user-dashboard.component.html',
     styleUrls: ['./user-dashboard.component.css'],
 })
@@ -23,7 +24,7 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
     constructor(
         private clientService: ClientService,
         private transactionService: TransactionService
-    ) {}
+    ) { }
 
     ngOnInit(): void {
         this.user = this.clientService.getLoggedClient() || null;
