@@ -3,50 +3,48 @@
         <div class="balance-container">
             <h1>Saldo atual</h1>
             <h2 [ngStyle]="{ color: balance < 0 ? 'red' : '#097459' }">
-                <span
-                    style="
-                        font-size: 18px;
-                        vertical-align: top;
-                        font-weight: lighter;
-                    "
-                    >R$</span
-                >
+                <span class="currency-symbol">R$</span>
                 {{ balance | number : "1.2-2" }}
             </h2>
-            <h3>Depositados este mês: R$ 4500,00</h3>
+            <h3>
+                Depositados este mês: {{ depositsThisMonth | currency : "BRL" }}
+            </h3>
         </div>
+
         <ul>
             <li>
-                <a routerLink="/cliente/deposito" href="/cliente/deposito">
-                    <img src="icon" alt="icon" />
+                <a routerLink="/cliente/deposito">
+                    <img
+                        src="assets/icons/deposit-icon.svg"
+                        alt="Ícone de depósito"
+                    />
                     <p>Depositar</p>
                 </a>
             </li>
             <li>
-                <a routerLink="/cliente/saque" href="/cliente/saque">
-                    <img src="icon" alt="icon" />
+                <a routerLink="/cliente/saque">
+                    <img
+                        src="assets/icons/withdraw-icon.svg"
+                        alt="Ícone de saque"
+                    />
                     <p>Sacar</p>
                 </a>
             </li>
             <li>
-                <a routerLink="/cliente/extrato" href="/cliente/extrato">
-                    <img src="icon" alt="icon" />
+                <a routerLink="/cliente/extrato">
+                    <img
+                        src="assets/icons/statement-icon.svg"
+                        alt="Ícone de extrato"
+                    />
                     <p>Extrato</p>
                 </a>
             </li>
             <li>
-                <a routerLink="/cliente/detalhes" href="/cliente/detalhes">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        height="24px"
-                        viewBox="0 -960 960 960"
-                        width="24px"
-                        fill="#FFFFFF"
-                    >
-                        <path
-                            d="M480-440q58 0 99-41t41-99q0-58-41-99t-99-41q-58 0-99 41t-41 99q0 58 41 99t99 41ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-46q-54-53-125.5-83.5T480-360q-83 0-154.5 30.5T200-246v46Z"
-                        />
-                    </svg>
+                <a routerLink="/cliente/detalhes">
+                    <img
+                        src="assets/icons/account-icon.svg"
+                        alt="Ícone da conta"
+                    />
                     <p>Minha Conta</p>
                 </a>
             </li>

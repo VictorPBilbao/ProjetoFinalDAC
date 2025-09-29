@@ -1,95 +1,47 @@
 import { Injectable } from '@angular/core';
 import { Transaction } from '../../models/transaction.model';
 
+import { LocalStorageServiceService } from '../local-storages/local-storage-service.service';
+
 @Injectable({
-  providedIn: 'root',
+    providedIn: 'root',
 })
 export class TransactionService {
-  private readonly LS_CHAVE = 'transactionData';
-  private transactions: Transaction[] = [];
+    private transactions: Transaction[] = [];
 
-  constructor() {
-    this.initializeData();
-  }
+    constructor(private storageService: LocalStorageServiceService) {
+        const dataFromStorage = this.storageService.getTransactions();
 
-  getTransactions(): Transaction[] {
-    return this.transactions;
-  }
-
-  addTransaction(newTransaction: Transaction): void {
-    this.transactions.push(newTransaction);
-    this.persist();
-  }
-
-  private persist(): void {
-    localStorage.setItem(this.LS_CHAVE, JSON.stringify(this.transactions));
-  }
-
-  private initializeData() {
-    if (!localStorage.getItem(this.LS_CHAVE)) {
-      this.seedInitialData();
+        this.transactions = dataFromStorage.map((tx) => {
+            tx.dateTime = new Date(tx.dateTime);
+            return tx;
+        });
     }
-    this.transactions = this.loadFromLS();
-  }
+    getTransactions(): Transaction[] {
+        return this.transactions;
+    }
 
-  private loadFromLS(): Transaction[] {
-    const dataJson = localStorage.getItem(this.LS_CHAVE);
-    if (!dataJson) return [];
+    addTransaction(newTransaction: Transaction): void {
+        this.transactions.push(newTransaction);
 
-    const data: Transaction[] = JSON.parse(dataJson);
-    return data.map((tx) => {
-      tx.dateTime = new Date(tx.dateTime);
-      return tx;
-    });
-  }
+        this.storageService.addTransaction(newTransaction);
+    }
 
-  private seedInitialData(): void {
-    const initialTransactions: Transaction[] = [
-      {
-        id: '1',
-        dateTime: new Date('2025-08-01T10:00:00'),
-        operation: 'Deposito',
-        amount: 1500,
-      },
-      {
-        id: '2',
-        dateTime: new Date('2025-08-01T14:30:00'),
-        operation: 'Saque',
-        amount: -50,
-      },
-      {
-        id: '3',
-        dateTime: new Date('2025-08-03T11:20:00'),
-        operation: 'Transferencia',
-        fromOrToClient: 'Fausto Silva',
-        amount: -300,
-      },
-      {
-        id: '4',
-        dateTime: new Date('2025-08-05T09:00:00'),
-        operation: 'Saque',
-        amount: -100,
-      },
-      {
-        id: '5',
-        dateTime: new Date('2025-08-05T16:45:00'),
-        operation: 'Transferencia',
-        fromOrToClient: 'Geraldo Alckmin',
-        amount: 850,
-      },
-      {
-        id: '6',
-        dateTime: new Date('2025-08-08T12:00:00'),
-        operation: 'Deposito',
-        amount: 200,
-      },
-      {
-        id: '7',
-        dateTime: new Date('2025-08-10T18:00:00'),
-        operation: 'Saque',
-        amount: -200,
-      },
-    ];
-    localStorage.setItem(this.LS_CHAVE, JSON.stringify(initialTransactions));
-  }
+    getMonthlyDeposits(): number {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const monthlyDeposits = this.transactions.filter((t) => {
+            const transactionDate = t.dateTime;
+            return (
+                t.operation === 'Deposito' &&
+                transactionDate.getMonth() === currentMonth &&
+                transactionDate.getFullYear() === currentYear
+            );
+        });
+
+        const total = monthlyDeposits.reduce((sum, t) => sum + t.amount, 0);
+        return total;
+    }
 }
