@@ -80,12 +80,6 @@ export const routes: Routes = [
         children: [
             { path: '', redirectTo: 'aprovacoes', pathMatch: 'full' },
             {
-                path: 'dashboard',
-                component: ManagerDashboardComponent,
-                canActivate: [authGuard],
-                data: { role: ['gerente'] },
-            },
-            {
                 path: 'aprovacoes',
                 component: ApprovalsComponent,
                 canActivate: [authGuard],
