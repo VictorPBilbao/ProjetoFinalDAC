@@ -16,9 +16,33 @@ export class TransactionService {
     return this.transactions;
   }
 
+  /** Retorna uma transação pelo id ou undefined se não existir */
+  getTransaction(id: string): Transaction | undefined {
+    return this.transactions.find((t) => t.id === id);
+  }
+
   addTransaction(newTransaction: Transaction): void {
     this.transactions.push(newTransaction);
     this.persist();
+  }
+
+  /** Atualiza uma transação existente. Retorna true se atualizada, false se não encontrada. */
+  updateTransaction(updatedTransaction: Transaction): boolean {
+    const idx = this.transactions.findIndex((t) => t.id === updatedTransaction.id);
+    if (idx === -1) return false;
+    // preserva objeto novo (imutabilidade leve)
+    this.transactions[idx] = { ...updatedTransaction };
+    this.persist();
+    return true;
+  }
+
+  /** Remove uma transação pelo id. Retorna true se removida, false se não encontrada. */
+  deleteTransaction(id: string): boolean {
+    const originalLength = this.transactions.length;
+    this.transactions = this.transactions.filter((t) => t.id !== id);
+    const removed = this.transactions.length !== originalLength;
+    if (removed) this.persist();
+    return removed;
   }
 
   private persist(): void {
