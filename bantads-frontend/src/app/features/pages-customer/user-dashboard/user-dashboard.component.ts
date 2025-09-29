@@ -30,7 +30,7 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
         this.user = this.clientService.getLoggedClient() || null;
         this.balance = this.user?.saldo ?? 0;
 
-        this.depositsThisMonth = this.transactionService.getMonthlyDeposits();
+        this.depositsThisMonth = this.transactionService.getMonthlyDeposits(this.user?.id || '');
     }
 
     ngOnDestroy(): void {

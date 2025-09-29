@@ -65,7 +65,7 @@ export class RegisterComponent {
             Swal.fire({
               icon: 'success',
               title: 'Cadastro realizado com sucesso!',
-              text: 'Ele será enviado para aprovação por um gerente da sua região antes de poder acessar o sistema.',
+              text: 'O seu cadastro será enviado para aprovação por um gerente da sua região antes de poder acessar o sistema.',
               confirmButtonText: 'OK'
             });
 

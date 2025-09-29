@@ -5,6 +5,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Cliente } from '../../models/cliente.model';
 import { Observable, Subscription } from 'rxjs';
 import { ClientService } from '../../services/client/client.service';
+import { TransactionService } from '../../services/transaction/transaction.service';
+import { Transaction } from '../../models/transaction.model';
 
 @Component({
     selector: 'app-whithdrawal',
@@ -20,9 +22,11 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
     cliente: Cliente | null = null;
     lastAccess$!: import('rxjs').Observable<string | null>;
     private clienteSub?: Subscription;
+    transaction: Transaction | null = null;
 
     constructor(
-        private clientService: ClientService
+        private clientService: ClientService,
+        private transactionService: TransactionService
     ) { }
 
     ngOnInit(): void {
@@ -64,6 +68,15 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
 
         // Atualiza saldo localmente (frontend-only)
         if (this.cliente) {
+            this.transaction = {
+                id: crypto.randomUUID(),
+                clientId: this.cliente.id,
+                operation: 'Saque',
+                amount: valor,
+                dateTime: new Date(),
+            }
+            this.transactionService.addTransaction(this.transaction);
+
             const updated = { ...this.cliente, saldo: this.cliente.saldo - Number(valor) } as Cliente;
             this.clientService.updateClient(updated);
             this.cliente = updated;

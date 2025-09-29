@@ -31,7 +31,7 @@ export class LocalStorageServiceService {
     private readonly USERS_KEY = 'users';
 
     constructor() {
-        this.initDefaultUsers();
+        this.initDefaultData();
     }
 
     // ---------------- Utils ----------------
@@ -42,22 +42,6 @@ export class LocalStorageServiceService {
 
     private setData<T>(key: string, data: T[]): void {
         localStorage.setItem(key, JSON.stringify(data));
-    }
-
-    // ---------------- Users ----------------
-    private initDefaultUsers(): void {
-        const existing = localStorage.getItem(this.USERS_KEY);
-        if (!existing) {
-            const defaultUsers: AuthUser[] = [
-                { user: 'admin', password: 'admin', role: 'admin' },
-                {
-                    user: 'adamantio@bantads.com',
-                    password: 'adamantio',
-                    role: 'admin',
-                },
-            ];
-            this.setData(this.USERS_KEY, defaultUsers);
-        }
     }
 
     getUsers(): AuthUser[] {
@@ -108,7 +92,7 @@ export class LocalStorageServiceService {
         if (userIdx !== -1) {
             users[userIdx] = {
                 ...users[userIdx],
-                password: updatedCliente.telefone,
+                password: '123',
             };
             this.setData(this.USERS_KEY, users);
         }
@@ -171,7 +155,7 @@ export class LocalStorageServiceService {
         // manager já tem senha no cadastro
         this.addUser({
             user: manager.email,
-            password: manager.telephone,
+            password: '123',
             role: 'gerente',
         });
     }
@@ -191,7 +175,7 @@ export class LocalStorageServiceService {
             if (userIdx !== -1) {
                 users[userIdx] = {
                     ...users[userIdx],
-                    password: updatedManager.telephone,
+                    password: '123',
                 };
                 this.setData(this.USERS_KEY, users);
             }
@@ -216,6 +200,11 @@ export class LocalStorageServiceService {
     // ---------------- Transaction ----------------
     getTransactions(): Transaction[] {
         return this.getData<Transaction>('transactions');
+    }
+
+    getTransictionsByClientId(clientId: string): Transaction[] {
+        const allTransactions = this.getTransactions();
+        return allTransactions.filter((t) => t.clientId === clientId);
     }
 
     addTransaction(transaction: Transaction): void {
@@ -298,5 +287,168 @@ export class LocalStorageServiceService {
         console.log(
             `[REJEIÇÃO] Cliente ${cliente.nome} rejeitado por ${manager.name}. Motivo: ${motivo}`
         );
+    }
+
+    initDefaultData(): void {
+        // ---- Gerentes ----
+        const managers: Manager[] = [
+            { id: 'm1', cpf: '98574307084', name: 'Geniéve', email: 'ger1@bantads.com.br', telephone: '11999990001', clients: [], clientCount: 0 },
+            { id: 'm2', cpf: '64065268052', name: 'Godophredo', email: 'ger2@bantads.com.br', telephone: '11999990002', clients: [], clientCount: 0 },
+            { id: 'm3', cpf: '23862179060', name: 'Gyândula', email: 'ger3@bantads.com.br', telephone: '11999990003', clients: [], clientCount: 0 },
+        ];
+
+        // ---- Clientes ----
+        const clientes: Cliente[] = [
+            {
+                id: '1',
+                nome: 'Catharyna',
+                email: 'cli1@bantads.com.br',
+                cpf: '12912861012',
+                telefone: '11999990010',
+                salario: 10000,
+                limite: 10000 * 2,
+                saldo: 0,
+                manager: { id: 'm1' } as any, // salva só o id
+                endereco: {
+                    tipo: 'Rua',
+                    logradouro: 'das Flores',
+                    bairro: 'Jardins',
+                    numero: '123',
+                    cep: '01458000',
+                    cidade: 'São Paulo',
+                    estado: 'SP',
+                },
+                agencia: '0001',
+                conta: '12345-6',
+                criadoEm: new Date().toISOString(),
+            },
+            {
+                id: '2',
+                nome: 'Cleuddônio',
+                email: 'cli2@bantads.com.br',
+                cpf: '09506382000',
+                telefone: '11999990011',
+                salario: 20000,
+                limite: 20000 * 2,
+                saldo: 0,
+                manager: { id: 'm2' } as any,
+                endereco: {
+                    tipo: 'Avenida',
+                    logradouro: 'Central',
+                    bairro: 'Centro',
+                    numero: '456',
+                    cep: '01010000',
+                    cidade: 'São Paulo',
+                    estado: 'SP',
+                },
+                agencia: '0002',
+                conta: '23456-7',
+                criadoEm: new Date().toISOString(),
+            },
+            {
+                id: '3',
+                nome: 'Catianna',
+                email: 'cli3@bantads.com.br',
+                cpf: '85733854057',
+                telefone: '11999990012',
+                salario: 3000,
+                limite: 3000 * 2,
+                saldo: 0,
+                manager: { id: 'm1' } as any,
+                endereco: {
+                    tipo: 'Praça',
+                    logradouro: 'da Liberdade',
+                    bairro: 'Liberdade',
+                    numero: '789',
+                    cep: '01503000',
+                    cidade: 'São Paulo',
+                    estado: 'SP',
+                },
+                agencia: '0001',
+                conta: '34567-8',
+                criadoEm: new Date().toISOString(),
+            },
+            {
+                id: '4',
+                nome: 'Cutardo',
+                email: 'cli4@bantads.com.br',
+                cpf: '58872160006',
+                telefone: '11999990013',
+                salario: 500,
+                limite: 500 * 2,
+                saldo: 0,
+                manager: { id: 'm3' } as any,
+                endereco: {
+                    tipo: 'Rua',
+                    logradouro: 'do Mercado',
+                    bairro: 'Centro',
+                    numero: '101',
+                    cep: '02020000',
+                    cidade: 'São Paulo',
+                    estado: 'SP',
+                },
+                agencia: '0003',
+                conta: '45678-9',
+                criadoEm: new Date().toISOString(),
+            },
+            {
+                id: '5',
+                nome: 'Coândrya',
+                email: 'cli5@bantads.com.br',
+                cpf: '76179646090',
+                telefone: '11999990014',
+                salario: 1500,
+                limite: 1500 * 2,
+                saldo: 0,
+                manager: { id: 'm2' } as any,
+                endereco: {
+                    tipo: 'Avenida',
+                    logradouro: 'Paulista',
+                    bairro: 'Bela Vista',
+                    numero: '202',
+                    cep: '01310000',
+                    cidade: 'São Paulo',
+                    estado: 'SP',
+                },
+                agencia: '0002',
+                conta: '56789-0',
+                criadoEm: new Date().toISOString(),
+            },
+        ];
+
+        // Salva clientes primeiro
+        this.setData('clientes', clientes);
+
+        // Atualiza managers com clientCount (sem clients completos para evitar circularidade)
+        managers.forEach(m => {
+            m.clientCount = clientes.filter(c => c.manager.id === m.id).length;
+        });
+        this.setData('managers', managers);
+
+
+        // ---- AuthUsers ----
+        const authUsers: AuthUser[] = [
+            // Admins
+            { user: 'admin', password: 'admin', role: 'admin' },
+            { user: 'adamantio@bantads.com', password: 'adamantio', role: 'admin' },
+            ...clientes.map(c => ({ user: c.email, password: 'tads', role: 'cliente' as 'cliente' })),
+            ...managers.map(m => ({ user: m.email, password: '123', role: 'gerente' as 'gerente' })),
+        ];
+        this.setData(this.USERS_KEY, authUsers);
+
+        // ---- Transactions ----
+        const transactions: Transaction[] = [
+            { id: 't1', clientId: '2', dateTime: new Date('2025-01-01T12:00:00'), operation: 'Deposito', amount: 1000 },
+            { id: 't2', clientId: '2', dateTime: new Date('2025-01-02T10:00:00'), operation: 'Deposito', amount: 5000 },
+            { id: 't3', clientId: '2', dateTime: new Date('2025-01-10T10:00:00'), operation: 'Saque', amount: 200 },
+            { id: 't4', clientId: '2', dateTime: new Date('2025-02-05T10:00:00'), operation: 'Deposito', amount: 7000 },
+            { id: 't5', clientId: '3', dateTime: new Date('2025-05-05T12:00:00'), operation: 'Deposito', amount: 1000 },
+            { id: 't6', clientId: '3', dateTime: new Date('2025-05-06T10:00:00'), operation: 'Saque', amount: 2000 },
+            { id: 't7', clientId: '4', dateTime: new Date('2025-06-01T10:00:00'), operation: 'Deposito', amount: 150000 },
+            { id: 't8', clientId: '5', dateTime: new Date('2025-07-01T12:00:00'), operation: 'Deposito', amount: 1500 },
+        ];
+        this.setData('transactions', transactions);
+
+        console.log('[SEED] Dados iniciais criados sem referências circulares ✅');
     }
 }

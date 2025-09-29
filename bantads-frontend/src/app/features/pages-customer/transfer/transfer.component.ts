@@ -9,6 +9,7 @@ import { Observable, Subscription, of } from 'rxjs';
 import { LocalStorageServiceService } from '../../services/local-storages/local-storage-service.service';
 import { TransactionService } from '../../services/transaction/transaction.service';
 import { ClientService } from '../../services/client/client.service';
+import { Transaction } from '../../models/transaction.model';
 
 @Component({
     selector: 'app-transfer',
@@ -23,6 +24,7 @@ export class TransferComponent implements OnDestroy {
     cliente$!: Observable<Cliente | null>;
     cliente: Cliente | null = null;
     lastAccess$!: string;
+    transaction: Transaction | null = null;
 
     form: FormGroup = this.fb.group({
         agencia: ['', [Validators.required]],
@@ -32,7 +34,6 @@ export class TransferComponent implements OnDestroy {
     });
 
     message: { type: 'success' | 'error'; text: string } | null = null;
-
     lastTransfer: { destinoConta: string; valor: number; timestamp: string } | null = null;
 
     constructor(private clientService: ClientService,
@@ -95,8 +96,11 @@ export class TransferComponent implements OnDestroy {
                 this.storageService.updateCliente(updatedOrigin);
                 // registra transações (origem negativa, destino positiva)
                 try {
-                    this.transactionService.addTransaction({ dateTime: new Date(), operation: 'Transferencia', fromOrToClient: destino.nome, amount: -debitAmount } as any);
-                    this.transactionService.addTransaction({ dateTime: new Date(), operation: 'Transferencia', fromOrToClient: this.cliente.nome, amount: debitAmount } as any);
+                    this.transactionService.addTransaction({ id: crypto.randomUUID(), clientId: this.cliente.id, dateTime: new Date(), operation: 'Transferencia', fromOrToClient: destino.nome, amount: -debitAmount } as any);
+                    this.transactionService.addTransaction({ id: crypto.randomUUID(), clientId: destino.id, dateTime: new Date(), operation: 'Transferencia', fromOrToClient: this.cliente.nome, amount: debitAmount } as any);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 5000); // 5000 ms = 5 segundos
                 } catch { /* noop */ }
                 // notifica mudanças globais
                 try { window.dispatchEvent(new Event('clientUpdated')); } catch { /* noop */ }
@@ -104,7 +108,15 @@ export class TransferComponent implements OnDestroy {
                 // conta destino não encontrada entre clientes — ainda persiste a origem e registra a transação de saída
                 this.storageService.updateCliente(updatedOrigin);
                 try {
-                    this.transactionService.addTransaction({ dateTime: new Date(), operation: 'Transferencia', fromOrToClient: contaDestino, amount: -debitAmount } as any);
+                    this.transaction = {
+                        id: crypto.randomUUID(),
+                        clientId: this.cliente.id,
+                        operation: 'Transferencia',
+                        amount: -debitAmount,
+                        dateTime: new Date(),
+                    }
+
+                    this.transactionService.addTransaction(this.transaction);
                 } catch { /* noop */ }
             }
         }

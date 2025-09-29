@@ -29,7 +29,7 @@ export class StatementComponent implements OnInit {
     itmsPerPg: number = 7;
     totalPgs: number = 0;
 
-    private initialBalance = 5000;
+    private initialBalance = 0;
     cliente: Cliente | null = null;
     private sub?: Subscription;
 
@@ -40,8 +40,8 @@ export class StatementComponent implements OnInit {
 
     ngOnInit(): void {
         this.cliente = this.clientService.getLoggedClient() || null;
-        this.allTransactions = this.transactionService.getTransactions();
-        this.initialBalance = this.cliente?.saldo ?? 0;
+        this.allTransactions = this.transactionService.getTransactionsByClientId(this.cliente?.id);
+        this.initialBalance = 0;
     }
 
     ngOnDestroy(): void {
@@ -76,18 +76,20 @@ export class StatementComponent implements OnInit {
     private executeStatement(begin: Date, end: Date) {
         const finalStatement: Record[] = [];
         let currentBalance = this.initialBalance;
-
+        console.log('Initial Balance:', currentBalance);
         for (
             let day = new Date(begin);
             day <= end;
             day.setDate(day.getDate() + 1)
         ) {
-            const dailyTransaction = this.allTransactions.filter(
-                (t) =>
-                    t.dateTime.getFullYear() === day.getFullYear() &&
-                    t.dateTime.getMonth() === day.getMonth() &&
-                    t.dateTime.getDate() === day.getDate()
-            );
+            const dailyTransaction = this.allTransactions.filter((t) => {
+            const txDate = new Date(t.dateTime); // garante que seja Date
+                return (
+                    txDate.getFullYear() === day.getFullYear() &&
+                    txDate.getMonth() === day.getMonth() &&
+                    txDate.getDate() === day.getDate()
+                );
+            });
 
             const totalMovedDaily = dailyTransaction.reduce(
                 (acc, t) => acc + t.amount,

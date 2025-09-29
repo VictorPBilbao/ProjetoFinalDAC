@@ -67,7 +67,7 @@ export class ManagerService {
         client.saldo = 0;
 
         // adiciona ao array oficial de clientes
-        this.storage.approveCliente(client, client.telefone, client.manager.id); // telephone é a senha temporária
+        this.storage.approveCliente(client, '123', client.manager.id); // telephone é a senha temporária
 
         console.log(
             `[APROVACAO] Cliente ${client.nome} aprovado. Conta: ${client.conta}`

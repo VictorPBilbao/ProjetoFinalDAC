@@ -21,19 +21,25 @@ export class TransactionService {
         return this.transactions;
     }
 
+    getTransactionsByClientId(clientId?: string): Transaction[] {
+        if (!clientId) return [];
+        return this.storageService.getTransictionsByClientId(clientId);
+    }
+
     addTransaction(newTransaction: Transaction): void {
         this.transactions.push(newTransaction);
 
         this.storageService.addTransaction(newTransaction);
     }
 
-    getMonthlyDeposits(): number {
+    getMonthlyDeposits(clientId: string): number {
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
 
-        const monthlyDeposits = this.transactions.filter((t) => {
-            const transactionDate = t.dateTime;
+        const transactions = this.getTransactionsByClientId(clientId);
+        const monthlyDeposits = transactions.filter((t) => {
+            const transactionDate = new Date(t.dateTime);
             return (
                 t.operation === 'Deposito' &&
                 transactionDate.getMonth() === currentMonth &&

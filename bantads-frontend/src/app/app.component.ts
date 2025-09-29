@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { HeaderComponent } from './features/components/header/header.component';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
@@ -23,7 +23,9 @@ export class AppComponent {
   title = 'bantads-frontend';
   showHeader = false;
 
-  constructor(private router: Router) {
+  constructor(
+    private router: Router
+) {
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd)
     ).subscribe((event: NavigationEnd) => {
