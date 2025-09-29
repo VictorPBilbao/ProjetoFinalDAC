@@ -34,7 +34,7 @@ export class UserDetailsComponent implements OnInit {
         private readonly authService: AuthService,
         private readonly clientService: ClientService,
         private readonly userService: UserService
-    ) {}
+    ) { }
 
     ngOnInit() {
         this.loadUserData();

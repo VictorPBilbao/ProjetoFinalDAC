@@ -5,11 +5,12 @@ import { RouterLink } from '@angular/router';
 
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
+import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 
 @Component({
     selector: 'app-list-clients',
     standalone: true,
-    imports: [FormsModule, CommonModule, RouterLink],
+    imports: [FormsModule, CommonModule, RouterLink, CpfPipe],
     templateUrl: './list-clients.component.html',
     styleUrl: './list-clients.component.css',
 })
@@ -28,7 +29,7 @@ export class ListClientsComponent implements OnInit {
     modalOpen = false;
     selectedClient?: Cliente;
 
-    constructor(private clientService: ClientService) {}
+    constructor(private clientService: ClientService) { }
 
     ngOnInit(): void {
         this.clientService.getClients().subscribe((clients) => {

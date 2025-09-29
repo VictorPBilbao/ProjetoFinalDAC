@@ -24,7 +24,7 @@
             </thead>
             <tbody>
                 <tr *ngFor="let cliente of pgClients">
-                    <td>{{ cliente.cpf }}</td>
+                    <td>{{ cliente.cpf | cpf }}</td>
                     <td>{{ cliente.nome }}</td>
                     <td>{{ cliente.endereco.cidade }}</td>
                     <td>{{ cliente.endereco.estado }}</td>

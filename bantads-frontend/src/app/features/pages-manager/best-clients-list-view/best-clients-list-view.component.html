@@ -1,42 +1,45 @@
 <div class="container">
-  <header class="page-header">
-    <h1>Clientes em Destaque<span style="font-weight: bold"></span></h1>
-    <p>Os 3 clientes com os maiores saldos da sua carteira.</p>
-  </header>
+    <header class="page-header">
+        <h1>Clientes em Destaque<span style="font-weight: bold"></span></h1>
+        <p>Os 3 clientes com os maiores saldos da sua carteira.</p>
+    </header>
 
-  <div class="podium">
-    <div
-      *ngFor="let cliente of clientesEmDestaque; let i = index"
-      class="client-card"
-      [ngClass]="'rank-' + (i + 1)"
-    >
-      <div class="card-header">
-        <span class="rank-number">
-          <span class="material-symbols-outlined"> workspace_premium </span>
-          {{ i + 1 }}
-        </span>
-        <h2 class="client-name">{{ cliente.nome }}</h2>
-      </div>
-
-      <p class="client-cpf">{{ cliente.cpf }}</p>
-
-      <div class="client-location">
-        <span class="material-symbols-outlined">location_on</span>
-        <span
-          >{{ cliente.endereco.cidade }}, {{ cliente.endereco.estado }}</span
+    <div class="podium">
+        <div
+            *ngFor="let cliente of clientesEmDestaque; let i = index"
+            class="client-card"
+            [ngClass]="'rank-' + (i + 1)"
         >
-      </div>
+            <div class="card-header">
+                <span class="rank-number">
+                    <span class="material-symbols-outlined">
+                        workspace_premium
+                    </span>
+                    {{ i + 1 }}
+                </span>
+                <h2 class="client-name">{{ cliente.nome }}</h2>
+            </div>
 
-      <div class="client-balance">
-        <span class="balance-label">Saldo em Conta</span>
-        <span class="balance-amount">{{
-          cliente.saldo | currency : "BRL" : "symbol" : "1.2-2"
-        }}</span>
-      </div>
+            <p class="client-cpf">{{ cliente.cpf | cpf }}</p>
+
+            <div class="client-location">
+                <span class="material-symbols-outlined">location_on</span>
+                <span
+                    >{{ cliente.endereco.cidade }},
+                    {{ cliente.endereco.estado }}</span
+                >
+            </div>
+
+            <div class="client-balance">
+                <span class="balance-label">Saldo em Conta</span>
+                <span class="balance-amount">{{
+                    cliente.saldo | currency : "BRL" : "symbol" : "1.2-2"
+                }}</span>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div *ngIf="clientesEmDestaque.length === 0" class="no-clients-message">
-    <p>Nenhum cliente para exibir no momento.</p>
-  </div>
+    <div *ngIf="clientesEmDestaque.length === 0" class="no-clients-message">
+        <p>Nenhum cliente para exibir no momento.</p>
+    </div>
 </div>

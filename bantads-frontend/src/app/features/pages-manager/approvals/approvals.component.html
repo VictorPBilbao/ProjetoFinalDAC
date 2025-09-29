@@ -37,7 +37,7 @@
             </thead>
             <tbody>
                 <tr *ngFor="let c of filtered">
-                    <td>{{ c.cpf }}</td>
+                    <td>{{ c.cpf | cpf }}</td>
                     <td>{{ c.nome }}</td>
                     <td>{{ c.email }}</td>
                     <td>
@@ -45,7 +45,7 @@
                     </td>
                     <td>{{ c.endereco.cidade }}</td>
                     <td>{{ c.endereco.estado }}</td>
-                    <td>{{ c.criadoEm | date : "short" }}</td>
+                    <td>{{ c.criadoEm | date : "dd/MM/yyyy HH:mm" }}</td>
                     <td class="actions">
                         <button class="btn approve" (click)="approve(c.id)">
                             Aprovar

@@ -27,14 +27,14 @@
             </thead>
             <tbody>
                 <tr *ngFor="let cliente of pgClients">
-                    <td>{{ cliente.cpf }}</td>
+                    <td>{{ cliente.cpf | cpf }}</td>
                     <td>{{ cliente.nome }}</td>
                     <td>{{ cliente.email }}</td>
                     <td>{{ cliente.salario | currency : "BRL" }}</td>
                     <td>{{ cliente.conta }}</td>
                     <td>{{ cliente.saldo | currency : "BRL" }}</td>
                     <td>{{ cliente.limite | currency : "BRL" }}</td>
-                    <td>{{ cliente.manager.cpf }}</td>
+                    <td>{{ cliente.manager.cpf | cpf }}</td>
                     <td>{{ cliente.manager.name }}</td>
                 </tr>
                 <tr *ngIf="filteredClients.length === 0">

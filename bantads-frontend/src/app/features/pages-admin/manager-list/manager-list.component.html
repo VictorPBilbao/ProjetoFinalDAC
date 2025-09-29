@@ -19,7 +19,7 @@
         <tbody>
             <tr *ngFor="let manager of managers">
                 <td>{{ manager.name }}</td>
-                <td>{{ manager.cpf }}</td>
+                <td>{{ manager.cpf | cpf }}</td>
                 <td>{{ manager.email }}</td>
                 <td>{{ manager.telephone }}</td>
                 <td class="actions">

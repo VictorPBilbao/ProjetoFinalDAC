@@ -8,11 +8,12 @@ import { Manager } from './../../models/manager.model';
 import { ClientService } from '../../services/client/client.service';
 import { ManagerService } from '../../services/manager/manager.service';
 import { AuthService } from '../../services/auth/auth.service';
+import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 
 @Component({
     selector: 'app-best-clients-list-view',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, CpfPipe],
     templateUrl: './best-clients-list-view.component.html',
     styleUrl: './best-clients-list-view.component.css',
 })
@@ -26,7 +27,7 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
         private clientService: ClientService,
         private managerService: ManagerService,
         private authService: AuthService
-    ) {}
+    ) { }
 
     ngOnInit(): void {
         this.carregarClientesDoGerente();

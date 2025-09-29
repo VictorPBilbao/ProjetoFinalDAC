@@ -5,11 +5,12 @@ import { RouterLink } from '@angular/router';
 
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
+import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 
 @Component({
     selector: 'app-consultar-cliente',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, CpfPipe],
     templateUrl: './consultar-cliente.component.html',
     styleUrls: ['./consultar-cliente.component.css'],
 })
@@ -19,7 +20,7 @@ export class ConsultarClienteComponent implements OnInit {
     search: string = '';
     feedbackMessage: string = '';
 
-    constructor(private clientService: ClientService) {}
+    constructor(private clientService: ClientService) { }
 
     ngOnInit(): void {
         this.clientService.getClients().subscribe({

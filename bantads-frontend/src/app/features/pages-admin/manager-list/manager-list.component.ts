@@ -6,11 +6,12 @@ import Swal from 'sweetalert2';
 
 import { Manager } from '../../models/manager.model';
 import { ManagerService } from '../../services/manager/manager.service';
+import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 
 @Component({
     selector: 'app-manager-list',
     standalone: true,
-    imports: [CommonModule, RouterLink],
+    imports: [CommonModule, RouterLink, CpfPipe],
     templateUrl: './manager-list.component.html',
     styleUrls: ['./manager-list.component.css'],
 })
@@ -21,7 +22,7 @@ export class ManagerListComponent implements OnInit, OnDestroy {
     constructor(
         private managerService: ManagerService,
         private router: Router
-    ) {}
+    ) { }
 
     ngOnInit(): void {
         this.loadManagers();
