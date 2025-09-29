@@ -1,59 +1,80 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NgxChartsModule } from '@swimlane/ngx-charts';
+import { NgxChartsModule, ScaleType } from '@swimlane/ngx-charts';
+import { forkJoin, Subscription } from 'rxjs';
+
 import { Manager } from '../../models/manager.model';
 import { Cliente } from '../../models/cliente.model';
-import { DashboardAdminService } from '../../services/admin/dashboard-admin.service';
-import { ScaleType } from '@swimlane/ngx-charts';
+import { ClientService } from '../../services/client/client.service';
+import { ManagerService } from '../../services/manager/manager.service';
 
 @Component({
-  selector: 'app-dashboard-admin',
-  standalone: true,
-  imports: [CommonModule, NgxChartsModule],
-  templateUrl: './dashboard-admin.component.html',
-  styleUrls: ['./dashboard-admin.component.css']
+    selector: 'app-dashboard-admin',
+    standalone: true,
+    imports: [CommonModule, NgxChartsModule],
+    templateUrl: './dashboard-admin.component.html',
+    styleUrls: ['./dashboard-admin.component.css'],
 })
-export class DashboardAdminComponent implements OnInit {
-  managers: Manager[] = []; // List of managers with their clients
-  chartData: any[] = []; // Data for the chart
-  colorScheme = {
-    name: 'customScheme',
-    selectable: true,
-    group: ScaleType.Ordinal,
-    domain: ['#0ec093', '#e53935']  // Green for positive, Red for negative
-  };
+export class DashboardAdminComponent implements OnInit, OnDestroy {
+    managers: Manager[] = [];
+    chartData: any[] = [];
+    isLoading = true;
+    private dataSubscription?: Subscription;
 
-  constructor(private dashboardService: DashboardAdminService) { }
+    colorScheme = {
+        name: 'customScheme',
+        selectable: true,
+        group: ScaleType.Ordinal,
+        domain: ['#0ec093', '#e53935'],
+    };
 
-  ngOnInit(): void {
-    this.loadManagers(); // Load managers and their clients on component initialization
-  }
+    constructor(private managerService: ManagerService) {}
 
-  private safeNumber(value: any): number { // Utility to safely convert to number
-    const n = Number(value);
-    return Number.isFinite(n) ? n : 0;
-  }
+    ngOnInit(): void {
+        this.loadDashboardData();
+    }
 
-  loadManagers() {
+    loadDashboardData(): void {
+        this.isLoading = true;
 
-    this.managers = this.dashboardService.getManagersWithClients(); // Fetch managers with their clients
+        this.dataSubscription = this.managerService
+            .getManagersWithTotals()
+            .subscribe({
+                next: (processedManagers) => {
+                    this.managers = processedManagers.sort(
+                        (a, b) =>
+                            (b.positiveTotal ?? 0) - (a.positiveTotal ?? 0)
+                    );
 
-    // Calculate totals and client counts for each manager
-    this.managers.forEach(manager => {
-      manager.clients = manager.clients || []; // Ensure clients array is defined
-      manager.clientCount = manager.clients.length; // Total number of clients
-      manager.positiveTotal = manager.clients.reduce((acc, cli) => acc + (this.safeNumber(cli.saldo) >= 0 ? this.safeNumber(cli.saldo) : 0), 0); // Sum of positive balances
-      manager.negativeTotal = manager.clients.reduce((acc, cli) => acc + (this.safeNumber(cli.saldo) < 0 ? this.safeNumber(cli.saldo) : 0), 0); // Sum of negative balances
-    });
+                    this.chartData = this.managers.map((m) => ({
+                        name: m.name,
+                        series: [
+                            {
+                                name: 'Saldo Positivo',
+                                value: m.positiveTotal ?? 0,
+                            },
+                            {
+                                name: 'Saldo Negativo',
+                                value: Math.abs(m.negativeTotal ?? 0),
+                            },
+                        ],
+                    }));
 
-    this.managers.sort((a, b) => (this.safeNumber(b.positiveTotal)) - (this.safeNumber(a.positiveTotal))); // Sort managers by positive total descending
-    // Prepare chart data
-    this.chartData = this.managers.map(m => ({
-      name: m.name,
-      series: [
-        { name: 'Saldo Positivo', value: this.safeNumber(m.positiveTotal) }, // Positive balance
-        { name: 'Saldo Negativo', value: Math.abs(this.safeNumber(m.negativeTotal)) } // Negative balance as positive value
-      ]
-    }));
-  }
+                    this.isLoading = false;
+                },
+                error: (err) => {
+                    console.error('Erro ao carregar dados do dashboard:', err);
+                    this.isLoading = false;
+                },
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.dataSubscription?.unsubscribe();
+    }
+
+    private safeNumber(value: any): number {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : 0;
+    }
 }

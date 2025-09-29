@@ -1,7 +1,12 @@
 import { Component, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+    FormBuilder,
+    FormGroup,
+    ReactiveFormsModule,
+    Validators,
+} from '@angular/forms';
 // ...existing code...
 import { Cliente } from '../../models/cliente.model';
 import { Manager } from '../../models/manager.model';
@@ -16,7 +21,7 @@ import { Transaction } from '../../models/transaction.model';
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, RouterModule],
     templateUrl: './transfer.component.html',
-    styleUrls: ['./transfer.component.css']
+    styleUrls: ['./transfer.component.css'],
 })
 export class TransferComponent implements OnDestroy {
     private fb = inject(FormBuilder);
@@ -30,15 +35,24 @@ export class TransferComponent implements OnDestroy {
         agencia: ['', [Validators.required]],
         conta: ['', [Validators.required]],
         contaDestino: ['', [Validators.required]],
-        valor: [null as number | null, [Validators.required, Validators.min(0.01)]],
+        valor: [
+            null as number | null,
+            [Validators.required, Validators.min(0.01)],
+        ],
     });
 
     message: { type: 'success' | 'error'; text: string } | null = null;
-    lastTransfer: { destinoConta: string; valor: number; timestamp: string } | null = null;
+    lastTransfer: {
+        destinoConta: string;
+        valor: number;
+        timestamp: string;
+    } | null = null;
 
-    constructor(private clientService: ClientService,
+    constructor(
+        private clientService: ClientService,
         private storageService: LocalStorageServiceService,
-        private transactionService: TransactionService) { }
+        private transactionService: TransactionService
+    ) {}
 
     ngOnInit(): void {
         this.cliente = this.clientService.getLoggedClient() || null;
@@ -47,13 +61,14 @@ export class TransferComponent implements OnDestroy {
         this.cliente$ = of(this.cliente);
         // preenche os campos de origem com os dados do cliente logado
         if (this.cliente) {
-            this.form.patchValue({ agencia: this.cliente.agencia, conta: this.cliente.conta });
+            this.form.patchValue({
+                agencia: this.cliente.agencia,
+                conta: this.cliente.conta,
+            });
         }
     }
 
-    ngOnDestroy(): void {
-        // se houver subscription adicionada no futuro, cancelar aqui
-    }
+    ngOnDestroy(): void {}
 
     submit() {
         this.message = null;
@@ -61,18 +76,34 @@ export class TransferComponent implements OnDestroy {
             this.form.markAllAsTouched();
             return;
         }
-        const { agencia, conta, contaDestino, valor } = this.form.value as { agencia: string; conta: string; contaDestino: string; valor: number };
+        const { agencia, conta, contaDestino, valor } = this.form.value as {
+            agencia: string;
+            conta: string;
+            contaDestino: string;
+            valor: number;
+        };
 
         // Regra: transferir apenas da conta do cliente
-        if (!this.cliente || agencia !== this.cliente.agencia || conta !== this.cliente.conta) {
-            this.message = { type: 'error', text: 'Você só pode transferir da sua conta.' };
+        if (
+            !this.cliente ||
+            agencia !== this.cliente.agencia ||
+            conta !== this.cliente.conta
+        ) {
+            this.message = {
+                type: 'error',
+                text: 'Você só pode transferir da sua conta.',
+            };
             return;
         }
 
         // Regra: saldo suficiente considerando limite
-        const disponivel = (this.cliente?.saldo ?? 0) + (this.cliente?.limite ?? 0);
+        const disponivel =
+            (this.cliente?.saldo ?? 0) + (this.cliente?.limite ?? 0);
         if (valor > disponivel) {
-            this.message = { type: 'error', text: 'Saldo insuficiente considerando o limite.' };
+            this.message = {
+                type: 'error',
+                text: 'Saldo insuficiente considerando o limite.',
+            };
             return;
         }
 
@@ -81,29 +112,52 @@ export class TransferComponent implements OnDestroy {
             const debitAmount = Number(valor);
 
             // debita conta do cliente logado
-            const updatedOrigin = { ...this.cliente, saldo: this.cliente.saldo - debitAmount } as Cliente;
+            const updatedOrigin = {
+                ...this.cliente,
+                saldo: this.cliente.saldo - debitAmount,
+            } as Cliente;
             this.clientService.updateClient(updatedOrigin);
             this.cliente = updatedOrigin;
 
             // tenta localizar cliente destino por número da conta
             const allClientes = this.storageService.getClientes();
-            const destino = allClientes.find(c => c.conta === contaDestino);
+            const destino = allClientes.find((c) => c.conta === contaDestino);
 
             if (destino) {
-                const updatedDestino = { ...destino, saldo: (destino.saldo ?? 0) + debitAmount } as Cliente;
+                const updatedDestino = {
+                    ...destino,
+                    saldo: (destino.saldo ?? 0) + debitAmount,
+                } as Cliente;
                 // persiste destino e origem
                 this.storageService.updateCliente(updatedDestino);
                 this.storageService.updateCliente(updatedOrigin);
                 // registra transações (origem negativa, destino positiva)
                 try {
-                    this.transactionService.addTransaction({ id: crypto.randomUUID(), clientId: this.cliente.id, dateTime: new Date(), operation: 'Transferencia', fromOrToClient: destino.nome, amount: -debitAmount } as any);
-                    this.transactionService.addTransaction({ id: crypto.randomUUID(), clientId: destino.id, dateTime: new Date(), operation: 'Transferencia', fromOrToClient: this.cliente.nome, amount: debitAmount } as any);
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 5000); // 5000 ms = 5 segundos
-                } catch { /* noop */ }
+                    this.transactionService.addTransaction({
+                        id: crypto.randomUUID(),
+                        clientId: this.cliente.id,
+                        dateTime: new Date(),
+                        operation: 'Transferencia',
+                        fromOrToClient: destino.nome,
+                        amount: -debitAmount,
+                    } as any);
+                    this.transactionService.addTransaction({
+                        id: crypto.randomUUID(),
+                        clientId: destino.id,
+                        dateTime: new Date(),
+                        operation: 'Transferencia',
+                        fromOrToClient: this.cliente.nome,
+                        amount: debitAmount,
+                    } as any);
+                } catch {
+                    /* noop */
+                }
                 // notifica mudanças globais
-                try { window.dispatchEvent(new Event('clientUpdated')); } catch { /* noop */ }
+                try {
+                    window.dispatchEvent(new Event('clientUpdated'));
+                } catch {
+                    /* noop */
+                }
             } else {
                 // conta destino não encontrada entre clientes — ainda persiste a origem e registra a transação de saída
                 this.storageService.updateCliente(updatedOrigin);
@@ -114,15 +168,28 @@ export class TransferComponent implements OnDestroy {
                         operation: 'Transferencia',
                         amount: -debitAmount,
                         dateTime: new Date(),
-                    }
+                    };
 
                     this.transactionService.addTransaction(this.transaction);
-                } catch { /* noop */ }
+                } catch {
+                    /* noop */
+                }
             }
         }
         const now = new Date().toISOString();
-        this.lastTransfer = { destinoConta: contaDestino, valor: Number(valor), timestamp: now };
-        this.message = { type: 'success', text: `Transferência de ${valor.toFixed(2)} realizada para ${contaDestino} em ${new Date(now).toLocaleString()}.` };
+        this.lastTransfer = {
+            destinoConta: contaDestino,
+            valor: Number(valor),
+            timestamp: now,
+        };
+        this.message = {
+            type: 'success',
+            text: `Transferência de ${valor.toFixed(
+                2
+            )} realizada para ${contaDestino} em ${new Date(
+                now
+            ).toLocaleString()}.`,
+        };
         this.form.patchValue({ valor: null, contaDestino: '' });
     }
 }

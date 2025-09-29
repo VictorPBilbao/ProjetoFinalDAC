@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'; // Adicione OnInit
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
@@ -17,7 +17,7 @@ import Swal from 'sweetalert2';
     templateUrl: './statement.component.html',
     styleUrl: './statement.component.css',
 })
-export class StatementComponent implements OnInit {
+export class StatementComponent implements OnInit, OnDestroy {
     beginDate: string = '';
     endDate: string = '';
 
@@ -29,7 +29,6 @@ export class StatementComponent implements OnInit {
     itmsPerPg: number = 7;
     totalPgs: number = 0;
 
-    private initialBalance = 0;
     cliente: Cliente | null = null;
     private sub?: Subscription;
 
@@ -40,8 +39,13 @@ export class StatementComponent implements OnInit {
 
     ngOnInit(): void {
         this.cliente = this.clientService.getLoggedClient() || null;
-        this.allTransactions = this.transactionService.getTransactionsByClientId(this.cliente?.id);
-        this.initialBalance = 0;
+
+        if (this.cliente) {
+            this.allTransactions =
+                this.transactionService.getTransactionsByClientId(
+                    this.cliente.id
+                );
+        }
     }
 
     ngOnDestroy(): void {
@@ -74,16 +78,26 @@ export class StatementComponent implements OnInit {
     }
 
     private executeStatement(begin: Date, end: Date) {
+        const priorTransactions = this.allTransactions.filter(
+            (t) => new Date(t.dateTime) < begin
+        );
+
+        const initialBalanceForPeriod = priorTransactions.reduce(
+            (acc, t) => acc + t.amount,
+            0
+        );
+
         const finalStatement: Record[] = [];
-        let currentBalance = this.initialBalance;
-        console.log('Initial Balance:', currentBalance);
+
+        let currentBalance = initialBalanceForPeriod;
+
         for (
             let day = new Date(begin);
             day <= end;
             day.setDate(day.getDate() + 1)
         ) {
             const dailyTransaction = this.allTransactions.filter((t) => {
-            const txDate = new Date(t.dateTime); // garante que seja Date
+                const txDate = new Date(t.dateTime);
                 return (
                     txDate.getFullYear() === day.getFullYear() &&
                     txDate.getMonth() === day.getMonth() &&
@@ -95,6 +109,7 @@ export class StatementComponent implements OnInit {
                 (acc, t) => acc + t.amount,
                 0
             );
+
             currentBalance += totalMovedDaily;
 
             finalStatement.push({

@@ -29,7 +29,21 @@ export class ClientService {
     }
 
     getClients(): Observable<Cliente[]> {
-        return of(this.storage.getClientes()).pipe(delay(500));
+        const clientes = this.storage.getClientes();
+        const managers = this.storage.getManagers();
+
+        const managerMap = new Map(managers.map((m) => [m.id, m]));
+
+        const populatedClients = clientes.map((cliente) => {
+            const managerId = (cliente.manager as any)?.id;
+
+            if (managerId && managerMap.has(managerId)) {
+                cliente.manager = managerMap.get(managerId)!;
+            }
+            return cliente;
+        });
+
+        return of(populatedClients).pipe(delay(500));
     }
 
     getClientById(id: string): Observable<Cliente | undefined> {

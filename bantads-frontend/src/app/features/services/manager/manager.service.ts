@@ -16,61 +16,82 @@ export class ManagerService {
         private readonly authService: AuthService
     ) {}
 
+    getManagersWithTotals(): Observable<Manager[]> {
+        const managers = this.storage.getManagers();
+        const clientes = this.storage.getClientes();
+
+        managers.forEach((manager) => {
+            const assignedClients = clientes.filter(
+                (c) => (c.manager as any)?.id === manager.id
+            );
+
+            manager.clientCount = assignedClients.length;
+
+            manager.positiveTotal = assignedClients.reduce((acc, cli) => {
+                return acc + (cli.saldo >= 0 ? cli.saldo : 0);
+            }, 0);
+
+            manager.negativeTotal = assignedClients.reduce((acc, cli) => {
+                return acc + (cli.saldo < 0 ? cli.saldo : 0);
+            }, 0);
+        });
+        return of(managers).pipe(delay(500));
+    }
+
     getPending(): Cliente[] {
         return this.storage.getClientesPendentes();
     }
 
     approve(clientId: string): { ok: boolean; message: string } {
         const pending = this.getPending();
-        const idx = pending.findIndex((c) => c.id === clientId);
-        if (idx === -1) {
+        const client = pending.find((c) => c.id === clientId);
+        if (!client) {
             return {
                 ok: false,
                 message: 'Cliente não encontrado nos pendentes.',
             };
         }
-        const client = pending[idx];
 
-        // calcular limite: salario >= 2000 => limite = salario / 2
+        const currentUser = this.authService.getUser();
+        if (!currentUser || currentUser.role !== 'gerente') {
+            return {
+                ok: false,
+                message: 'Ação permitida apenas para gerentes autenticados.',
+            };
+        }
+
+        const managers = this.storage.getManagers();
+        const approvingManager = managers.find(
+            (m) => m.email === currentUser.user
+        );
+
+        if (!approvingManager) {
+            return {
+                ok: false,
+                message: 'Gerente autenticado não encontrado no sistema.',
+            };
+        }
+
+        client.manager = approvingManager;
+
         client.limite = client.salario >= 2000 ? client.salario / 2 : 0;
 
-        // escolher manager com menos clientes
-        const managers = this.storage.getManagers();
-        const clients = this.storage.getClientes();
-        const managerClientCounts: Record<string, number> = {};
-        managers.forEach((m) => {
-            if (m.id) managerClientCounts[m.id] = 0;
-        });
-        clients.forEach((c) => {
-            if (c.manager?.id) {
-                managerClientCounts[c.manager.id] =
-                    (managerClientCounts[c.manager.id] || 0) + 1;
-            }
-        });
-        const sortedManagers = [...managers].sort(
-            (a, b) =>
-                (managerClientCounts[a.id || ''] || 0) -
-                (managerClientCounts[b.id || ''] || 0)
-        );
-        const chosen = sortedManagers[0];
-
-        // gerar numero de conta unico (4 digitos)
+        const allClients = this.storage.getClientes();
         let conta: string;
-        const existingContas = new Set(clients.map((c) => c.conta));
+        const existingContas = new Set(allClients.map((c) => c.conta));
         do {
             conta = Math.floor(1000 + Math.random() * 9000).toString();
         } while (existingContas.has(conta));
 
-        client.manager = chosen;
         client.conta = conta;
         client.agencia = '0001';
         client.saldo = 0;
 
-        // adiciona ao array oficial de clientes
-        this.storage.approveCliente(client, '123', client.manager.id); // telephone é a senha temporária
+        // Passa o ID do gerente correto para o método de aprovação do storage
+        this.storage.approveCliente(client, '123', approvingManager.id);
 
         console.log(
-            `[APROVACAO] Cliente ${client.nome} aprovado. Conta: ${client.conta}`
+            `[APROVACAO] Cliente ${client.nome} aprovado por ${approvingManager.name}. Conta: ${client.conta}`
         );
 
         return { ok: true, message: 'Cliente aprovado com sucesso.' };

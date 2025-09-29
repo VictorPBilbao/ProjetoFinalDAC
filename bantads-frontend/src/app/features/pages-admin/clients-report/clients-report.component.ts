@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'app-clients-report',
@@ -13,7 +14,7 @@ import { ClientService } from '../../services/client/client.service';
     templateUrl: './clients-report.component.html',
     styleUrl: './clients-report.component.css',
 })
-export class ClientsReportComponent implements OnInit {
+export class ClientsReportComponent implements OnInit, OnDestroy {
     private allClients: Cliente[] = [];
     filteredClients: Cliente[] = [];
     pgClients: Cliente[] = [];
@@ -24,15 +25,27 @@ export class ClientsReportComponent implements OnInit {
     itmsPerPg: number = 7;
     totalPgs: number = 0;
 
+    private clientsSubscription?: Subscription;
+
     constructor(private clientService: ClientService) {}
 
     ngOnInit(): void {
-        this.clientService.getClients().subscribe((clients) => {
-            this.allClients = clients;
-        });
+        this.clientsSubscription = this.clientService.getClients().subscribe({
+            next: (clients) => {
+                this.allClients = clients;
 
-        this.allClients.sort((a, b) => a.nome.localeCompare(b.nome));
-        this.filterClients();
+                this.allClients.sort((a, b) => a.nome.localeCompare(b.nome));
+
+                this.filterClients();
+            },
+            error: (err) => {
+                console.error('Erro ao carregar clientes:', err);
+            },
+        });
+    }
+
+    ngOnDestroy(): void {
+        this.clientsSubscription?.unsubscribe();
     }
 
     filterClients(): void {

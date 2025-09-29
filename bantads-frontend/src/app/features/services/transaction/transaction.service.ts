@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Transaction } from '../../models/transaction.model';
-
 import { LocalStorageServiceService } from '../local-storages/local-storage-service.service';
 
 @Injectable({
@@ -11,19 +10,21 @@ export class TransactionService {
 
     constructor(private storageService: LocalStorageServiceService) {
         const dataFromStorage = this.storageService.getTransactions();
-
         this.transactions = dataFromStorage.map((tx) => {
             tx.dateTime = new Date(tx.dateTime);
             return tx;
         });
     }
+
     getTransactions(): Transaction[] {
         return this.transactions;
     }
 
     getTransactionsByClientId(clientId?: string): Transaction[] {
-        if (!clientId) return [];
-        return this.storageService.getTransictionsByClientId(clientId);
+        if (!clientId) {
+            return [];
+        }
+        return this.transactions.filter((t) => t.clientId === clientId);
     }
 
     addTransaction(newTransaction: Transaction): void {
@@ -38,6 +39,7 @@ export class TransactionService {
         const currentYear = now.getFullYear();
 
         const transactions = this.getTransactionsByClientId(clientId);
+
         const monthlyDeposits = transactions.filter((t) => {
             const transactionDate = new Date(t.dateTime);
             return (
@@ -47,7 +49,6 @@ export class TransactionService {
             );
         });
 
-        const total = monthlyDeposits.reduce((sum, t) => sum + t.amount, 0);
-        return total;
+        return monthlyDeposits.reduce((sum, t) => sum + t.amount, 0);
     }
 }
