@@ -1,86 +1,62 @@
 <div class="client-container">
-  <h2>Lista de Clientes</h2>
+    <h2>Lista de Clientes</h2>
 
-  <div class="search-bar">
-    <input
-      type="text"
-      placeholder="Pesquisar por nome ou CPF..."
-      [(ngModel)]="search"
-      (input)="filterClients()"
-    />
-  </div>
-
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>CPF</th>
-          <th>Nome</th>
-          <th>Cidade</th>
-          <th>Estado</th>
-          <th>Saldo</th>
-          <th>Limite</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let cliente of pgClients">
-          <td>{{ cliente.cpf }}</td>
-          <td>{{ cliente.nome }}</td>
-          <td>{{ cliente.endereco.cidade }}</td>
-          <td>{{ cliente.endereco.estado }}</td>
-          <td [class.negative]="cliente.saldo < 0" [class.positive]="cliente.saldo >= 0">{{ cliente.saldo | currency : 'BRL' }}</td>
-          <td class="positive">{{ cliente.limite | currency : 'BRL' }}</td>
-          <td>
-            <button type="button" class="details-link" (click)="openModal(cliente)">Detalhes</button>
-          </td>
-        </tr>
-        <tr *ngIf="pgClients.length === 0">
-          <td colspan="7" class="no-results">Nenhum cliente encontrado.</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Controle de Paginação -->
-  <div class="pg-controls" *ngIf="totalPgs > 1">
-    <button (click)="previousPg()" [disabled]="currentPg === 1">
-      « Anterior
-    </button>
-
-    <span>Pagina {{ currentPg }} de {{ totalPgs }}</span>
-
-    <button (click)="nextPg()" [disabled]="currentPg === totalPgs">
-      » Próxima
-    </button>
-  </div>
-</div>
-
-<!-- Modal de Detalhes -->
-<div class="modal-backdrop" *ngIf="modalOpen" (click)="closeModal()"></div>
-<div class="modal" *ngIf="modalOpen" role="dialog" aria-modal="true">
-  <div class="modal-header">
-    <h3>Detalhes do Cliente</h3>
-    <button class="close-btn" (click)="closeModal()" aria-label="Fechar">×</button>
-  </div>
-  <div class="modal-body" *ngIf="selectedClient as cli">
-    <div class="info-grid">
-      <div class="info-item"><span class="label">ID</span><span class="value">{{ cli.id }}</span></div>
-      <div class="info-item"><span class="label">Nome</span><span class="value">{{ cli.nome }}</span></div>
-      <div class="info-item"><span class="label">Email</span><span class="value">{{ cli.email || '-' }}</span></div>
-      <div class="info-item"><span class="label">CPF</span><span class="value">{{ cli.cpf }}</span></div>
-      <div class="info-item"><span class="label">Telefone</span><span class="value">{{ cli.telefone || '-' }}</span></div>
-      <div class="info-item"><span class="label">Salário</span><span class="value">{{ cli.salario | currency : 'BRL' }}</span></div>
-      <div class="info-item"><span class="label">Limite</span><span class="value positive">{{ cli.limite | currency : 'BRL' }}</span></div>
-      <div class="info-item"><span class="label">Saldo</span><span class="value" [class.negative]="cli.saldo < 0" [class.positive]="cli.saldo >= 0">{{ cli.saldo | currency : 'BRL' }}</span></div>
-      <div class="info-item"><span class="label">Gerente</span><span class="value">{{ cli.manager.name }}</span></div>
-      <div class="info-item full"><span class="label">Endereço</span><span class="value">{{ cli.endereco.tipo }} {{ cli.endereco.logradouro }}, {{ cli.endereco.numero }} {{ cli.endereco.complemento }} - {{ cli.endereco.cidade }}/{{ cli.endereco.estado }}</span></div>
-      <div class="info-item"><span class="label">Agência</span><span class="value">{{ cli.agencia }}</span></div>
-      <div class="info-item"><span class="label">Conta</span><span class="value">{{ cli.conta }}</span></div>
-      <div class="info-item"><span class="label">Criado Em</span><span class="value">{{ cli.criadoEm | date : 'dd/MM/yyyy HH:mm:ss' }}</span></div>
+    <div class="search-bar">
+        <input
+            type="text"
+            placeholder="Pesquisar por nome ou CPF..."
+            [(ngModel)]="search"
+            (input)="filterClients()"
+        />
     </div>
-  </div>
-  <div class="modal-footer">
-    <button class="close-btn-2" (click)="closeModal()">Fechar</button>
-  </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>CPF</th>
+                    <th>Nome</th>
+                    <th>Cidade</th>
+                    <th>Estado</th>
+                    <th>Saldo</th>
+                    <th>Limite</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let cliente of pgClients">
+                    <td>{{ cliente.cpf }}</td>
+                    <td>{{ cliente.nome }}</td>
+                    <td>{{ cliente.endereco.cidade }}</td>
+                    <td>{{ cliente.endereco.estado }}</td>
+                    <td
+                        [class.negative]="cliente.saldo < 0"
+                        [class.positive]="cliente.saldo >= 0"
+                    >
+                        {{ cliente.saldo | currency : "BRL" }}
+                    </td>
+                    <td class="positive">
+                        {{ cliente.limite | currency : "BRL" }}
+                    </td>
+                </tr>
+                <tr *ngIf="pgClients.length === 0">
+                    <td colspan="7" class="no-results">
+                        Nenhum cliente encontrado.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Controle de Paginação -->
+    <div class="pg-controls" *ngIf="totalPgs > 1">
+        <button (click)="previousPg()" [disabled]="currentPg === 1">
+            « Anterior
+        </button>
+
+        <span>Pagina {{ currentPg }} de {{ totalPgs }}</span>
+
+        <button (click)="nextPg()" [disabled]="currentPg === totalPgs">
+            » Próxima
+        </button>
+    </div>
 </div>

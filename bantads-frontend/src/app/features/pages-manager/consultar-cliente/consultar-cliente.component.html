@@ -1,69 +1,120 @@
-<main class="consultar-main">
-  <div class="page-header">
-    <h1>Consultar Cliente</h1>
-    <span class="last-access">Atualizado: {{ (selectedClient?.criadoEm || defaultDate) | date:'dd/MM/yyyy HH:mm:ss' }}</span>
-  </div>
+<div class="client-container">
+    <h2>Consultar Cliente</h2>
 
-  <section class="content-grid">
-    <div class="main-content">
-      <!-- Lista de resultados -->
-      <section class="card results" *ngIf="filteredClients.length > 1">
-        <h2>Resultados ({{ filteredClients.length }})</h2>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>CPF</th>
-                <th>Saldo</th>
-                <th>Limite</th>
-                <th>Gerente</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let c of filteredClients" (click)="selectClient(c)" [class.selected-row]="c.id === selectedClient?.id">
-                <td>{{ c.id }}</td>
-                <td>{{ c.nome }}</td>
-                <td>{{ c.cpf }}</td>
-                <td [class.negative]="c.saldo < 0" [class.positive]="c.saldo >= 0">{{ c.saldo | currency:'BRL':'symbol':'1.2-2' }}</td>
-                <td class="positive">{{ c.limite | currency:'BRL':'symbol':'1.2-2' }}</td>
-                <td>{{ c.manager.name }}</td>
-                <td><button type="button" (click)="selectClient(c); $event.stopPropagation()">Detalhes</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card no-results" *ngIf="notFound">
-        <p>Nenhum cliente encontrado.</p>
-      </section>
-
-      <!-- Detalhes do cliente -->
-      <section class="card cliente-detalhes" *ngIf="selectedClient as cli">
-        <h2>Detalhes do Cliente</h2>
-        <div class="info-grid">
-          <div class="info-item"><span class="label">ID</span><span class="value">{{ cli.id }}</span></div>
-          <div class="info-item"><span class="label">Nome</span><span class="value">{{ cli.nome }}</span></div>
-            <div class="info-item"><span class="label">Email</span><span class="value">{{ cli.email || '-' }}</span></div>
-          <div class="info-item"><span class="label">CPF</span><span class="value">{{ cli.cpf }}</span></div>
-          <div class="info-item"><span class="label">Telefone</span><span class="value">{{ cli.telefone || '-' }}</span></div>
-          <div class="info-item"><span class="label">Salário</span><span class="value">{{ cli.salario | currency:'BRL':'symbol':'1.2-2' }}</span></div>
-          <div class="info-item"><span class="label">Limite</span><span class="value positive">{{ cli.limite | currency:'BRL':'symbol':'1.2-2' }}</span></div>
-          <div class="info-item"><span class="label">Saldo</span><span class="value" [class.negative]="cli.saldo < 0" [class.positive]="cli.saldo >= 0">{{ cli.saldo | currency:'BRL':'symbol':'1.2-2' }}</span></div>
-          <div class="info-item"><span class="label">Gerente</span><span class="value">{{ cli.manager.name }}</span></div>
-          <div class="info-item full"><span class="label">Endereço</span><span class="value">{{ cli.endereco.tipo }} {{ cli.endereco.logradouro }}, {{ cli.endereco.numero }} {{ cli.endereco.complemento }} - {{ cli.endereco.cidade }}/{{ cli.endereco.estado }}</span></div>
-          <div class="info-item"><span class="label">Agência</span><span class="value">{{ cli.agencia || '-' }}</span></div>
-          <div class="info-item"><span class="label">Conta</span><span class="value">{{ cli.conta || '-' }}</span></div>
-          <div class="info-item"><span class="label">Criado Em</span><span class="value">{{ cli.criadoEm | date:'dd/MM/yyyy HH:mm:ss' }}</span></div>
-        </div>
-      </section>
-
-      <section class="card hint" *ngIf="!selectedClient && !notFound && filteredClients.length <= 1">
-        <p>Digite um termo de busca (nome, CPF, conta ou ID) e pressione Enter ou clique em Buscar.</p>
-      </section>
+    <div class="search-bar">
+        <input
+            type="text"
+            placeholder="Digite o nome ou CPF do cliente..."
+            [(ngModel)]="search"
+            (keyup.enter)="findClient()"
+        />
+        <button (click)="findClient()">Buscar</button>
     </div>
-  </section>
-</main>
+
+    <div class="feedback-area">
+        <div *ngIf="feedbackMessage" class="error-message">
+            {{ feedbackMessage }}
+        </div>
+        <div *ngIf="!foundClient && !feedbackMessage" class="info-message">
+            Digite um nome ou CPF para iniciar a busca.
+        </div>
+    </div>
+
+    <div *ngIf="foundClient" class="details-card">
+        <div class="details-section">
+            <h3>Dados Pessoais</h3>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <label>Nome Completo</label>
+                    <span>{{ foundClient.nome }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>CPF</label>
+                    <span>{{ foundClient.cpf }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>E-mail</label>
+                    <span>{{ foundClient.email }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Telefone</label>
+                    <span>{{ foundClient.telefone }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-section">
+            <h3>Endereço</h3>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <label>Logradouro</label>
+                    <span
+                        >{{ foundClient.endereco.tipo }}
+                        {{ foundClient.endereco.logradouro }},
+                        {{ foundClient.endereco.numero }}</span
+                    >
+                </div>
+                <div class="detail-item">
+                    <label>Cidade / Estado</label>
+                    <span
+                        >{{ foundClient.endereco.cidade }} /
+                        {{ foundClient.endereco.estado }}</span
+                    >
+                </div>
+                <div class="detail-item">
+                    <label>CEP</label>
+                    <span>{{ foundClient.endereco.cep }}</span>
+                </div>
+                <div
+                    class="detail-item"
+                    *ngIf="foundClient.endereco.complemento"
+                >
+                    <label>Complemento</label>
+                    <span>{{ foundClient.endereco.complemento }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="details-section">
+            <h3>Dados da Conta</h3>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <label>Agência / Conta</label>
+                    <span
+                        >{{ foundClient.agencia }} /
+                        {{ foundClient.conta }}</span
+                    >
+                </div>
+                <div class="detail-item">
+                    <label>Salário Declarado</label>
+                    <span>{{ foundClient.salario | currency : "BRL" }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Saldo</label>
+                    <span
+                        [class.negative]="foundClient.saldo < 0"
+                        [class.positive]="foundClient.saldo >= 0"
+                    >
+                        {{ foundClient.saldo | currency : "BRL" }}
+                    </span>
+                </div>
+                <div class="detail-item">
+                    <label>Limite</label>
+                    <span class="positive">{{
+                        foundClient.limite | currency : "BRL"
+                    }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Gerente</label>
+                    <span>{{ foundClient.manager.name }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Cliente desde</label>
+                    <span>{{
+                        foundClient.criadoEm | date : "dd/MM/yyyy"
+                    }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
