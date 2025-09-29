@@ -18,7 +18,6 @@ import Swal from 'sweetalert2';
     styleUrl: './statement.component.css',
 })
 export class StatementComponent implements OnInit {
-    // Implemente OnInit
     beginDate: string = '';
     endDate: string = '';
 
