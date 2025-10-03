@@ -108,13 +108,15 @@
 .hero-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
+  justify-content: center;
 }
 .main-title {
   font-size: 60px;
   color: #010101;
   line-height: 1.1;
   font-weight: bold;
+  margin-bottom: 4px
 }
 .subtitle {
   font-size: 24px;
@@ -123,7 +125,7 @@
 .hero-actions {
   display: flex;
   gap: 18px;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 .btn-primary, .btn-outline {
   padding: 13px 24px;
