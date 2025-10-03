@@ -14,7 +14,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   heroImages: string[] = [
     'images/car.jpg',
     'images/house.jpg',
-    'images/vacation.jpg'
+    'images/happy.jpg'
   ];
 
   currentIndex = 0;
