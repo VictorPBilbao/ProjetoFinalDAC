@@ -1,39 +1,81 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription, forkJoin } from 'rxjs';
+
 import { Cliente } from './../../models/cliente.model';
 import { Manager } from './../../models/manager.model';
 
+import { ClientService } from '../../services/client/client.service';
+import { ManagerService } from '../../services/manager/manager.service';
+import { AuthService } from '../../services/auth/auth.service';
+import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 
 @Component({
-  selector: 'app-best-clients-list-view',
-  imports: [CommonModule],
-  templateUrl: './best-clients-list-view.component.html',
-  styleUrl: './best-clients-list-view.component.css'
+    selector: 'app-best-clients-list-view',
+    standalone: true,
+    imports: [CommonModule, CpfPipe],
+    templateUrl: './best-clients-list-view.component.html',
+    styleUrl: './best-clients-list-view.component.css',
 })
-export class BestClientsListViewComponent implements OnInit {
+export class BestClientsListViewComponent implements OnInit, OnDestroy {
+    clientesEmDestaque: Cliente[] = [];
+    feedbackMessage: string = '';
+    isLoading: boolean = true;
+    private dataSubscription?: Subscription;
 
-  constructor() { }
-  clientesEmDestaque: Cliente[] = [];
+    constructor(
+        private clientService: ClientService,
+        private managerService: ManagerService,
+        private authService: AuthService
+    ) { }
 
-  ngOnInit(): void {
-    this.carregarClientes();
-  }
-  carregarClientes(): void {
-    const gerente1: Manager = { id: '1', name: 'Thalita Santos', cpf: '596.644.780-24', email: 'thalita@bantads.com', telephone: '(41) 3361-4904' };
-    const gerente2: Manager = { id: '2', name: 'Ana Carolina', cpf: '943.173.280-70', email: 'ana@bantads.com', telephone: '(41) 3361-4904' };
+    ngOnInit(): void {
+        this.carregarClientesDoGerente();
+    }
 
-    const todosOsClientes: Cliente[] = [
-      { id: '1', nome: 'Guilherme Arthur', email: '', cpf: '123.456.789-00', telefone: '', salario: 0, limite: 0, saldo: 1250000, manager: gerente1, endereco: { tipo: '', logradouro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: '' },
-      { id: '2', nome: 'Leonardo Chicora', email: '', cpf: '111.222.333-44', telefone: '', salario: 0, limite: 0, saldo: 790000, manager: gerente1, endereco: { tipo: '', logradouro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: '' },
-      { id: '3', nome: 'Adriano Zandroski', email: '', cpf: '444.555.666-77', telefone: '', salario: 0, limite: 0, saldo: 500000, manager: gerente2, endereco: { tipo: '', logradouro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: '' },
-      { id: '4', nome: 'Binicius Kataguiri', email: '', cpf: '987.654.321-09', telefone: '', salario: 0, limite: 0, saldo: 850000, manager: gerente2, endereco: { tipo: '', logradouro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: '' },
-      { id: '5', nome: 'Victor Passini', email: '', cpf: '888.999.000-11', telefone: '', salario: 0, limite: 0, saldo: -15000, manager: gerente1, endereco: { tipo: '', logradouro: '', numero: '', cep: '', cidade: 'Curitiba', estado: 'PR' }, agencia: '', conta: '', criadoEm: '' }
-    ];
+    carregarClientesDoGerente(): void {
+        this.isLoading = true;
+        const loggedUser = this.authService.getUser();
 
-    const clientesOrdenados = todosOsClientes.sort((a, b) => {
-      return b.saldo - a.saldo;
-    });
+        if (!loggedUser || loggedUser.role !== 'gerente') {
+            this.isLoading = false;
+            this.feedbackMessage = 'Nenhum gerente logado.';
+            return;
+        }
 
-    this.clientesEmDestaque = clientesOrdenados.slice(0, 3);
-  }
+        this.dataSubscription = forkJoin({
+            clients: this.clientService.getClients(),
+            managers: this.managerService.getManagers(),
+        }).subscribe({
+            next: ({ clients, managers }) => {
+                const currentManager = managers.find(
+                    (m) => m.email === loggedUser.user
+                );
+
+                if (currentManager) {
+                    const managerClients = clients.filter(
+                        (c) => c.manager?.id === currentManager.id
+                    );
+
+                    const clientesOrdenados = managerClients.sort((a, b) => {
+                        return b.saldo - a.saldo;
+                    });
+
+                    this.clientesEmDestaque = clientesOrdenados.slice(0, 3);
+                }
+
+                this.isLoading = false;
+            },
+            error: (err) => {
+                this.feedbackMessage =
+                    'Não foi possível carregar a lista de clientes.';
+                console.error('Erro ao carregar dados:', err);
+                this.isLoading = false;
+            },
+        });
+    }
+
+    ngOnDestroy(): void {
+        this.dataSubscription?.unsubscribe();
+    }
 }

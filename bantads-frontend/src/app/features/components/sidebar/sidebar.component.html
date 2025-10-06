@@ -1,0 +1,180 @@
+<aside class="d-flex flex-column sidebar open">
+    <div class="d-flex">
+        <div class="menu-user-container d-flex flex-column menu-padding">
+            <div class="flex items-center justify-content-center mb-3">
+                <div
+                    class="menu-name-initials-container d-flex align-items-center justify-content-center"
+                >
+                    {{ getUserInitals() }}
+                </div>
+
+                <div class="menu-user-name">
+                    {{ client?.nome }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <nav class="menu-nav d-flex">
+        <ul class="nav d-flex flex-column list-unstyled">
+            <!-- ========================= CLIENTE ========================= -->
+            <li class="nav-item" *ngIf="clientLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/cliente/dashboard"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-home"></i>
+                    <p class="nav-link-text">Dashboard</p>
+                </a>
+            </li>
+
+            <li class="nav-item" *ngIf="clientLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/cliente/extrato"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-clipboard-list"></i>
+                    <p class="nav-link-text">Extrato</p>
+                </a>
+            </li>
+
+            <li class="nav-item" *ngIf="clientLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/cliente/deposito"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-money-bill-wave"></i>
+                    <p class="nav-link-text">Depósito</p>
+                </a>
+            </li>
+
+            <li class="nav-item" *ngIf="clientLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/cliente/saque"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-sack-dollar"></i>
+                    <p class="nav-link-text">Saque</p>
+                </a>
+            </li>
+
+            <li class="nav-item" *ngIf="clientLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/cliente/transferencia"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-money-bill-transfer"></i>
+                    <p class="nav-link-text">Transferência</p>
+                </a>
+            </li>
+
+            <li class="nav-item" *ngIf="clientLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/cliente/detalhes"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-user-circle"></i>
+                    <p class="nav-link-text">Meus Dados</p>
+                </a>
+            </li>
+
+            <!-- ========================= GERENTE ========================= -->
+
+            <li class="nav-item" *ngIf="managerLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/gerente/aprovacoes"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-user-check"></i>
+                    <p class="nav-link-text">Aprovações</p>
+                </a>
+            </li>
+
+            <li class="nav-item" *ngIf="managerLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/gerente/clientes"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-users"></i>
+                    <p class="nav-link-text">Clientes</p>
+                </a>
+            </li>
+
+            <li class="nav-item" *ngIf="managerLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/gerente/melhores-clientes"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-trophy"></i>
+                    <p class="nav-link-text">Melhores Clientes</p>
+                </a>
+            </li>
+
+            <li class="nav-item" *ngIf="managerLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/gerente/consultar-cliente"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-magnifying-glass"></i>
+                    <p class="nav-link-text">Consultar Cliente</p>
+                </a>
+            </li>
+
+            <!-- ========================= ADMIN ========================= -->
+            <li class="nav-item" *ngIf="adminLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/admin/dashboard"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-chart-line"></i>
+                    <p class="nav-link-text">Dashboard</p>
+                </a>
+            </li>
+
+            <li class="nav-item" *ngIf="adminLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/admin/relatorio-clientes"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-file-alt"></i>
+                    <p class="nav-link-text">Relatório Clientes</p>
+                </a>
+            </li>
+
+            <li class="nav-item" *ngIf="adminLinksVisible">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    routerLink="/admin/gerentes"
+                    routerLinkActive="active"
+                >
+                    <i class="fas fa-user-tie"></i>
+                    <p class="nav-link-text">Gerentes</p>
+                </a>
+            </li>
+            <!-- ========================= LOGOUT ========================= -->
+            <li class="nav-item nav-item-seperator">
+                <div class="nav-border"></div>
+            </li>
+            <li class="nav-item">
+                <a
+                    class="nav-link flex items-center gap-2 menu-padding"
+                    (click)="logout()"
+                >
+                    <i class="fas fa-right-from-bracket"></i>
+                    <p class="nav-link-text">Logout</p>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</aside>

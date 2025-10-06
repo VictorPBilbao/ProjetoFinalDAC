@@ -1,35 +1,87 @@
-<main>
-  <section class="side-menu">
-    <h1>Bantads</h1>
-    <ul>
-      <li>Dashboard</li>
-      <li>Perfil</li>
-      <li>Transações</li>
-      <li>Extrato</li>
-    </ul>
-  </section>
+<main class="dashboard-container">
+    <header class="dashboard-header">
+        <h1>Olá, Usuário!</h1>
+        <p>Bem-vindo(a) de volta à sua conta.</p>
+    </header>
 
-  <section class="main-content">
-    <div class="container">
-      <div class="header">
-        <h1>Saldo atual</h1>
-        <h2>R$ 3.483,23</h2>
-      </div>
+    <section class="main-card">
+        <div class="balance-info">
+            <span class="balance-title">Saldo disponível</span>
+            <h2 class="balance-value">
+                {{ balance | currency : "BRL" }}
+                <img
+                    src="images/eye-icon.png"
+                    alt="Ocultar saldo"
+                    class="visibility-icon"
+                />
+            </h2>
+            <p class="monthly-deposits">
+                Depositados este mês: {{ depositsThisMonth | currency : "BRL" }}
+            </p>
+        </div>
 
-      <ul class="content-header">
-        <li>Receita</li>
-        <li>Gastos</li>
-      </ul>
-      <div>
-        <img src="https://placehold.co/530x335" alt="Graph" />
-      </div>
+        <nav class="quick-actions">
+            <a href="/cliente/deposito" class="action-item">
+                <div class="icon-background">
+                    <img src="images/deposito.png" alt="Ícone de depósito" />
+                </div>
+                <span>Depositar</span>
+            </a>
+            <a href="/cliente/saque" class="action-item">
+                <div class="icon-background">
+                    <img src="images/saque.png" alt="Ícone de saque" />
+                </div>
+                <span>Sacar</span>
+            </a>
+            <a href="/cliente/extrato" class="action-item">
+                <div class="icon-background">
+                    <img
+                        src="images/extrato-bancario.png"
+                        alt="Ícone de extrato"
+                    />
+                </div>
+                <span>Extrato</span>
+            </a>
+            <a href="/cliente/detalhes" class="action-item">
+                <div class="icon-background">
+                    <img src="images/conta-bancaria.png" alt="Ícone da conta" />
+                </div>
+                <span>Minha Conta</span>
+            </a>
+        </nav>
+    </section>
 
-      <h4>Esta semana</h4>
-      <hr />
-      <div class="statement-list">
-        <app-statement-item />
-        <app-statement-item />
-      </div>
-    </div>
-  </section>
+    <section class="recent-activity">
+        <h3>Atividade Recente</h3>
+        <ul>
+            <li class="transaction-item">
+                <div class="transaction-details">
+                    <strong class="transaction-description"
+                        >Transferência Recebida</strong
+                    >
+                    <span class="transaction-date">05 de Out, 2025</span>
+                </div>
+                <span class="transaction-amount positive">+ R$ 250,00</span>
+            </li>
+            <li class="transaction-item">
+                <div class="transaction-details">
+                    <strong class="transaction-description"
+                        >Pagamento Spotify</strong
+                    >
+                    <span class="transaction-date">02 de Out, 2025</span>
+                </div>
+                <span class="transaction-amount negative">- R$ 34,90</span>
+            </li>
+            <li class="transaction-item">
+                <div class="transaction-details">
+                    <strong class="transaction-description"
+                        >Compra no Supermercado</strong
+                    >
+                    <span class="transaction-date">01 de Out, 2025</span>
+                </div>
+                <span class="transaction-amount negative">- R$ 187,30</span>
+            </li>
+        </ul>
+        <a href="/cliente/extrato" class="view-all">Ver extrato completo</a>
+    </section>
 </main>

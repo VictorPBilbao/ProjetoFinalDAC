@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ManagerService } from '../../services/manager/manager.service';
 import { Cliente } from '../../models/cliente.model';
+import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 
 @Component({
     selector: 'app-approvals',
     standalone: true,
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, CpfPipe],
     templateUrl: './approvals.component.html',
     styleUrls: ['./approvals.component.css'],
 })
@@ -22,7 +23,7 @@ export class ApprovalsComponent implements OnInit {
     search = '';
     filtered: Cliente[] = [];
 
-    constructor(private readonly managerService: ManagerService) {}
+    constructor(private readonly managerService: ManagerService) { }
 
     ngOnInit(): void {
         this.load();

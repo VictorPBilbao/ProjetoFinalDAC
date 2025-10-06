@@ -1,34 +1,34 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './features/services/auth/auth.guard';
 
+import { ClientsReportComponent } from './features/pages-admin/clients-report/clients-report.component';
+//admin pages
+import { DashboardAdminComponent } from './features/pages-admin/dashboard-admin/dashboard-admin.component';
+import { ManagerDetailsComponent } from './features/pages-admin/manager-details/manager-details.component';
+import { ManagerListComponent } from './features/pages-admin/manager-list/manager-list.component';
+import { DepositoComponent } from './features/pages-customer/deposito/deposito.component';
 //standard pages
 import { LoginComponent } from './features/pages-customer/login/login.component';
 import { RegisterComponent } from './features/pages-customer/register/register.component';
-import { PageNotFoundComponent } from './features/pages/page-not-found/page-not-found.component';
-
 //customer pages
 import { StatementComponent } from './features/pages-customer/statement/statement.component';
-import { DepositoComponent } from './features/pages-customer/deposito/deposito.component';
 import { UserDashboardComponent } from './features/pages-customer/user-dashboard/user-dashboard.component';
 import { UserDetailsComponent } from './features/pages-customer/user-details/user-details.component';
 import { WhithdrawalComponent } from './features/pages-customer/whithdrawal/whithdrawal.component';
-
-//manager pages
-import { ListClientsComponent } from './features/pages-manager/list-clients/list-clients.component';
+import { TransferComponent } from './features/pages-customer/transfer/transfer.component';
+import { ApprovalsComponent } from './features/pages-manager/approvals/approvals.component';
 import { BestClientsListViewComponent } from './features/pages-manager/best-clients-list-view/best-clients-list-view.component';
 import { ConsultarClienteComponent } from './features/pages-manager/consultar-cliente/consultar-cliente.component';
-import { ApprovalsComponent } from './features/pages-manager/approvals/approvals.component';
-
-//admin pages
-import { DashboardAdminComponent } from './features/pages-admin/dashboard-admin/dashboard-admin.component';
-import { ClientsReportComponent } from './features/pages-admin/clients-report/clients-report.component';
-import { ManagerListComponent } from './features/pages-admin/manager-list/manager-list.component';
-import { ManagerDetailsComponent } from './features/pages-admin/manager-details/manager-details.component';
+//manager pages
+import { ListClientsComponent } from './features/pages-manager/list-clients/list-clients.component';
+import { ManagerDashboardComponent } from './features/pages-manager/manager-dashboard/manager-dashboard.component';
+import { PageNotFoundComponent } from './features/pages/page-not-found/page-not-found.component';
+import { authGuard } from './features/services/auth/auth.guard';
+import { loginGuard } from './features/services/auth/login.guard';
 
 export const routes: Routes = [
     //standard routes
     { path: '', redirectTo: '/login', pathMatch: 'full' },
-    { path: 'login', component: LoginComponent },
+    { path: 'login', component: LoginComponent, canActivate: [loginGuard] },
     { path: 'cadastro', component: RegisterComponent },
 
     // customer routes
@@ -56,6 +56,12 @@ export const routes: Routes = [
             {
                 path: 'saque',
                 component: WhithdrawalComponent,
+                canActivate: [authGuard],
+                data: { role: ['cliente'] },
+            },
+            {
+                path: 'transferencia',
+                component: TransferComponent,
                 canActivate: [authGuard],
                 data: { role: ['cliente'] },
             },

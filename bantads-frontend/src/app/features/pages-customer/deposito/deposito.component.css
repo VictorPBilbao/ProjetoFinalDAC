@@ -108,8 +108,6 @@
 
 .content-grid {
   display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 24px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -123,6 +121,10 @@
 .side-menu ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .side-menu li a { color: #363940; text-decoration: none; font-size: 15px; }
 .side-menu li.active a { color: #0ec093; font-weight: 600; }
+
+.deposit-form {
+  margin-top: 10px;
+}
 
 .account-info h2, .deposit-form h2 { margin-top: 0; font-size: 20px; color: #343434; }
 .info-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee; }

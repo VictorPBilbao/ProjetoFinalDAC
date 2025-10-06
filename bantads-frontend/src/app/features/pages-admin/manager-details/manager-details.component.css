@@ -6,6 +6,13 @@
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   font-family: Arial, sans-serif;
+  transition: all 0.3s ease-in-out;
+  position: relative;
+}
+
+.manager-details-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
 .header {
@@ -17,10 +24,17 @@ h2 {
   font-size: 24px;
   color: #333;
   font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.header p {
+  color: #777;
+  font-size: 15px;
 }
 
 .manager-form .form-group {
   margin-bottom: 20px;
+  position: relative;
 }
 
 .manager-form label {
@@ -28,6 +42,7 @@ h2 {
   font-weight: bold;
   margin-bottom: 8px;
   color: #555;
+  transition: color 0.3s ease;
 }
 
 .manager-form input {
@@ -36,12 +51,26 @@ h2 {
   border: 1px solid #ddd;
   border-radius: 5px;
   font-size: 16px;
-  box-sizing: border-box; /* Garante que o padding não aumente o tamanho total */
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  background-color: #fafafa;
+}
+
+.manager-form input:hover {
+  border-color: #bbb;
+  background-color: #fff;
 }
 
 .manager-form input:focus {
   outline: none;
-  border-color: #3cb371; /* Borda verde ao focar */
+  border-color: #3cb371;
+  background-color: #f5fff8;
+  box-shadow: 0 0 5px rgba(60, 179, 113, 0.3);
+}
+
+.manager-form input::placeholder {
+  color: #aaa;
+  font-style: italic;
 }
 
 .form-actions {
@@ -49,6 +78,7 @@ h2 {
   justify-content: flex-end;
   gap: 15px;
   margin-top: 30px;
+  flex-wrap: wrap;
 }
 
 .cancel-button,
@@ -58,6 +88,7 @@ h2 {
   cursor: pointer;
   font-size: 16px;
   font-weight: bold;
+  transition: all 0.3s ease;
 }
 
 .cancel-button {
@@ -68,14 +99,103 @@ h2 {
 
 .cancel-button:hover {
   background-color: #f0f0f0;
+  color: #555;
+  border-color: #999;
 }
 
 .save-button {
   background-color: #3cb371;
   border: none;
   color: white;
+  box-shadow: 0 3px 6px rgba(60, 179, 113, 0.3);
 }
 
 .save-button:hover {
   background-color: #2e8b57;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(60, 179, 113, 0.4);
+}
+
+.save-button:active {
+  transform: scale(0.98);
+}
+
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 5px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .manager-details-container {
+    padding: 20px;
+    margin: 30px 15px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  .save-button,
+  .cancel-button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.manager-form input:invalid {
+  border-color: #e74c3c;
+  background-color: #fff5f5;
+}
+
+.manager-form input:invalid:focus {
+  box-shadow: 0 0 5px rgba(231, 76, 60, 0.3);
+}
+
+.manager-form input:not(:placeholder-shown) {
+  border-color: #3cb371;
+  background-color: #f6fff9;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  font-size: 13px;
+  color: #888;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.manager-form .form-group:hover .tooltip {
+  opacity: 1;
+}
+
+.manager-details-container::before {
+  content: "";
+  display: block;
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(90deg, #3cb371, #2e8b57);
+  border-radius: 8px 8px 0 0;
+  position: absolute;
+  top: 0;
+  left: 0;
 }

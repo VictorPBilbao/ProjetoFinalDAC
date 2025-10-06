@@ -1,75 +1,86 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { Cliente } from '../../models/cliente.model';
-import { ClientService } from '../../services/client.service';
+import { ClientService } from '../../services/client/client.service';
+import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 
 @Component({
-  selector: 'app-list-clients',
-  standalone: true,
-  imports: [FormsModule, CommonModule, RouterLink],
-  templateUrl: './list-clients.component.html',
-  styleUrl: './list-clients.component.css',
+    selector: 'app-list-clients',
+    standalone: true,
+    imports: [FormsModule, CommonModule, RouterLink, CpfPipe],
+    templateUrl: './list-clients.component.html',
+    styleUrl: './list-clients.component.css',
 })
 export class ListClientsComponent implements OnInit {
-  private allClients: Cliente[] = [];
-  filteredClients: Cliente[] = [];
-  pgClients: Cliente[] = [];
+    private allClients: Cliente[] = [];
+    filteredClients: Cliente[] = [];
+    pgClients: Cliente[] = [];
 
-  search: string = '';
+    search: string = '';
 
-  currentPg: number = 1;
-  itmsPerPg: number = 7;
-  totalPgs: number = 0;
+    currentPg: number = 1;
+    itmsPerPg: number = 7;
+    totalPgs: number = 0;
 
-  constructor(private clientService: ClientService) {
-    this.allClients = this.clientService.getClients();
-  }
+    // Modal state
+    modalOpen = false;
+    selectedClient?: Cliente;
 
-  ngOnInit(): void {
-    this.allClients.sort((a, b) => a.nome.localeCompare(b.nome));
-    this.filterClients();
-  }
+    constructor(private clientService: ClientService) { }
 
-  filterClients(): void {
-    const keyword = this.search.toLowerCase().trim();
-    if (!keyword) {
-      this.filteredClients = [...this.allClients];
-    } else {
-      this.filteredClients = this.allClients.filter(
-        (client) =>
-          client.nome.toLowerCase().includes(keyword) ||
-          client.cpf.replace(/[.-]/g, '').includes(keyword.replace(/[.-]/g, ''))
-      );
+    ngOnInit(): void {
+        this.clientService.getClients().subscribe((clients) => {
+            this.pgClients = clients;
+        });
+
+        this.pgClients.sort((a, b) => a.nome.localeCompare(b.nome));
     }
-    this.currentPg = 1;
-    this.updatePgView();
-  }
 
-  updatePgView() {
-    this.totalPgs = Math.ceil(this.filteredClients.length / this.itmsPerPg);
-    if (this.currentPg > this.totalPgs && this.totalPgs > 0) {
-      this.currentPg = this.totalPgs;
+    filterClients(): void {
+        const keyword = this.search.toLowerCase().trim();
+        this.clientService.getClients().subscribe((clients) => {
+            this.allClients = clients;
+            if (!keyword) {
+                this.filteredClients = [...this.allClients];
+            } else {
+                this.filteredClients = this.allClients.filter(
+                    (client) =>
+                        client.nome.toLowerCase().includes(keyword) ||
+                        client.cpf
+                            .replace(/[.-]/g, '')
+                            .includes(keyword.replace(/[.-]/g, ''))
+                );
+            }
+            this.currentPg = 1;
+            this.updatePgView();
+        });
     }
-    const start = (this.currentPg - 1) * this.itmsPerPg;
-    const end = start + this.itmsPerPg;
-    this.pgClients = this.filteredClients.slice(start, end);
-  }
 
-  goToPg(pg: number) {
-    if (pg >= 1 && pg <= this.totalPgs) {
-      this.currentPg = pg;
-      this.updatePgView();
+    updatePgView() {
+        this.totalPgs = Math.ceil(this.filteredClients.length / this.itmsPerPg);
+        if (this.currentPg > this.totalPgs && this.totalPgs > 0) {
+            this.currentPg = this.totalPgs;
+        }
+        const start = (this.currentPg - 1) * this.itmsPerPg;
+        const end = start + this.itmsPerPg;
+        this.pgClients = this.filteredClients.slice(start, end);
     }
-  }
 
-  nextPg() {
-    this.goToPg(this.currentPg + 1);
-  }
+    goToPg(pg: number) {
+        if (pg >= 1 && pg <= this.totalPgs) {
+            this.currentPg = pg;
+            this.updatePgView();
+        }
+    }
 
-  previousPg() {
-    this.goToPg(this.currentPg - 1);
-  }
+    nextPg() {
+        this.goToPg(this.currentPg + 1);
+    }
+
+    previousPg() {
+        this.goToPg(this.currentPg - 1);
+    }
 }

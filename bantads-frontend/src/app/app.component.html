@@ -1,6 +1,13 @@
-<aside></aside>
+<app-loading></app-loading>
 <app-header *ngIf="showHeader"></app-header>
 
-<main [ngClass]="{ 'main-content-with-header': showHeader }">
-  <router-outlet></router-outlet>
+
+<main [ngClass]="{
+    'main-content-with-header': showHeader,
+    'flex': showSidebar()
+}">
+  <app-sidebar *ngIf="showSidebar()"></app-sidebar>
+  <div [ngClass]="{ 'content': showSidebar() }">
+    <router-outlet></router-outlet>
+  </div>
 </main>

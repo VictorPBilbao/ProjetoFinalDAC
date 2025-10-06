@@ -1,97 +1,49 @@
-<header class="home-header">
-  <div class="header-bar">
-    <div class="header-content-left">
-      <div class="logo-title">
-        <img src="images/banco-de-dinheiro-2-10.png" alt="Logo" class="logo" />
-        <span class="brand-title">BANTADS</span>
-      </div>
-      <div class="agency-account-row">
-        <span class="account-access">
-          <img src="images/lock0.svg" alt="Lock" class="lock-icon" />
-          Acessar
-        </span>
-        <input type="text" class="user-input" placeholder="Usuário" />
-        <input type="password" class="password-input" placeholder="Senha" />
-        <button class="ok-btn" type="button">OK</button>
-      </div>
-    </div>
-    <div class="header-content-right">
-      <div class="search-bar">
-        <input type="text" placeholder="Pesquisar..." />
-        <img src="images/icon0.svg" alt="Search Icon" />
-      </div>
-    </div>
-  </div>
-</header>
-
 <main class="deposit-main">
   <div class="page-header">
     <h1>Depósito</h1>
-    <span class="last-access">Último acesso: 17/08/2025 20:10:54</span>
+    <span class="last-access">Último acesso: {{ lastAccess$ | date:'dd/MM/yyyy HH:mm:ss' }}</span>
   </div>
 
   <section class="content-grid">
-    <aside class="side-menu card">
-      <h3>Menu</h3>
-      <nav>
-        <ul>
-          <li class="active"><a href="#">Depositar</a></li>
-          <li><a href="#">Saque</a></li>
-          <li><a href="#">Consultar Extrato</a></li>
-        </ul>
-      </nav>
-    </aside>
-
     <div class="main-content">
-      <section class="card account-info">
+      <section class="card account-info" *ngIf="cliente$ | async as cliente">
         <h2>Informações da Conta</h2>
-        <div class="info-row"><span>Agência</span><strong>756-0</strong></div>
-        <div class="info-row"><span>Conta Corrente</span><strong>97193-6</strong></div>
+  <div class="info-row"><span>Agência</span><strong>{{ cliente.agencia }}</strong></div>
+  <div class="info-row"><span>Conta Corrente</span><strong>{{ cliente.conta }}</strong></div>
         <div class="balances">
           <div class="balance-item">
             <span>Saldo</span>
-            <strong class="negative">R$ 82,42</strong>
+            <strong [class.negative]="cliente.saldo < 0" [class.positive]="cliente.saldo >= 0">{{ cliente.saldo | currency:'BRL':'symbol':'1.2-2' }}</strong>
           </div>
           <div class="balance-item">
             <span>Limite</span>
-            <strong class="positive">R$ 100,00</strong>
+            <strong class="positive">{{ cliente.limite | currency:'BRL':'symbol':'1.2-2' }}</strong>
           </div>
         </div>
       </section>
 
       <section class="card deposit-form">
         <h2>Realizar Depósito</h2>
-        <form>
+        <form [formGroup]="form" (ngSubmit)="submit()">
           <div class="form-grid">
             <div class="form-group">
               <label for="agencia">Agência</label>
-              <input id="agencia" type="text" name="agencia" />
+              <input id="agencia" type="text" formControlName="agencia" />
             </div>
             <div class="form-group">
               <label for="conta">Conta Corrente</label>
-              <input id="conta" type="text" name="conta" />
+              <input id="conta" type="text" formControlName="conta" />
             </div>
             <div class="form-group">
               <label for="valor">Valor</label>
-              <input id="valor" type="number" name="valor" placeholder="0,00" />
-            </div>
-            <div class="form-group">
-              <label for="id1">Identificador 1</label>
-              <input id="id1" type="text" name="id1" />
-            </div>
-            <div class="form-group">
-              <label for="id2">Identificador 2</label>
-              <input id="id2" type="text" name="id2" />
-            </div>
-            <div class="form-group">
-              <label for="id3">Identificador 3</label>
-              <input id="id3" type="text" name="id3" />
+              <input id="valor" type="number" formControlName="valor" placeholder="0,00" />
             </div>
           </div>
           <div class="actions">
-            <button type="submit" class="btn-primary">Continuar</button>
-            <button type="reset" class="btn-outline">Limpar</button>
+            <button type="submit" class="btn-primary" [disabled]="form.invalid">Continuar</button>
+            <button type="button" class="btn-outline" (click)="resetForm()">Limpar</button>
           </div>
+          <p *ngIf="message" [class.msg-success]="message.type==='success'" [class.msg-error]="message.type==='error'">{{ message.text }}</p>
         </form>
       </section>
     </div>

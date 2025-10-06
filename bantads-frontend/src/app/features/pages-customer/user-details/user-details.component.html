@@ -1,184 +1,254 @@
-<div class="user-details-wrapper" *ngIf="cliente">
-  <div class="header">
-    <h2>Perfil do Cliente</h2>
-    <div class="status" *ngIf="saved">Alterações salvas!</div>
-  </div>
+<!-- Loading State -->
+<div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Carregando dados do cliente...</p>
+</div>
 
-  <div class="account-summary">
-    <div class="item">
-      <span class="label">Agência</span>
-      <span class="value">{{ cliente.agencia }}</span>
+<!-- Error State -->
+<div *ngIf="error && !loading" class="error-container">
+    <div class="error-message">
+        <h3>Erro</h3>
+        <p>{{ error }}</p>
+        <button type="button" class="btn-retry" (click)="loadUserData()">
+            Tentar novamente
+        </button>
     </div>
-    <div class="item">
-      <span class="label">Conta</span>
-      <span class="value">{{ cliente.conta }}</span>
-    </div>
-    <div class="item">
-      <span class="label">Saldo</span>
-      <span class="value" [class.negative]="cliente.saldo < 0">
-        {{ cliente.saldo | currency : "BRL" : "symbol" : "1.2-2" }}
-      </span>
-    </div>
-    <div class="item">
-      <span class="label">Limite</span>
-      <span class="value">{{
-        cliente.limite | currency : "BRL" : "symbol" : "1.2-2"
-      }}</span>
-    </div>
-    <div class="item">
-      <span class="label">Gerente</span>
-      <span class="value">{{ cliente.manager.name }}</span>
-    </div>
-  </div>
+</div>
 
-  <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
-    <section class="section">
-      <h3>Dados Pessoais</h3>
-      <div class="grid">
-        <div class="form-field">
-          <label>Nome</label>
-          <input
-            type="text"
-            formControlName="nome"
-            placeholder="Nome"
-            [readonly]="!editMode"
-          />
-          <small *ngIf="form.get('nome')?.invalid && form.get('nome')?.touched"
-            >Nome obrigatório (mín. 3)</small
-          >
-        </div>
-        <div class="form-field">
-          <label>E-mail</label>
-          <input
-            type="email"
-            formControlName="email"
-            placeholder="email@exemplo.com"
-            [readonly]="!editMode"
-          />
-          <small
-            *ngIf="form.get('email')?.invalid && form.get('email')?.touched"
-            >E-mail inválido</small
-          >
-        </div>
-        <div class="form-field">
-          <label>CPF (fixo)</label>
-          <input type="text" formControlName="cpf" placeholder="CPF" readonly />
-        </div>
-        <div class="form-field">
-          <label>Telefone</label>
-          <input
-            type="text"
-            formControlName="telefone"
-            placeholder="(00) 00000-0000"
-            [readonly]="!editMode"
-          />
-        </div>
-        <div class="form-field">
-          <label>Salário</label>
-          <input
-            type="number"
-            formControlName="salario"
-            step="0.01"
-            placeholder="Salário"
-            [readonly]="!editMode"
-          />
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <h3>Endereço</h3>
-      <div formGroupName="endereco" class="grid">
-        <div class="form-field">
-          <label>Tipo</label>
-          <input
-            type="text"
-            formControlName="tipo"
-            placeholder="Tipo"
-            [readonly]="!editMode"
-          />
-        </div>
-        <div class="form-field">
-          <label>Logradouro</label>
-          <input
-            type="text"
-            formControlName="logradouro"
-            placeholder="Logradouro"
-            [readonly]="!editMode"
-          />
-        </div>
-        <div class="form-field small">
-          <label>Número</label>
-          <input
-            type="text"
-            formControlName="numero"
-            placeholder="Número"
-            [readonly]="!editMode"
-          />
-        </div>
-        <div class="form-field">
-          <label>Complemento</label>
-          <input
-            type="text"
-            formControlName="complemento"
-            placeholder="Complemento"
-            [readonly]="!editMode"
-          />
-        </div>
-        <div class="form-field small">
-          <label>CEP</label>
-          <input
-            type="text"
-            formControlName="cep"
-            placeholder="00000-000"
-            [readonly]="!editMode"
-          />
-        </div>
-        <div class="form-field">
-          <label>Cidade</label>
-          <input
-            type="text"
-            formControlName="cidade"
-            placeholder="Cidade"
-            [readonly]="!editMode"
-          />
-        </div>
-        <div class="form-field tiny">
-          <label>Estado</label>
-          <input
-            type="text"
-            maxlength="2"
-            formControlName="estado"
-            placeholder="UF"
-            [readonly]="!editMode"
-          />
-        </div>
-      </div>
-    </section>
-
-    <div class="actions">
-      <button
-        type="button"
-        class="btn-outline"
-        (click)="toggleEdit()"
-        *ngIf="!editMode"
-      >
-        Editar
-      </button>
-      <button
-        type="button"
-        class="btn-text"
-        (click)="toggleEdit()"
-        *ngIf="editMode"
-      >
-        Cancelar
-      </button>
-      <button type="submit" class="btn-primary" *ngIf="editMode">Salvar</button>
+<!-- Main Content -->
+<div class="user-details-wrapper" *ngIf="cliente && !loading && !error">
+    <div class="header">
+        <h2>Perfil do Cliente</h2>
+        <div class="status" *ngIf="saved">Alterações salvas!</div>
     </div>
-  </form>
 
-  <div class="preview" *ngIf="saved">
-    <h4>Resumo Atualizado</h4>
-    <pre>{{ cliente | json }}</pre>
-  </div>
+    <div class="account-summary">
+        <div class="item">
+            <span class="label">Agência</span>
+            <span class="value">{{ cliente.agencia }}</span>
+        </div>
+        <div class="item">
+            <span class="label">Conta</span>
+            <span class="value">{{ cliente.conta }}</span>
+        </div>
+        <div class="item">
+            <span class="label">Saldo</span>
+            <span class="value" [class.negative]="cliente.saldo < 0">
+                {{ cliente.saldo | currency : "BRL" : "symbol" : "1.2-2" }}
+            </span>
+        </div>
+        <div class="item">
+            <span class="label">Limite</span>
+            <span class="value">{{
+                cliente.limite | currency : "BRL" : "symbol" : "1.2-2"
+            }}</span>
+        </div>
+        <div class="item">
+            <span class="label">Gerente</span>
+            <span class="value">{{ cliente.manager.name }}</span>
+        </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="salvar()" novalidate>
+        <section class="section">
+            <h3>Dados Pessoais</h3>
+            <div class="grid">
+                <div class="form-field">
+                    <label for="nome">Nome</label>
+                    <input
+                        id="nome"
+                        type="text"
+                        formControlName="nome"
+                        placeholder="Nome"
+                        [readonly]="!editMode"
+                    />
+                    <small
+                        *ngIf="
+                            form.get('nome')?.invalid &&
+                            form.get('nome')?.touched
+                        "
+                        >Nome obrigatório (mín. 3)</small
+                    >
+                </div>
+                <div class="form-field">
+                    <label for="email">E-mail</label>
+                    <input
+                        id="email"
+                        type="email"
+                        formControlName="email"
+                        placeholder="email@exemplo.com"
+                        readonly
+                    />
+                </div>
+                <div class="form-field">
+                    <label for="cpf">CPF</label>
+                    <input
+                        id="cpf"
+                        type="text"
+                        formControlName="cpf"
+                        placeholder="CPF"
+                        readonly
+                    />
+                </div>
+                <div class="form-field">
+                    <label for="telefone">Telefone</label>
+                    <input
+                        id="telefone"
+                        type="text"
+                        formControlName="telefone"
+                        placeholder="(00) 00000-0000"
+                        [readonly]="!editMode"
+                    />
+                </div>
+                <div class="form-field">
+                    <label for="salario">Salário</label>
+                    <input
+                        id="salario"
+                        type="number"
+                        formControlName="salario"
+                        step="0.01"
+                        placeholder="Salário"
+                        [readonly]="!editMode"
+                    />
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h3>Endereço</h3>
+            <div formGroupName="endereco" class="grid">
+                <!-- CEP Field with Auto-fill -->
+                <div class="form-field small cep-field">
+                    <label for="cep">CEP</label>
+                    <div class="input-with-icon">
+                        <input
+                            id="cep"
+                            type="text"
+                            formControlName="cep"
+                            placeholder="00000-000"
+                            [readonly]="!editMode"
+                            (blur)="onCepBlur()"
+                            (input)="onCepInput($event)"
+                            maxlength="9"
+                        />
+                        <div *ngIf="loadingCep" class="cep-loading">🔄</div>
+                    </div>
+                    <small *ngIf="cepError" class="error-text">{{
+                        cepError
+                    }}</small>
+                    <small *ngIf="editMode" class="help-text"
+                        >Digite o CEP para preencher automaticamente o
+                        endereço</small
+                    >
+                </div>
+
+                <!-- Auto-filled fields (readonly) -->
+                <div class="form-field">
+                    <label for="logradouro">Logradouro</label>
+                    <input
+                        id="logradouro"
+                        type="text"
+                        formControlName="logradouro"
+                        placeholder="Será preenchido pelo CEP"
+                        readonly
+                        class="auto-fill"
+                    />
+                </div>
+
+                <div class="form-field">
+                    <label for="bairro">Bairro</label>
+                    <input
+                        id="bairro"
+                        type="text"
+                        formControlName="bairro"
+                        placeholder="Será preenchido pelo CEP"
+                        readonly
+                        class="auto-fill"
+                    />
+                </div>
+
+                <div class="form-field">
+                    <label for="cidade">Cidade</label>
+                    <input
+                        id="cidade"
+                        type="text"
+                        formControlName="cidade"
+                        placeholder="Será preenchida pelo CEP"
+                        readonly
+                        class="auto-fill"
+                    />
+                </div>
+
+                <div class="form-field tiny">
+                    <label for="estado">Estado</label>
+                    <input
+                        id="estado"
+                        type="text"
+                        maxlength="2"
+                        formControlName="estado"
+                        placeholder="UF"
+                        readonly
+                        class="auto-fill"
+                    />
+                </div>
+
+                <!-- Editable fields -->
+                <div class="form-field small">
+                    <label for="numero">Número *</label>
+                    <input
+                        id="numero"
+                        type="text"
+                        formControlName="numero"
+                        placeholder="Número"
+                        [readonly]="!editMode"
+                    />
+                    <small
+                        *ngIf="
+                            enderecoGroup.get('numero')?.invalid &&
+                            enderecoGroup.get('numero')?.touched
+                        "
+                        class="error-text"
+                    >
+                        Número é obrigatório
+                    </small>
+                </div>
+
+                <div class="form-field">
+                    <label for="complemento">Complemento</label>
+                    <input
+                        id="complemento"
+                        type="text"
+                        formControlName="complemento"
+                        placeholder="Complemento (opcional)"
+                        [readonly]="!editMode"
+                    />
+                </div>
+
+                <!-- Hidden tipo field -->
+                <input type="hidden" formControlName="tipo" />
+            </div>
+        </section>
+
+        <div class="actions">
+            <button
+                type="button"
+                class="btn-outline"
+                (click)="toggleEdit()"
+                *ngIf="!editMode"
+            >
+                Editar
+            </button>
+            <button
+                type="button"
+                class="btn-text"
+                (click)="toggleEdit()"
+                *ngIf="editMode"
+            >
+                Cancelar
+            </button>
+            <button type="submit" class="btn-primary" *ngIf="editMode">
+                Salvar
+            </button>
+        </div>
+    </form>
 </div>
