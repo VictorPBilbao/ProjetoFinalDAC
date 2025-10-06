@@ -7,14 +7,25 @@
     <section class="main-card">
         <div class="balance-info">
             <span class="balance-title">Saldo disponível</span>
+
             <h2 class="balance-value">
-                {{ balance | currency : "BRL" }}
-                <img
-                    src="images/eye-icon.png"
-                    alt="Ocultar saldo"
-                    class="visibility-icon"
-                />
+                <ng-container *ngIf="!hideBalance; else hiddenBalance">
+                    {{ balance | currency : "BRL" }}
+                </ng-container>
+                <ng-template #hiddenBalance>••••••</ng-template>
+
+                <button
+                    type="button"
+                    class="icon-button"
+                    (click)="toggleBalanceVisibility()"
+                    [attr.aria-label]="hideBalance ? 'Mostrar saldo' : 'Ocultar saldo'">
+                    <img
+                        [src]="hideBalance ? 'images/eye-closed.png' : 'images/eye-icon.png'"
+                        alt=""
+                        class="visibility-icon" />
+                </button>
             </h2>
+
             <p class="monthly-deposits">
                 Depositados este mês: {{ depositsThisMonth | currency : "BRL" }}
             </p>

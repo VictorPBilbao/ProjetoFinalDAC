@@ -9,6 +9,33 @@
     --border-color: #e0e0e0;
 }
 
+/* Faixa de destaque igual ao extrato (banda suave no topo) */
+:host {
+    display: block;
+    position: relative;
+    background-color: var(--background-color);
+    color: var(--text-primary);
+}
+:host::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 190px;
+    background: radial-gradient(1000px 180px at 50% -60px, rgba(14, 192, 147, 0.14) 0%, rgba(14, 192, 147, 0.06) 40%, transparent 75%);
+    pointer-events: none;
+    z-index: 0;
+}
+.dashboard-container {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -21,15 +48,6 @@ body {
     font-family: "Poppins", sans-serif;
     background-color: var(--background-color);
     color: var(--text-primary);
-}
-
-.dashboard-container {
-    max-width: 800px;
-    margin: 40px auto;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
 }
 
 .dashboard-header h1 {
@@ -66,17 +84,40 @@ body {
     color: var(--dark-green);
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
 }
 
-.visibility-icon {
-    height: 24px;
+/* Ícone de ocultar: tamanho fixo e sem estourar */
+.icon-button {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    line-height: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    width: 28px;
+    border-radius: 6px;
     cursor: pointer;
-    opacity: 0.6;
-    transition: opacity 0.2s;
 }
-.visibility-icon:hover {
+.icon-button:focus-visible {
+    outline: 2px solid var(--primary-green);
+    outline-offset: 2px;
+}
+.visibility-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    display: block;
+    opacity: 0.85;
+    transition: opacity 0.2s, transform 0.1s;
+}
+.icon-button:hover .visibility-icon {
     opacity: 1;
+}
+.icon-button:active .visibility-icon {
+    transform: scale(0.96);
 }
 
 .monthly-deposits {
@@ -188,4 +229,13 @@ body {
 }
 .view-all:hover {
     color: var(--dark-green);
+}
+
+@media (max-width: 640px) {
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .balance-value {
+        font-size: 28px;
+    }
 }
