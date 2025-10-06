@@ -40,53 +40,30 @@
   color: var(--c-text);
 }
 
-.header {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: var(--space-lg);
-  position: relative;
-}
-
-.header h2 {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  margin: 0;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--c-primary);
-}
-
-.new-manager-button {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: 0.65rem 1.25rem;
-  background-color: var(--c-primary);
-  color: var(--c-surface);
-  border: none;
+/* Wrapper com sombra/borda como nos relatórios */
+.table-wrapper {
+  background-color: var(--c-surface);
   border-radius: var(--border-radius);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
-  text-decoration: none;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.new-manager-button:hover {
-  background-color: var(--c-primary-dark);
   box-shadow: var(--shadow);
-  transform: translateY(-2px);
+  border: 1px solid var(--c-border);
+  overflow-x: auto;
 }
 
+/* Tabela limpa dentro do wrapper */
 .manager-table {
   width: 100%;
   border-collapse: collapse;
   background-color: var(--c-surface);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
-  overflow: hidden;
+  border-radius: 0;            /* sombra e raio no wrapper */
+  box-shadow: none;            /* sombra no wrapper */
+  overflow: visible;
+}
+
+.manager-table thead {
+  background-color: var(--c-primary-light);
+  position: sticky;            /* cabeçalho “grudado” */
+  top: 0;
+  z-index: 2;
 }
 
 .manager-table th,
@@ -94,26 +71,17 @@
   padding: var(--space-md);
   text-align: left;
   border-bottom: 1px solid var(--c-border);
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
-.manager-table thead {
-  background-color: var(--c-primary-light);
-}
-
-.manager-table th {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
-  color: var(--c-primary-dark);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.manager-table tbody tr:last-child td {
-  border-bottom: none;
+/* Zebra e hover suaves */
+.manager-table tbody tr:nth-child(even) {
+  background-color: #fcfcfc;
 }
 
 .manager-table tbody tr:hover {
-  background-color: #fcfcfc;
+  background-color: #f7fffc;
 }
 
 td.actions {
@@ -137,19 +105,48 @@ td.actions {
   transition: var(--transition);
 }
 
-.edit-button {
-  background-color: var(--c-primary);
-  text-decoration: none;
+.edit-button { background-color: var(--c-primary); text-decoration: none; }
+.edit-button:hover { background-color: var(--c-primary-dark); }
+
+.delete-button { background-color: var(--c-danger); }
+.delete-button:hover { background-color: var(--c-danger-dark); }
+
+/* Acessibilidade de foco consistente */
+.new-manager-button:focus-visible,
+.edit-button:focus-visible,
+.delete-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--c-primary-light), var(--shadow);
 }
 
-.edit-button:hover {
-  background-color: var(--c-primary-dark);
+/* Header responsivo mantendo padrão */
+.header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  position: relative;
 }
 
-.delete-button {
-  background-color: var(--c-danger);
+.header h2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--c-primary);
 }
 
-.delete-button:hover {
-  background-color: var(--c-danger-dark);
+@media (max-width: 640px) {
+  .header {
+    justify-content: space-between;
+  }
+  .header h2 {
+    position: static;
+    transform: none;
+  }
+  .new-manager-button {
+    margin-left: auto;
+  }
 }
