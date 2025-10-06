@@ -155,7 +155,7 @@ export class LocalStorageServiceService {
         // manager já tem senha no cadastro
         this.addUser({
             user: manager.email,
-            password: '123',
+            password: manager.password ?? '123',
             role: 'gerente',
         });
     }
@@ -175,7 +175,6 @@ export class LocalStorageServiceService {
             if (userIdx !== -1) {
                 users[userIdx] = {
                     ...users[userIdx],
-                    password: '123',
                 };
                 this.setData(this.USERS_KEY, users);
             }
@@ -184,11 +183,48 @@ export class LocalStorageServiceService {
 
     deleteManager(managerId: string): void {
         let managers = this.getManagers();
-        const managerToDelete = managers.find((m) => m.id === managerId);
-        managers = managers.filter((m) => m.id !== managerId);
-        this.setData('managers', managers);
+        const allClients = this.getClientes();
 
-        // remove usuário do Auth também
+        if (managers.length <= 1) {
+            throw new Error(
+                'Não é possível remover o último gerente do sistema.'
+            );
+        }
+
+        const managerToDelete = managers.find((m) => m.id === managerId);
+        if (!managerToDelete) {
+            throw new Error('Gerente a ser removido não encontrado.');
+        }
+
+        const remainingManagers = managers.filter((m) => m.id !== managerId);
+
+        const managerClientCounts = remainingManagers.map((manager) => ({
+            manager,
+            clientCount: allClients.filter(
+                (client) => client.manager?.id === manager.id
+            ).length,
+        }));
+
+        managerClientCounts.sort((a, b) => a.clientCount - b.clientCount);
+
+        const targetManager = managerClientCounts[0].manager;
+
+        const clientsToReassign = allClients.filter(
+            (c) => c.manager?.id === managerId
+        );
+
+        clientsToReassign.forEach((client) => {
+            console.log(
+                `Reatribuindo cliente ${client.nome} de ${managerToDelete.name} para ${targetManager.name}`
+            );
+            client.manager = targetManager;
+        });
+
+        this.setData('clientes', allClients);
+
+        const updatedManagers = managers.filter((m) => m.id !== managerId);
+        this.setData('managers', updatedManagers);
+
         if (managerToDelete) {
             const users = this.getUsers().filter(
                 (u) => u.user !== managerToDelete.email

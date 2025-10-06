@@ -1,42 +1,117 @@
 <div class="manager-details-container">
-  <div class="header">
-    <h2>{{ isEditMode ? 'Editar Gerente' : 'Novo Gerente' }}</h2>
-  </div>
-
-  <form [formGroup]="managerForm" (ngSubmit)="onSubmit()" class="manager-form" #managerFormDirective="ngForm">
-    <div class="form-group">
-      <label for="name">Nome</label>
-      <input type="text" id="name" formControlName="name" placeholder="Nome Completo" required/>
+    <div class="header">
+        <h2>{{ isEditMode ? "Editar Gerente" : "Novo Gerente" }}</h2>
     </div>
 
-    <div class="form-group">
-      <label for="email">E-mail</label>
-      <input type="email" id="email" formControlName="email" placeholder="E-mail" required/>
-    </div>
+    <form
+        [formGroup]="managerForm"
+        (ngSubmit)="onSubmit()"
+        class="manager-form"
+    >
+        <div class="form-group">
+            <label for="name">Nome</label>
+            <input
+                type="text"
+                id="name"
+                formControlName="name"
+                placeholder="Nome Completo"
+                required
+            />
+            <div
+                *ngIf="
+                    managerForm.get('name')?.invalid &&
+                    managerForm.get('name')?.touched
+                "
+                class="error-feedback"
+            >
+                Nome é obrigatório.
+            </div>
+        </div>
 
-    <div class="form-group">
-      <label for="cpf">CPF</label>
-      <input
-        type="text"
-        id="cpf"
-        formControlName="cpf"
-        placeholder="CPF"
-        [disabled]="true"
-        (blur)="onVerifyManagerByCPF()"
-        mask="000.000.000-00"
-        required/>
-    </div>
+        <div class="form-group">
+            <label for="email">E-mail</label>
+            <input
+                type="email"
+                id="email"
+                formControlName="email"
+                placeholder="E-mail"
+                required
+            />
+            <div
+                *ngIf="
+                    managerForm.get('email')?.invalid &&
+                    managerForm.get('email')?.touched
+                "
+                class="error-feedback"
+            >
+                Por favor, insira um e-mail válido.
+            </div>
+        </div>
 
-    <div class="form-group">
-      <label for="telephone">Telefone</label>
-      <input type="text" id="telephone" formControlName="telephone" placeholder="Telefone" mask="(00) 00000-0000" required/>
-    </div>
+        <div class="form-group">
+            <label for="cpf">CPF</label>
+            <input
+                type="text"
+                id="cpf"
+                formControlName="cpf"
+                placeholder="CPF"
+                (blur)="onVerifyManagerByCPF()"
+                mask="000.000.000-00"
+                required
+            />
+            <div
+                *ngIf="managerForm.get('cpf')?.hasError('exists')"
+                class="error-feedback"
+            >
+                Este CPF já está em uso.
+            </div>
+        </div>
 
-    <div class="form-actions">
-      <a type="button" class="cancel-button" routerLink="/admin/gerentes">Cancelar</a>
-      <button type="submit" class="save-button" [disabled]="managerForm.invalid">
-        {{ isEditMode ? 'Atualizar' : 'Salvar' }}
-      </button>
-    </div>
-  </form>
+        <div class="form-group">
+            <label for="telephone">Telefone</label>
+            <input
+                type="text"
+                id="telephone"
+                formControlName="telephone"
+                placeholder="Telefone"
+                mask="(00) 00000-0000"
+                required
+            />
+        </div>
+
+        <div class="form-group">
+            <label for="password">Senha</label>
+            <input
+                type="password"
+                id="password"
+                formControlName="password"
+                [placeholder]="
+                    isEditMode
+                        ? 'Deixe em branco para não alterar'
+                        : 'Mínimo 6 caracteres'
+                "
+                autocomplete="new-password"
+            />
+            <div
+                *ngIf="
+                    managerForm.get('password')?.invalid &&
+                    managerForm.get('password')?.touched
+                "
+                class="error-message"
+            >
+                A senha deve ter no mínimo 6 caracteres.
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a class="cancel-button" routerLink="/admin/gerentes">Cancelar</a>
+            <button
+                type="submit"
+                class="save-button"
+                [disabled]="managerForm.invalid"
+            >
+                {{ isEditMode ? "Atualizar" : "Salvar" }}
+            </button>
+        </div>
+    </form>
 </div>

@@ -79,3 +79,9 @@ h2 {
 .save-button:hover {
   background-color: #2e8b57;
 }
+
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 5px;
+}
