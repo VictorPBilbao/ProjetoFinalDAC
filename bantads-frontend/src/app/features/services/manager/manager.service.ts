@@ -6,6 +6,7 @@ import {
     RejectedClient,
 } from '../../services/local-storages/local-storage-service.service';
 import { AuthService } from '../auth/auth.service';
+import { LoadingService } from '../utils/loading-service.service';
 import { Observable, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 
@@ -13,10 +14,12 @@ import { delay } from 'rxjs/operators';
 export class ManagerService {
     constructor(
         private readonly storage: LocalStorageServiceService,
-        private readonly authService: AuthService
+        private readonly authService: AuthService,
+        private readonly loadingService: LoadingService
     ) {}
 
     getManagersWithTotals(): Observable<Manager[]> {
+        this.loadingService.show();
         const managers = this.storage.getManagers();
         const clientes = this.storage.getClientes();
 
@@ -35,14 +38,19 @@ export class ManagerService {
                 return acc + (cli.saldo < 0 ? cli.saldo : 0);
             }, 0);
         });
+
+        this.loadingService.hide();
         return of(managers).pipe(delay(500));
     }
 
     getPending(): Cliente[] {
+        this.loadingService.show();
         return this.storage.getClientesPendentes();
+        this.loadingService.hide();
     }
 
     approve(clientId: string): { ok: boolean; message: string } {
+        this.loadingService.show();
         const pending = this.getPending();
         const client = pending.find((c) => c.id === clientId);
         if (!client) {
@@ -54,9 +62,10 @@ export class ManagerService {
 
         const currentUser = this.authService.getUser();
         if (!currentUser || currentUser.role !== 'gerente') {
+            this.loadingService.hide();
             return {
                 ok: false,
-                message: 'Ação permitida apenas para gerentes autenticados.',
+                message: 'Ação permitida apenas para gerentes autenticados.'
             };
         }
 
@@ -66,6 +75,7 @@ export class ManagerService {
         );
 
         if (!approvingManager) {
+            this.loadingService.hide();
             return {
                 ok: false,
                 message: 'Gerente autenticado não encontrado no sistema.',
@@ -94,10 +104,12 @@ export class ManagerService {
             `[APROVACAO] Cliente ${client.nome} aprovado por ${approvingManager.name}. Conta: ${client.conta}`
         );
 
+        this.loadingService.hide();
         return { ok: true, message: 'Cliente aprovado com sucesso.' };
     }
 
     reject(clientId: string, reason: string): { ok: boolean; message: string } {
+        this.loadingService.show();
         if (!reason?.trim()) {
             return { ok: false, message: 'Motivo é obrigatório.' };
         }
@@ -105,6 +117,7 @@ export class ManagerService {
         const pending = this.getPending();
         const cliente = pending.find((c) => c.id === clientId);
         if (!cliente) {
+            this.loadingService.hide();
             return {
                 ok: false,
                 message: 'Cliente não encontrado nos pendentes.',
@@ -114,6 +127,7 @@ export class ManagerService {
         // Get current logged manager
         const currentUser = this.authService.getUser();
         if (!currentUser) {
+            this.loadingService.hide();
             return {
                 ok: false,
                 message: 'Usuário não autenticado.',
@@ -126,6 +140,7 @@ export class ManagerService {
             (m) => m.email === currentUser.user
         );
         if (!currentManager) {
+            this.loadingService.hide();
             return {
                 ok: false,
                 message: 'Manager não encontrado.',
@@ -143,12 +158,14 @@ export class ManagerService {
             console.log(`Motivo: ${reason}`);
             console.log(`Data/Hora: ${new Date().toLocaleString('pt-BR')}`);
 
+            this.loadingService.hide();
             return {
                 ok: true,
                 message: `Cliente ${cliente.nome} foi rejeitado e removido da lista. Email de notificação enviado.`,
             };
         } catch (error) {
             console.error('Erro ao rejeitar cliente:', error);
+            this.loadingService.hide();
             return {
                 ok: false,
                 message: 'Erro interno ao processar rejeição.',
@@ -158,6 +175,7 @@ export class ManagerService {
 
     // ---------------- CREATE ----------------
     createManager(manager: Manager): Observable<any> {
+        this.loadingService.show();
         // Gera ID simples
         const newManager: Manager = {
             ...manager,
@@ -174,6 +192,7 @@ export class ManagerService {
             data: newManager,
         };
 
+        this.loadingService.hide();
         return of(response).pipe(delay(1000)); // simula delay
     }
 
@@ -197,6 +216,8 @@ export class ManagerService {
 
     // ---------------- UPDATE ----------------
     updateManager(updated: Manager): Observable<any> {
+
+        this.loadingService.show();
         const managers = this.storage
             .getManagers()
             .map((m) => (m.id === updated.id ? { ...m, ...updated } : m));
@@ -209,11 +230,13 @@ export class ManagerService {
             data: updated,
         };
 
+        this.loadingService.hide();
         return of(response).pipe(delay(1000));
     }
 
     // ---------------- DELETE ----------------
     deleteManager(managerId: string): Observable<any> {
+        this.loadingService.show();
         const managers = this.storage
             .getManagers()
             .filter((m) => m.id !== managerId);
@@ -225,6 +248,7 @@ export class ManagerService {
             id: managerId,
         };
 
+        this.loadingService.hide();
         return of(response).pipe(delay(1000));
     }
 
