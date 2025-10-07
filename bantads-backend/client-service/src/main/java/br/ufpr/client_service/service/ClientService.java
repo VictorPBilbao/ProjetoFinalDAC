@@ -1,12 +1,15 @@
 package br.ufpr.client_service.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import br.ufpr.client_service.model.AutocadastroRequestDTO;
 import br.ufpr.client_service.model.Client;
 import br.ufpr.client_service.model.ClientDTO;
 import br.ufpr.client_service.repository.ClientRepository;
+import jakarta.transaction.Transactional;
 
 @Service
 public class ClientService {
@@ -15,6 +18,40 @@ public class ClientService {
 
     ClientService(ClientRepository clientRepository) {
         this.clientRepository = clientRepository;
+    }
+
+    // ? Autocadastro - R1
+    @Transactional
+    public ClientDTO autocadastro(AutocadastroRequestDTO request) {
+        // Check if CPF already exists (approved or pending)
+        if (clientRepository.existsById(request.getCpf())) {
+            throw new IllegalArgumentException(
+                    "Cliente já cadastrado ou aguardando aprovação com CPF: " + request.getCpf());
+        }
+
+        // Check if email already exists
+        if (clientRepository.findByEmail(request.getEmail()) != null) {
+            throw new IllegalArgumentException("Email já cadastrado: " + request.getEmail());
+        }
+
+        // Create new client entity
+        Client client = new Client();
+        client.setCpf(request.getCpf());
+        client.setNome(request.getNome());
+        client.setEmail(request.getEmail());
+        client.setTelefone(request.getTelefone());
+        client.setSalario(request.getSalario());
+        client.setEndereco(request.getEndereco());
+        client.setCep(request.getCep()); // Note: converting from uppercase CEP
+        client.setCidade(request.getCidade());
+        client.setEstado(request.getEstado());
+        client.setAprovado(false); // Awaiting approval
+        client.setDataCadastro(LocalDateTime.now());
+
+        // Save client
+        Client savedClient = clientRepository.save(client);
+
+        return convertToDTO(savedClient);
     }
 
     // ? Get all approved clients
