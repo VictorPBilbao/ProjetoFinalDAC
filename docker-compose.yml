@@ -39,11 +39,6 @@ services:
             - "15672:15672"
         networks:
             - bantads-network
-        healthcheck:
-            test: ["CMD", "rabbitmq-diagnostics", "ping"]
-            interval: 5s
-            timeout: 5s
-            retries: 10
 
     # Client service container
     client-service:
