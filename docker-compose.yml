@@ -1,70 +1,74 @@
 services:
-  # PostgreSQL container
-  postgres:
-    image: postgres:14-alpine
-    container_name: bantads-postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: bantads
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-      # Mount initialization scripts
-      - ./init-scripts/postgres:/docker-entrypoint-initdb.d
-    networks:
-      - bantads-network
+    # PostgreSQL container
+    postgres:
+        image: postgres:14-alpine
+        container_name: bantads-postgres
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: bantads
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+            - ./init-scripts/postgres:/docker-entrypoint-initdb.d
+        networks:
+            - bantads-network
 
-  # MongoDB container
-  mongodb:
-    image: mongo:5
-    container_name: bantads-mongodb
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: mongo
-      MONGO_INITDB_ROOT_PASSWORD: mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb-data:/data/db
-      # Mount initialization scripts
-      - ./init-scripts/mongodb:/docker-entrypoint-initdb.d
-    networks:
-      - bantads-network
+    # MongoDB container
+    mongodb:
+        image: mongo:5
+        container_name: bantads-mongodb
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: mongo
+            MONGO_INITDB_ROOT_PASSWORD: mongo
+        ports:
+            - "27017:27017"
+        volumes:
+            - mongodb-data:/data/db
+            - ./init-scripts/mongodb:/docker-entrypoint-initdb.d
+        networks:
+            - bantads-network
 
-  # RabbitMQ container
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: bantads-rabbitmq
-    ports:
-      - "5672:5672"   # AMQP protocol port
-      - "15672:15672" # Management UI port
-    networks:
-      - bantads-network
+    # RabbitMQ container
+    rabbitmq:
+        image: rabbitmq:3-management
+        container_name: bantads-rabbitmq
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        networks:
+            - bantads-network
+        healthcheck:
+            test: ["CMD", "rabbitmq-diagnostics", "ping"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
 
-  # Client service container
-  client-service:
-    build:
-      context: ./bantads-backend/client-service
-      dockerfile: Dockerfile
-    container_name: bantads-client-service
-    ports:
-      - "8081:8081"
-    depends_on:
-      - postgres
-      - rabbitmq
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bantads
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      SPRING_RABBITMQ_HOST: rabbitmq
-    networks:
-      - bantads-network
+    # Client service container
+    client-service:
+        build:
+            context: ./bantads-backend/client-service
+            dockerfile: Dockerfile
+        container_name: bantads-client-service
+        ports:
+            - "8081:8081"
+        depends_on:
+            - postgres
+            - rabbitmq
+        environment:
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bantads
+            SPRING_DATASOURCE_USERNAME: postgres
+            SPRING_DATASOURCE_PASSWORD: postgres
+            SPRING_RABBITMQ_HOST: rabbitmq
+        networks:
+            - bantads-network
+        restart: on-failure
 
 networks:
-  bantads-network:
-    driver: bridge
+    bantads-network:
+        driver: bridge
 
 volumes:
-  postgres-data:
-  mongodb-data:
+    postgres-data:
+    mongodb-data:
