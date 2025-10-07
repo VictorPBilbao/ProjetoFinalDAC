@@ -38,7 +38,7 @@
                     <td>{{ cliente.manager.name }}</td>
                 </tr>
                 <tr *ngIf="filteredClients.length === 0">
-                    <td colspan="7" class="no-results">
+                    <td colspan="9" class="no-results">
                         Nenhum cliente encontrado.
                     </td>
                 </tr>
@@ -52,7 +52,7 @@
             &laquo; Anterior
         </button>
 
-        <span>Pagina {{ currentPg }} de {{ totalPgs }}</span>
+        <span>Página {{ currentPg }} de {{ totalPgs }}</span>
 
         <button (click)="nextPg()" [disabled]="currentPg === totalPgs">
             &raquo; Próxima
