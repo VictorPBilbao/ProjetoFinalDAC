@@ -60,6 +60,26 @@ services:
             - bantads-network
         restart: on-failure
 
+    # API Gateway
+    api-gateway:
+        build:
+            context: ./bantads-backend/api-gateway
+            dockerfile: Dockerfile
+        container_name: bantads-api-gateway
+        environment:
+            PORT: 3000
+            CLIENT_SERVICE_URL: http://client-service:8081
+            ACCOUNT_SERVICE_URL: http://account-service:8082
+            MANAGER_SERVICE_URL: http://manager-service:8083
+            AUTH_SERVICE_URL: http://auth-service:8084
+            JWT_SECRET: your-super-secret-jwt-key-change-in-production
+        ports:
+            - "3000:3000"
+        depends_on:
+            - client-service
+        networks:
+            - bantads-network
+
 networks:
     bantads-network:
         driver: bridge
