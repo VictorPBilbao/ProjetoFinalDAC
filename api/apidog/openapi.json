@@ -265,7 +265,9 @@
             "bearerAuth": []
           }
         ]
-      },
+      }
+    },
+    "/api/clientes": {
       "post": {
         "summary": "/clientes",
         "deprecated": false,
@@ -279,6 +281,17 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/AutocadastroInfo"
+              },
+              "example": {
+                "cpf": "12345678901",
+                "nome": "João Silva",
+                "email": "joao@example.com",
+                "telefone": "(11) 99999-9999",
+                "salario": 3000,
+                "endereco": "Rua X, 100",
+                "cep": "80000000",
+                "cidade": "Curitiba",
+                "estado": "PR"
               }
             }
           }
@@ -1712,7 +1725,7 @@
   },
   "servers": [
     {
-      "url": "https://dev.your-api-server.com",
+      "url": "http://localhost:8081",
       "description": "Develop Env"
     },
     {
