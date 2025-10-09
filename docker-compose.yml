@@ -60,6 +60,29 @@ services:
             - bantads-network
         restart: on-failure
 
+    auth-service:
+        build:
+            context: ./bantads-backend/auth-service
+            dockerfile: Dockerfile
+        container_name: bantads-auth-service
+        ports:
+            - "8084:8084"
+        depends_on:
+            - mongodb
+            - rabbitmq
+        environment:
+            SPRING_DATA_MONGODB_HOST: mongodb
+            SPRING_DATA_MONGODB_PORT: 27017
+            SPRING_DATA_MONGODB_DATABASE: bantads_auth
+            SPRING_DATA_MONGODB_USERNAME: mongo
+            SPRING_DATA_MONGODB_PASSWORD: mongo
+            SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin
+            JWT_SECRET: your-super-secret-jwt-key-change-in-production
+            JWT_EXPIRATION: 86400000
+        networks:
+            - bantads-network
+        restart: on-failure
+
     # API Gateway
     api-gateway:
         build:
@@ -77,6 +100,7 @@ services:
             - "3000:3000"
         depends_on:
             - client-service
+            - auth-service
         networks:
             - bantads-network
 
