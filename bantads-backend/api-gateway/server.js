@@ -98,7 +98,7 @@ app.get(
 // ============================================
 
 app.use(
-    "/api/clientes",
+    "/clientes",
     proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
         proxyReqPathResolver: (req) => {
             // Remove the leading slash from req.url to avoid double slashes
@@ -118,53 +118,7 @@ app.use(
 );
 
 // ============================================
-// ACCOUNT SERVICE ROUTES (Placeholder)
-// ============================================
-
-app.use(
-    "/api/contas",
-    proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082", {
-        proxyReqPathResolver: (req) => {
-            const path = req.url.startsWith("/") ? req.url.substring(1) : req.url;
-            const url = `/api/contas${path ? "/" + path : ""}`;
-            console.log(`📤 [ACCOUNT] Proxying to: ${url}`);
-            return url;
-        },
-        proxyErrorHandler: (err, res, next) => {
-            console.error("❌ Account Service error:", err.message);
-            res.status(503).json({
-                error: "Account Service unavailable",
-                message: "This service is not yet implemented",
-            });
-        },
-    })
-);
-
-// ============================================
-// MANAGER SERVICE ROUTES (Placeholder)
-// ============================================
-
-app.use(
-    "/api/gerentes",
-    proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
-        proxyReqPathResolver: (req) => {
-            const path = req.url.startsWith("/") ? req.url.substring(1) : req.url;
-            const url = `/api/gerentes${path ? "/" + path : ""}`;
-            console.log(`📤 [MANAGER] Proxying to: ${url}`);
-            return url;
-        },
-        proxyErrorHandler: (err, res, next) => {
-            console.error("❌ Manager Service error:", err.message);
-            res.status(503).json({
-                error: "Manager Service unavailable",
-                message: "This service is not yet implemented",
-            });
-        },
-    })
-);
-
-// ============================================
-// AUTH SERVICE ROUTES (Placeholder)
+// AUTH SERVICE ROUTES
 // ============================================
 
 app.post(
