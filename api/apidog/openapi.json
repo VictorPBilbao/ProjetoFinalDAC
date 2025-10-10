@@ -55,6 +55,10 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/LoginInfo"
+              },
+              "example": {
+                "email": "cli1@bantads.com.br",
+                "senha": "tads"
               }
             }
           }
