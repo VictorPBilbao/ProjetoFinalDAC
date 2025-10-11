@@ -2,6 +2,8 @@ const express = require("express");
 const proxy = require("express-http-proxy");
 const cors = require("cors");
 const morgan = require("morgan");
+const { authenticateToken, requireRole, requireOwnerOrAdmin } = require("./middleware/auth");
+
 require("dotenv").config();
 
 const app = express();
@@ -41,39 +43,9 @@ app.get("/health", (req, res) => {
 // SERVICE HEALTH CHECKS (Individual)
 // ============================================
 
-app.get(
-    "/health/auth",
-    proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084", {
-        proxyReqPathResolver: () => {
-            console.log(`📤 [AUTH-HEALTH] Proxying to: /health`);
-            return "/health";
-        },
-        proxyErrorHandler: (err, res, next) => {
-            console.error("❌ Auth Service health check error:", err.message);
-            res.status(503).json({
-                error: "Auth Service unavailable",
-                message: err.message,
-            });
-        },
-    })
-);
+app.get("/health/auth", proxy(process.env.AUTH_SERVICE_URL));
 
-app.get(
-    "/health/client",
-    proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
-        proxyReqPathResolver: () => {
-            console.log(`📤 [CLIENT-HEALTH] Proxying to: /health`);
-            return "/health";
-        },
-        proxyErrorHandler: (err, res, next) => {
-            console.error("❌ Client Service health check error:", err.message);
-            res.status(503).json({
-                error: "Client Service unavailable",
-                message: err.message,
-            });
-        },
-    })
-);
+app.get("/health/client", proxy(process.env.CLIENT_SERVICE_URL));
 
 // ============================================
 // REBOOT ENDPOINT (R01 - Initialize Database)
@@ -82,7 +54,6 @@ app.get(
 app.get(
     "/reboot",
     proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
-        proxyReqPathResolver: () => "/reboot",
         proxyErrorHandler: (err, res, next) => {
             console.error("❌ Reboot proxy error:", err.message);
             res.status(503).json({
@@ -97,18 +68,47 @@ app.get(
 // CLIENT SERVICE ROUTES
 // ============================================
 
-app.use(
+app.get(
     "/clientes",
-    proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+    authenticateToken,
+    requireRole("ADMINISTRADOR"),
+    proxy(process.env.CLIENT_SERVICE_URL, {
         proxyReqPathResolver: (req) => {
-            // Remove the leading slash from req.url to avoid double slashes
-            const path = req.url.startsWith("/") ? req.url.substring(1) : req.url;
-            const url = `/api/clientes${path ? "/" + path : ""}`;
-            console.log(`📤 [CLIENT] Proxying to: ${url}`);
-            return url;
+            return `${req.url}`;
         },
         proxyErrorHandler: (err, res, next) => {
-            console.error("❌ Client Service error:", err.message);
+            res.status(503).json({
+                error: "Client Service unavailable",
+                message: err.message,
+            });
+        },
+    })
+);
+
+app.post(
+    "/clientes",
+    proxy(process.env.CLIENT_SERVICE_URL, {
+        proxyReqPathResolver: (req) => {
+            return `${req.url}`;
+        },
+        proxyErrorHandler: (err, res, next) => {
+            res.status(503).json({
+                error: "Client Service unavailable",
+                message: err.message,
+            });
+        },
+    })
+);
+
+app.get(
+    "/clientes/:cpf",
+    authenticateToken,
+    requireOwnerOrAdmin("cpf"),
+    proxy(process.env.CLIENT_SERVICE_URL, {
+        proxyReqPathResolver: (req) => {
+            return `${req.url}`;
+        },
+        proxyErrorHandler: (err, res, next) => {
             res.status(503).json({
                 error: "Client Service unavailable",
                 message: err.message,
@@ -121,50 +121,13 @@ app.use(
 // AUTH SERVICE ROUTES
 // ============================================
 
-app.post(
-    "/login",
+// All auth routes proxy directly without path manipulation
+app.use(
+    ["/login", "/logout", "/validate"],
     proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084", {
-        proxyReqPathResolver: () => {
-            console.log(`📤 [AUTH] Proxying to: /login`);
-            return "/login";
-        },
-        proxyErrorHandler: (err, res, next) => {
-            console.error("❌ Auth Service error:", err.message);
-            res.status(503).json({
-                error: "Auth Service unavailable",
-                message: "This service is not yet implemented",
-            });
-        },
-    })
-);
-
-app.post(
-    "/logout",
-    proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084", {
-        proxyReqPathResolver: () => {
-            console.log(`📤 [AUTH] Proxying to: /logout`);
-            return "/logout";
-        },
-        proxyErrorHandler: (err, res, next) => {
-            console.error("❌ Auth Service error:", err.message);
-            res.status(503).json({
-                error: "Auth Service unavailable",
-                message: "This service is not yet implemented",
-            });
-        },
-    })
-);
-
-// ============================================
-// JWT VALIDATION ROUTE
-// ============================================
-
-app.get(
-    "/validate",
-    proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084", {
-        proxyReqPathResolver: () => {
-            console.log(`📤 [AUTH] Proxying to: /validate`);
-            return "/validate";
+        proxyReqPathResolver: (req) => {
+            console.log(`📤 [AUTH] ${req.method} ${req.originalUrl}`);
+            return req.originalUrl;
         },
         proxyErrorHandler: (err, res, next) => {
             console.error("❌ Auth Service error:", err.message);

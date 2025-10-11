@@ -17,7 +17,7 @@ services:
 
     # MongoDB container
     mongodb:
-        image: mongo:8.0-noble
+        image: mongo:8-noble
         container_name: bantads-mongodb
         environment:
             MONGO_INITDB_ROOT_USERNAME: mongo
@@ -32,7 +32,7 @@ services:
 
     # RabbitMQ container
     rabbitmq:
-        image: rabbitmq:3-management
+        image: rabbitmq:4-management-alpine
         container_name: bantads-rabbitmq
         ports:
             - "5672:5672"
@@ -77,7 +77,7 @@ services:
             SPRING_DATA_MONGODB_USERNAME: mongo
             SPRING_DATA_MONGODB_PASSWORD: mongo
             SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin
-            JWT_SECRET: your-super-secret-jwt-key-change-in-production
+            JWT_SECRET: your-super-secret-jwt-key-change-in-production-12345
             JWT_EXPIRATION: 86400000
         networks:
             - bantads-network
@@ -95,7 +95,7 @@ services:
             ACCOUNT_SERVICE_URL: http://account-service:8082
             MANAGER_SERVICE_URL: http://manager-service:8083
             AUTH_SERVICE_URL: http://auth-service:8084
-            JWT_SECRET: your-super-secret-jwt-key-change-in-production
+            JWT_SECRET: your-super-secret-jwt-key-change-in-production-12345
         ports:
             - "3000:3000"
         depends_on:
