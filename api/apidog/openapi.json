@@ -109,107 +109,55 @@
         ]
       }
     },
-    "/clientes/{cpf}": {
-      "get": {
-        "summary": "/clientes/{cpf}",
+    "/clientes": {
+      "post": {
+        "summary": "/clientes",
         "deprecated": false,
-        "description": "Consulta um cliente",
+        "description": "autocadastro de cliente",
         "tags": [
           "Clientes"
         ],
-        "parameters": [
-          {
-            "name": "cpf",
-            "in": "path",
-            "description": "",
-            "required": true,
-            "example": "",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Usuário consultado com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DadosClienteResponse"
-                }
-              }
-            },
-            "headers": {}
-          },
-          "401": {
-            "description": "O usuário não está logado",
-            "headers": {}
-          },
-          "403": {
-            "description": "O usuário não tem permissão para efetuar esta operação",
-            "headers": {}
-          },
-          "404": {
-            "description": "Usuário não encontrado",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "put": {
-        "summary": "/clientes/{cpf}",
-        "deprecated": false,
-        "description": "altera os dados de perfil de cliente",
-        "tags": [
-          "Clientes"
-        ],
-        "parameters": [
-          {
-            "name": "cpf",
-            "in": "path",
-            "description": "",
-            "required": true,
-            "example": "",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PerfilInfo"
+                "$ref": "#/components/schemas/AutocadastroInfo"
+              },
+              "example": {
+                "cpf": "12345678901",
+                "nome": "João Silva",
+                "email": "joao@example.com",
+                "telefone": "(11) 99999-9999",
+                "salario": 3000,
+                "endereco": "Rua X, 100",
+                "cep": "80000000",
+                "cidade": "Curitiba",
+                "estado": "PR"
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Perfil do cliente alterado com sucesso",
+          "201": {
+            "description": "Cliente autocadastrado",
             "headers": {}
           },
-          "401": {
-            "description": "O usuário não está logado",
+          "400": {
+            "description": "Erro inserindo cliente",
             "headers": {}
           },
-          "403": {
-            "description": "O usuário não tem permissão para efetuar esta operação",
+          "409": {
+            "description": "Cliente já cadastrado ou aguardando aprovação, CPF duplicado",
             "headers": {}
           }
         },
         "security": [
           {
-            "bearerAuth": []
+            "JTW Token": []
           }
         ]
-      }
-    },
-    "/clientes": {
+      },
       "get": {
         "summary": "/clientes",
         "deprecated": false,
@@ -266,55 +214,109 @@
         },
         "security": [
           {
-            "bearerAuth": []
+            "JTW Token": []
           }
         ]
       }
     },
-    "/api/clientes": {
-      "post": {
-        "summary": "/clientes",
+    "/clientes/{cpf}": {
+      "get": {
+        "summary": "/clientes/{cpf}",
         "deprecated": false,
-        "description": "autocadastro de cliente",
+        "description": "Consulta um cliente",
         "tags": [
           "Clientes"
         ],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "cpf",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "12912861012",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuário consultado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DadosClienteResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          },
+          "404": {
+            "description": "Usuário não encontrado",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "JTW Token": []
+          }
+        ]
+      },
+      "put": {
+        "summary": "/clientes/{cpf}",
+        "deprecated": false,
+        "description": "altera os dados de perfil de cliente",
+        "tags": [
+          "Clientes"
+        ],
+        "parameters": [
+          {
+            "name": "cpf",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AutocadastroInfo"
-              },
-              "example": {
-                "cpf": "12345678901",
-                "nome": "João Silva",
-                "email": "joao@example.com",
-                "telefone": "(11) 99999-9999",
-                "salario": 3000,
-                "endereco": "Rua X, 100",
-                "cep": "80000000",
-                "cidade": "Curitiba",
-                "estado": "PR"
+                "$ref": "#/components/schemas/PerfilInfo"
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Cliente autocadastrado",
+          "200": {
+            "description": "Perfil do cliente alterado com sucesso",
             "headers": {}
           },
-          "400": {
-            "description": "Erro inserindo cliente",
+          "401": {
+            "description": "O usuário não está logado",
             "headers": {}
           },
-          "409": {
-            "description": "Cliente já cadastrado ou aguardando aprovação, CPF duplicado",
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
             "headers": {}
           }
         },
-        "security": []
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/clientes/{cpf}/aprovar": {
