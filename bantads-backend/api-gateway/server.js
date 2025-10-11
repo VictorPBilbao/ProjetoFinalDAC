@@ -31,10 +31,10 @@ app.get("/health", (req, res) => {
         status: "✅ API Gateway is running!",
         timestamp: new Date().toISOString(),
         services: {
-            client: process.env.CLIENT_SERVICE_URL || "http://localhost:8081",
-            account: process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082",
-            manager: process.env.MANAGER_SERVICE_URL || "http://localhost:8083",
-            auth: process.env.AUTH_SERVICE_URL || "http://localhost:8084",
+            client: process.env.CLIENT_SERVICE_URL,
+            account: process.env.ACCOUNT_SERVICE_URL,
+            manager: process.env.MANAGER_SERVICE_URL,
+            auth: process.env.AUTH_SERVICE_URL,
         },
     });
 });
