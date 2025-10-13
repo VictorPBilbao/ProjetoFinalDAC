@@ -18,19 +18,11 @@
                     type="button"
                     class="icon-button"
                     (click)="toggleBalanceVisibility()"
-                    [attr.aria-label]="
-                        hideBalance ? 'Mostrar saldo' : 'Ocultar saldo'
-                    "
-                >
+                    [attr.aria-label]="hideBalance ? 'Mostrar saldo' : 'Ocultar saldo'">
                     <img
-                        [src]="
-                            hideBalance
-                                ? 'images/eye-closed.png'
-                                : 'images/eye-icon.png'
-                        "
+                        [src]="hideBalance ? 'images/eye-closed.png' : 'images/eye-icon.png'"
                         alt=""
-                        class="visibility-icon"
-                    />
+                        class="visibility-icon" />
                 </button>
             </h2>
 
