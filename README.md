@@ -1039,27 +1039,27 @@ Verifica o status do Client Service.
 
 ### Clientes
 
-| CPF | Nome | E-mail | Senha | Salário |
-|-----|------|--------|-------|---------|
-| 12912861012 | Catharyna | cli1@bantads.com.br | tads | R$ 10.000,00 |
-| 09506382000 | Cleuddônio | cli2@bantads.com.br | tads | R$ 20.000,00 |
-| 85733854057 | Catianna | cli3@bantads.com.br | tads | R$ 3.000,00 |
-| 58872160006 | Cutardo | cli4@bantads.com.br | tads | R$ 500,00 |
-| 76179646090 | Coândrya | cli5@bantads.com.br | tads | R$ 1.500,00 |
+| CPF         | Nome       | E-mail              | Senha | Salário      |
+|-------------|------------|---------------------|-------|--------------|
+| 12912861012 | Catharyna  | cli1@bantads.com.br | tads  | R$ 10.000,00 |
+| 09506382000 | Cleuddônio | cli2@bantads.com.br | tads  | R$ 20.000,00 |
+| 85733854057 | Catianna   | cli3@bantads.com.br | tads  | R$ 3.000,00  |
+| 58872160006 | Cutardo    | cli4@bantads.com.br | tads  | R$ 500,00    |
+| 76179646090 | Coândrya   | cli5@bantads.com.br | tads  | R$ 1.500,00  |
 
 ### Gerentes
 
-| CPF | Nome | E-mail | Senha |
-|-----|------|--------|-------|
-| 98574307084 | Geniéve | ger1@bantads.com.br | tads |
-| 64065268052 | Godophredo | ger2@bantads.com.br | tads |
-| 23862179060 | Gyândula | ger3@bantads.com.br | tads |
+| CPF         | Nome       | E-mail              | Senha |
+|-------------|------------|---------------------|-------|
+| 98574307084 | Geniéve    | ger1@bantads.com.br | tads  |
+| 64065268052 | Godophredo | ger2@bantads.com.br | tads  |
+| 23862179060 | Gyândula   | ger3@bantads.com.br | tads  |
 
 ### Administrador
 
-| CPF | Nome | E-mail | Senha |
-|-----|------|--------|-------|
-| 40501740066 | Adamântio | adm1@bantads.com.br | tads |
+| CPF         | Nome      | E-mail              | Senha |
+|-------------|-----------|---------------------|-------|
+| 40501740066 | Adamântio | adm1@bantads.com.br | tads  |
 
 ---
 
@@ -1296,7 +1296,7 @@ Este projeto foi desenvolvido para fins educacionais na UFPR - Universidade Fede
 Desenvolvido por alunos do curso de Tecnologia em Análise e Desenvolvimento de Sistemas (TADS) da UFPR.
 
 **Disciplina:** DS152 - Desenvolvimento de Aplicações Corporativas  
-**Professor:** Razer Anthon
+**Professor:** Razer Anthom Nizer Rojas Montaño
 **Ano:** 2025
 
 ---
@@ -1304,7 +1304,6 @@ Desenvolvido por alunos do curso de Tecnologia em Análise e Desenvolvimento de 
 ## 🎓 Agradecimentos
 
 - Universidade Federal do Paraná (UFPR)
-- Departamento de Informática
 - Professores e colegas do curso TADS
 
 ---
