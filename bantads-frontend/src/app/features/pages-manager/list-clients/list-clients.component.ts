@@ -1,7 +1,8 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
@@ -14,49 +15,73 @@ import { CpfPipe } from '../../shared/pipes/cpf.pipe';
     templateUrl: './list-clients.component.html',
     styleUrl: './list-clients.component.css',
 })
-export class ListClientsComponent implements OnInit {
+export class ListClientsComponent implements OnInit, OnDestroy {
     private allClients: Cliente[] = [];
     filteredClients: Cliente[] = [];
     pgClients: Cliente[] = [];
 
     search: string = '';
+    isLoading = true;
 
     currentPg: number = 1;
     itmsPerPg: number = 7;
     totalPgs: number = 0;
 
-    // Modal state
     modalOpen = false;
     selectedClient?: Cliente;
 
-    constructor(private clientService: ClientService) { }
+    private clientsSubscription?: Subscription;
+
+    constructor(private clientService: ClientService) {}
 
     ngOnInit(): void {
-        this.clientService.getClients().subscribe((clients) => {
-            this.pgClients = clients;
-        });
+        this.isLoading = true;
+        this.clientsSubscription = this.clientService
+            .getClients()
+            .subscribe((clients) => {
+                this.allClients = clients.sort((a, b) =>
+                    a.nome.localeCompare(b.nome)
+                );
 
-        this.pgClients.sort((a, b) => a.nome.localeCompare(b.nome));
+                this.filterClients();
+                this.isLoading = false;
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.clientsSubscription?.unsubscribe();
     }
 
     filterClients(): void {
         const keyword = this.search.toLowerCase().trim();
-        this.clientService.getClients().subscribe((clients) => {
-            this.allClients = clients;
-            if (!keyword) {
-                this.filteredClients = [...this.allClients];
-            } else {
-                this.filteredClients = this.allClients.filter(
-                    (client) =>
-                        client.nome.toLowerCase().includes(keyword) ||
-                        client.cpf
-                            .replace(/[.-]/g, '')
-                            .includes(keyword.replace(/[.-]/g, ''))
-                );
-            }
-            this.currentPg = 1;
-            this.updatePgView();
-        });
+        if (!keyword) {
+            this.filteredClients = [...this.allClients];
+        } else {
+            this.filteredClients = this.allClients.filter(
+                (client) =>
+                    client.nome.toLowerCase().includes(keyword) ||
+                    client.cpf
+                        .replace(/[.-]/g, '')
+                        .includes(keyword.replace(/[.-]/g, ''))
+            );
+        }
+        this.currentPg = 1;
+        this.updatePgView();
+    }
+
+    openModal(cliente: Cliente): void {
+        this.selectedClient = cliente;
+        this.modalOpen = true;
+    }
+
+    closeModal(): void {
+        this.modalOpen = false;
+        this.selectedClient = undefined;
+    }
+
+    @HostListener('document:keydown.escape', ['$event'])
+    onKeydownHandler(event: KeyboardEvent) {
+        this.closeModal();
     }
 
     updatePgView() {

@@ -139,3 +139,23 @@ h2 {
   color: var(--c-expense);
   font-weight: 500;
 }
+
+td.actions {
+  text-align: center;
+}
+
+.details-button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: var(--c-primary);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.details-button:hover {
+  background-color: var(--c-primary-dark);
+}
+
