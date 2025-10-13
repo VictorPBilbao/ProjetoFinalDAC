@@ -1,17 +1,17 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
-import { Subscription } from 'rxjs';
 import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 
 @Component({
     selector: 'app-clients-report',
     standalone: true,
-    imports: [FormsModule, CommonModule, RouterLink, CpfPipe],
+    imports: [FormsModule, CommonModule, CpfPipe],
     templateUrl: './clients-report.component.html',
     styleUrl: './clients-report.component.css',
 })
@@ -28,7 +28,7 @@ export class ClientsReportComponent implements OnInit, OnDestroy {
 
     private clientsSubscription?: Subscription;
 
-    constructor(private clientService: ClientService) { }
+    constructor(private clientService: ClientService) {}
 
     ngOnInit(): void {
         this.clientsSubscription = this.clientService.getClients().subscribe({

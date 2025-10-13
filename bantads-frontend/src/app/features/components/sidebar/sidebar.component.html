@@ -14,9 +14,8 @@
             </div>
         </div>
     </div>
-    <nav class="menu-nav d-flex">
+    <nav class="menu-nav d-flex flex-column" style="flex: 1 1 0%">
         <ul class="nav d-flex flex-column list-unstyled">
-            <!-- ========================= CLIENTE ========================= -->
             <li class="nav-item" *ngIf="clientLinksVisible">
                 <a
                     class="nav-link flex items-center gap-2 menu-padding"
@@ -83,8 +82,6 @@
                 </a>
             </li>
 
-            <!-- ========================= GERENTE ========================= -->
-
             <li class="nav-item" *ngIf="managerLinksVisible">
                 <a
                     class="nav-link flex items-center gap-2 menu-padding"
@@ -129,7 +126,6 @@
                 </a>
             </li>
 
-            <!-- ========================= ADMIN ========================= -->
             <li class="nav-item" *ngIf="adminLinksVisible">
                 <a
                     class="nav-link flex items-center gap-2 menu-padding"
@@ -162,7 +158,11 @@
                     <p class="nav-link-text">Gerentes</p>
                 </a>
             </li>
-            <!-- ========================= LOGOUT ========================= -->
+        </ul>
+        <ul
+            class="nav d-flex flex-column list-unstyled"
+            style="margin-top: auto"
+        >
             <li class="nav-item nav-item-seperator">
                 <div class="nav-border"></div>
             </li>
