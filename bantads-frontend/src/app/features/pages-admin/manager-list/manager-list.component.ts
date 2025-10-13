@@ -18,6 +18,14 @@ import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 export class ManagerListComponent implements OnInit, OnDestroy {
     managers: Manager[] = [];
     private managerSubscription?: Subscription;
+    searchTerm: string = '';
+    filteredManagers: Manager[] = [];
+    currentPage: number = 1;
+    itemsPerPage: number = 10;
+    totalPages: number = 1;
+    sortColumn: keyof Manager | null = null;
+    sortDirection: 'asc' | 'desc' = 'asc';
+    isLoading: boolean = false;
 
     constructor(
         private managerService: ManagerService,
@@ -76,5 +84,75 @@ export class ManagerListComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.managerSubscription?.unsubscribe();
+    }
+
+    private refreshFilteredManagers(): void {
+        const term = this.searchTerm.toLowerCase().trim();
+        let result = this.managers;
+
+        if (term) {
+            result = result.filter(
+                (m) =>
+                    m.name.toLowerCase().includes(term) ||
+                    m.email?.toLowerCase().includes(term) ||
+                    m.cpf?.includes(term)
+            );
+        }
+
+        if (this.sortColumn) {
+            result = result.sort((a, b) => {
+                const aVal = (a[this.sortColumn!] ?? '').toString().toLowerCase();
+                const bVal = (b[this.sortColumn!] ?? '').toString().toLowerCase();
+
+                if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
+                if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        this.totalPages = Math.ceil(result.length / this.itemsPerPage);
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+        this.filteredManagers = result.slice(startIndex, endIndex);
+    }
+
+    // Busca dinâmica
+    onSearchChange(value: string): void {
+        this.searchTerm = value;
+        this.currentPage = 1;
+        this.refreshFilteredManagers();
+    }
+
+    // Ordenação clicando em cabeçalhos
+    sortBy(column: keyof Manager): void {
+        if (this.sortColumn === column) {
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortColumn = column;
+            this.sortDirection = 'asc';
+        }
+        this.refreshFilteredManagers();
+    }
+
+    // Paginação simples
+    goToPage(page: number): void {
+        if (page >= 1 && page <= this.totalPages) {
+            this.currentPage = page;
+            this.refreshFilteredManagers();
+        }
+    }
+
+    nextPage(): void {
+        if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+            this.refreshFilteredManagers();
+        }
+    }
+
+    prevPage(): void {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            this.refreshFilteredManagers();
+        }
     }
 }
