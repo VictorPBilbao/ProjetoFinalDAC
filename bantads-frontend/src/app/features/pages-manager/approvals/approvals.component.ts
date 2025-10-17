@@ -7,7 +7,6 @@ import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
-
 @Component({
     selector: 'app-approvals',
     standalone: true,
