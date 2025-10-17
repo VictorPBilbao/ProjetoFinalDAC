@@ -7,6 +7,7 @@ import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 
+
 @Component({
     selector: 'app-approvals',
     standalone: true,
@@ -61,6 +62,7 @@ export class ApprovalsComponent implements OnInit, OnDestroy {
                 },
                 error: (err: any) => {
                     this.setFeedback(false, err?.message ?? 'Erro ao carregar pendentes');
+                    this.isLoading = false;
                 },
                 complete: () => {
                     this.isLoading = false;

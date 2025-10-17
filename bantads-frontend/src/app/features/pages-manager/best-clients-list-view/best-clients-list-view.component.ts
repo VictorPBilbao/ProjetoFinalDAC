@@ -59,6 +59,7 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
                     const managerClients = clients.filter(
                         (c) => c.manager?.id === currentManager.id
                     );
+                    console.log('Clientes encontrados para este gerente:', managerClients.length, managerClients);
 
                     const clientesOrdenados = managerClients.sort((a, b) => {
                         return b.saldo - a.saldo;
@@ -70,7 +71,7 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
                 this.isLoading = false;
             },
             error: (err) => {
-                this.feedbackMessage =
+                this.errorMsg =
                     'Não foi possível carregar a lista de clientes.';
                 console.error('Erro ao carregar dados:', err);
                 this.isLoading = false;

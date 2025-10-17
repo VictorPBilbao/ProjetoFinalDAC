@@ -28,7 +28,7 @@
         >
     </div>
 
-    <div *ngIf="isLoading" class="empty" aria-busy="true">Carregando...</div>
+    <!-- <div *ngIf="isLoading" class="empty" aria-busy="true">Carregando...</div> -->
 
     <div
         *ngIf="!isLoading && filtered.length === 0"
@@ -145,14 +145,13 @@
         </table>
     </div>
 
-    <div id="legend" class="legend" *ngIf="!isLoading && filtered.length > 0">
-        <p>
-            <strong>Regra de limite:</strong> Salário &gt;= 2.000 => Limite =
-            50% do salário; caso contrário, sem limite.
-        </p>
-        <p>
-            Ao aprovar: sistema atribui automaticamente o gerente com menos
-            clientes e gera número de conta de 4 dígitos.
-        </p>
-    </div>
+    <!-- <div id="legend" class="legend" *ngIf="!isLoading && filtered.length > 0"> -->
+    <!-- <p>
+        <strong>Regra de limite:</strong> Salário &gt;= 2.000 => Limite = 50% do
+        salário; caso contrário, sem limite.
+    </p>
+    <p>
+        Ao aprovar: sistema atribui automaticamente o gerente com menos clientes
+        e gera número de conta de 4 dígitos.
+    </p> -->
 </div>

@@ -77,18 +77,6 @@
                         {{ cliente.cpf | cpf }}
                     </p>
                 </div>
-
-                <img
-                    class="client-avatar"
-                    [src]="
-                        cliente.avatarUrl ||
-                        'assets/images/avatar-placeholder.png'
-                    "
-                    alt="Avatar de {{ cliente.nome }}"
-                    loading="lazy"
-                    width="56"
-                    height="56"
-                />
             </div>
 
             <div class="client-location" aria-hidden="false">
@@ -110,33 +98,7 @@
                 }}</span>
             </div>
 
-            <footer class="card-actions">
-                <a
-                    class="btn btn-primary"
-                    [routerLink]="['/manager/clientes', cliente.id]"
-                    [attr.aria-label]="'Ver detalhes de ' + cliente.nome"
-                >
-                    Ver Cliente
-                </a>
-
-                <button
-                    type="button"
-                    class="btn btn-ghost"
-                    (click)="selectHighlight(cliente)"
-                    [attr.aria-pressed]="selectedClient?.id === cliente.id"
-                    [attr.aria-label]="
-                        selectedClient?.id === cliente.id
-                            ? 'Remover destaque'
-                            : 'Destacar cliente'
-                    "
-                >
-                    {{
-                        selectedClient?.id === cliente.id
-                            ? "Destaque"
-                            : "Destacar"
-                    }}
-                </button>
-            </footer>
+            <footer class="card-actions"></footer>
         </div>
     </div>
 
@@ -150,17 +112,5 @@
         role="status"
     >
         <p>Nenhum cliente para exibir no momento.</p>
-    </div>
-
-    <!-- Legenda / nota rápida -->
-    <div
-        class="note"
-        *ngIf="!isLoading && clientesEmDestaque.length > 0"
-        aria-hidden="true"
-    >
-        <small
-            >Os valores são atualizados em tempo real. Use "Ver Cliente" para
-            abrir o perfil completo.</small
-        >
     </div>
 </div>
