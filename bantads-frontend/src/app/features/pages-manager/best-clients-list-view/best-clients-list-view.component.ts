@@ -1,10 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { Subscription, forkJoin } from 'rxjs';
 
 import { Cliente } from './../../models/cliente.model';
-import { Manager } from './../../models/manager.model';
 
 import { ClientService } from '../../services/client/client.service';
 import { ManagerService } from '../../services/manager/manager.service';
@@ -14,7 +12,7 @@ import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 @Component({
     selector: 'app-best-clients-list-view',
     standalone: true,
-    imports: [CommonModule, CpfPipe, RouterLink],
+    imports: [CommonModule, CpfPipe],
     templateUrl: './best-clients-list-view.component.html',
     styleUrl: './best-clients-list-view.component.css',
 })
