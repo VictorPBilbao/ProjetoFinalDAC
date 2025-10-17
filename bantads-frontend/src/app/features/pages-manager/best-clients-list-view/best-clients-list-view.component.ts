@@ -18,7 +18,6 @@ import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 })
 export class BestClientsListViewComponent implements OnInit, OnDestroy {
     clientesEmDestaque: Cliente[] = [];
-    feedbackMessage: string = '';
     isLoading: boolean = true;
     private dataSubscription?: Subscription;
     selectedClient: Cliente | null = null;
