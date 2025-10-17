@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Subscription, forkJoin } from 'rxjs';
 
 import { Cliente } from './../../models/cliente.model';
@@ -13,7 +14,7 @@ import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 @Component({
     selector: 'app-best-clients-list-view',
     standalone: true,
-    imports: [CommonModule, CpfPipe],
+    imports: [CommonModule, CpfPipe, RouterLink],
     templateUrl: './best-clients-list-view.component.html',
     styleUrl: './best-clients-list-view.component.css',
 })
@@ -22,6 +23,8 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
     feedbackMessage: string = '';
     isLoading: boolean = true;
     private dataSubscription?: Subscription;
+    selectedClient: Cliente | null = null;
+    errorMsg: string = '';
 
     constructor(
         private clientService: ClientService,
@@ -39,7 +42,7 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
 
         if (!loggedUser || loggedUser.role !== 'gerente') {
             this.isLoading = false;
-            this.feedbackMessage = 'Nenhum gerente logado.';
+            this.errorMsg = 'Nenhum gerente logado.';
             return;
         }
 
@@ -73,6 +76,18 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
                 this.isLoading = false;
             },
         });
+    }
+
+    selectHighlight(cliente: Cliente): void {
+        if (this.selectedClient?.id === cliente.id) {
+            this.selectedClient = null;
+        } else {
+            this.selectedClient = cliente;
+        }
+    }
+
+    trackById(index: number, cliente: Cliente): string {
+        return cliente.id;
     }
 
     ngOnDestroy(): void {

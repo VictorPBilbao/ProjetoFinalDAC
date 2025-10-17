@@ -1,104 +1,166 @@
-<div class="best-clients-container" role="region" aria-label="Clientes em destaque">
-  <header class="page-header">
-    <h1>Clientes em Destaque</h1>
-    <p class="subtitle">Os 3 clientes com os maiores saldos da sua carteira.</p>
-  </header>
+<div
+    class="best-clients-container"
+    role="region"
+    aria-label="Clientes em destaque"
+>
+    <header class="page-header">
+        <h1>Clientes em Destaque</h1>
+        <p class="subtitle">
+            Os 3 clientes com os maiores saldos da sua carteira.
+        </p>
+    </header>
 
-  <!-- Estado de carregamento -->
-  <div *ngIf="isLoading" class="podium loading" aria-busy="true" aria-live="polite">
-    <div class="client-card skeleton" *ngFor="let i of [1,2,3]">
-      <div class="card-header">
-        <span class="rank-number skeleton-box"></span>
-        <div class="client-name skeleton-box"></div>
-      </div>
-      <div class="client-cpf skeleton-box"></div>
-      <div class="client-location skeleton-box"></div>
-      <div class="client-balance">
-        <span class="balance-label skeleton-box"></span>
-        <span class="balance-amount skeleton-box"></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Mensagem de erro -->
-  <div *ngIf="!isLoading && errorMsg" class="no-clients-message error" role="alert">
-    <p>{{ errorMsg }}</p>
-  </div>
-
-  <!-- Lista de clientes em destaque -->
-  <div class="podium" *ngIf="!isLoading && (clientesEmDestaque?.length > 0)">
+    <!-- Estado de carregamento -->
     <div
-      *ngFor="let cliente of clientesEmDestaque; let i = index; trackBy: trackById"
-      class="client-card"
-      [ngClass]="{
-        'rank-1': i === 0,
-        'rank-2': i === 1,
-        'rank-3': i === 2
-      }"
-      tabindex="0"
-      role="article"
-      aria-label="Cliente {{ cliente.nome }} - posição {{ i + 1 }}"
+        *ngIf="isLoading"
+        class="podium loading"
+        aria-busy="true"
+        aria-live="polite"
     >
-      <div class="card-header">
-        <span class="rank-number" aria-hidden="true">
-          <span class="material-symbols-outlined medal-icon" aria-hidden="true">workspace_premium</span>
-          {{ i + 1 }}
-        </span>
-
-        <div class="client-meta">
-          <h2 class="client-name">{{ cliente.nome }}</h2>
-          <p class="client-cpf" aria-label="CPF">{{ cliente.cpf | cpf }}</p>
+        f
+        <div class="client-card skeleton" *ngFor="let i of [1, 2, 3]">
+            <div class="card-header">
+                <span class="rank-number skeleton-box"></span>
+                <div class="client-name skeleton-box"></div>
+            </div>
+            <div class="client-cpf skeleton-box"></div>
+            <div class="client-location skeleton-box"></div>
+            <div class="client-balance">
+                <span class="balance-label skeleton-box"></span>
+                <span class="balance-amount skeleton-box"></span>
+            </div>
         </div>
-
-        <img
-          class="client-avatar"
-          [src]="cliente.avatarUrl || 'assets/images/avatar-placeholder.png'"
-          alt="Avatar de {{ cliente.nome }}"
-          loading="lazy"
-          width="56"
-          height="56"
-        />
-      </div>
-
-      <div class="client-location" aria-hidden="false">
-        <span class="material-symbols-outlined location-icon" aria-hidden="true">location_on</span>
-        <span>{{ cliente.endereco?.cidade }}, {{ cliente.endereco?.estado }}</span>
-      </div>
-
-      <div class="client-balance" aria-label="Saldo em conta">
-        <span class="balance-label">Saldo em Conta</span>
-        <span class="balance-amount">{{ cliente.saldo | currency : 'BRL' : 'symbol' : '1.2-2' }}</span>
-      </div>
-
-      <footer class="card-actions">
-        <a
-          class="btn btn-primary"
-          [routerLink]="['/manager/clientes', cliente.id]"
-          aria-label="Ver detalhes de {{ cliente.nome }}"
-        >
-          Ver Cliente
-        </a>
-
-        <button
-          type="button"
-          class="btn btn-ghost"
-          (click)="selectHighlight(cliente)"
-          aria-pressed="{{ selectedClient?.id === cliente.id }}"
-          [attr.aria-label]="selectedClient?.id === cliente.id ? 'Remover destaque' : 'Destacar cliente'"
-        >
-          {{ selectedClient?.id === cliente.id ? 'Destaque' : 'Destacar' }}
-        </button>
-      </footer>
     </div>
-  </div>
 
-  <!-- Estado vazio -->
-  <div *ngIf="!isLoading && (!clientesEmDestaque || clientesEmDestaque.length === 0)" class="no-clients-message" role="status">
-    <p>Nenhum cliente para exibir no momento.</p>
-  </div>
+    <!-- Mensagem de erro -->
+    <div
+        *ngIf="!isLoading && errorMsg"
+        class="no-clients-message error"
+        role="alert"
+    >
+        <p>{{ errorMsg }}</p>
+    </div>
 
-  <!-- Legenda / nota rápida -->
-  <div class="note" *ngIf="!isLoading && clientesEmDestaque?.length > 0" aria-hidden="true">
-    <small>Os valores são atualizados em tempo real. Use "Ver Cliente" para abrir o perfil completo.</small>
-  </div>
+    <!-- Lista de clientes em destaque -->
+    <div class="podium" *ngIf="!isLoading && clientesEmDestaque.length > 0">
+        <div
+            *ngFor="
+                let cliente of clientesEmDestaque;
+                let i = index;
+                trackBy: trackById
+            "
+            class="client-card"
+            [ngClass]="{
+                'rank-1': i === 0,
+                'rank-2': i === 1,
+                'rank-3': i === 2
+            }"
+            tabindex="0"
+            role="article"
+            [attr.aria-label]="
+                'Cliente ' + cliente.nome + ' - posição ' + (i + 1)
+            "
+        >
+            <div class="card-header">
+                <span class="rank-number" aria-hidden="true">
+                    <span
+                        class="material-symbols-outlined medal-icon"
+                        aria-hidden="true"
+                        >workspace_premium</span
+                    >
+                    {{ i + 1 }}
+                </span>
+
+                <div class="client-meta">
+                    <h2 class="client-name">{{ cliente.nome }}</h2>
+                    <p class="client-cpf" aria-label="CPF">
+                        {{ cliente.cpf | cpf }}
+                    </p>
+                </div>
+
+                <img
+                    class="client-avatar"
+                    [src]="
+                        cliente.avatarUrl ||
+                        'assets/images/avatar-placeholder.png'
+                    "
+                    alt="Avatar de {{ cliente.nome }}"
+                    loading="lazy"
+                    width="56"
+                    height="56"
+                />
+            </div>
+
+            <div class="client-location" aria-hidden="false">
+                <span
+                    class="material-symbols-outlined location-icon"
+                    aria-hidden="true"
+                    >location_on</span
+                >
+                <span
+                    >{{ cliente.endereco.cidade }},
+                    {{ cliente.endereco.estado }}</span
+                >
+            </div>
+
+            <div class="client-balance" aria-label="Saldo em conta">
+                <span class="balance-label">Saldo em Conta</span>
+                <span class="balance-amount">{{
+                    cliente.saldo | currency : "BRL" : "symbol" : "1.2-2"
+                }}</span>
+            </div>
+
+            <footer class="card-actions">
+                <a
+                    class="btn btn-primary"
+                    [routerLink]="['/manager/clientes', cliente.id]"
+                    [attr.aria-label]="'Ver detalhes de ' + cliente.nome"
+                >
+                    Ver Cliente
+                </a>
+
+                <button
+                    type="button"
+                    class="btn btn-ghost"
+                    (click)="selectHighlight(cliente)"
+                    [attr.aria-pressed]="selectedClient?.id === cliente.id"
+                    [attr.aria-label]="
+                        selectedClient?.id === cliente.id
+                            ? 'Remover destaque'
+                            : 'Destacar cliente'
+                    "
+                >
+                    {{
+                        selectedClient?.id === cliente.id
+                            ? "Destaque"
+                            : "Destacar"
+                    }}
+                </button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Estado vazio -->
+    <div
+        *ngIf="
+            !isLoading &&
+            (!clientesEmDestaque || clientesEmDestaque.length === 0)
+        "
+        class="no-clients-message"
+        role="status"
+    >
+        <p>Nenhum cliente para exibir no momento.</p>
+    </div>
+
+    <!-- Legenda / nota rápida -->
+    <div
+        class="note"
+        *ngIf="!isLoading && clientesEmDestaque.length > 0"
+        aria-hidden="true"
+    >
+        <small
+            >Os valores são atualizados em tempo real. Use "Ver Cliente" para
+            abrir o perfil completo.</small
+        >
+    </div>
 </div>

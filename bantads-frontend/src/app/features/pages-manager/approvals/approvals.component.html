@@ -1,7 +1,17 @@
-<div class="approvals-container" role="region" aria-label="Pedidos de Autocadastro">
+<div
+    class="approvals-container"
+    role="region"
+    aria-label="Pedidos de Autocadastro"
+>
     <h2>Pedidos de Autocadastro</h2>
 
-    <div class="feedback" *ngIf="feedbackMsg" [ngClass]="feedbackType" role="status" aria-live="polite">
+    <div
+        class="feedback"
+        *ngIf="feedbackMsg"
+        [ngClass]="feedbackType"
+        role="status"
+        aria-live="polite"
+    >
         {{ feedbackMsg }}
     </div>
 
@@ -13,14 +23,18 @@
             (ngModelChange)="onSearchChange($event)"
             aria-label="Pesquisar pedidos"
         />
-        <span class="count" *ngIf="filtered.length">{{ filtered.length }} pendente(s)</span>
+        <span class="count" *ngIf="filtered.length"
+            >{{ filtered.length }} pendente(s)</span
+        >
     </div>
 
-    <div *ngIf="isLoading" class="empty" aria-busy="true">
-        Carregando...
-    </div>
+    <div *ngIf="isLoading" class="empty" aria-busy="true">Carregando...</div>
 
-    <div *ngIf="!isLoading && filtered.length === 0" class="empty" role="status">
+    <div
+        *ngIf="!isLoading && filtered.length === 0"
+        class="empty"
+        role="status"
+    >
         Nenhum pedido pendente.
     </div>
 
@@ -44,18 +58,28 @@
                         <td>{{ c.cpf | cpf }}</td>
                         <td>{{ c.nome }}</td>
                         <td>{{ c.email }}</td>
-                        <td>{{ c.salario | currency : 'BRL' : 'symbol' : '1.2-2' }}</td>
-                        <td>{{ c.endereco?.cidade }}</td>
-                        <td>{{ c.endereco?.estado }}</td>
-                        <td>{{ c.criadoEm | date : 'dd/MM/yyyy HH:mm' }}</td>
+                        <td>
+                            {{
+                                c.salario
+                                    | currency : "BRL" : "symbol" : "1.2-2"
+                            }}
+                        </td>
+                        <td>{{ c.endereco.cidade }}</td>
+                        <td>{{ c.endereco.estado }}</td>
+                        <td>{{ c.criadoEm | date : "dd/MM/yyyy HH:mm" }}</td>
                         <td class="actions">
                             <button
                                 class="btn approve"
                                 (click)="approve(c.id)"
                                 [disabled]="actionInProgressId === c.id"
-                                aria-label="Aprovar {{ c.nome }}">
-                                <span *ngIf="actionInProgressId !== c.id">Aprovar</span>
-                                <span *ngIf="actionInProgressId === c.id">Processando...</span>
+                                [attr.aria-label]="'Aprovar ' + c.nome"
+                            >
+                                <span *ngIf="actionInProgressId !== c.id"
+                                    >Aprovar</span
+                                >
+                                <span *ngIf="actionInProgressId === c.id"
+                                    >Processando...</span
+                                >
                             </button>
 
                             <button
@@ -63,7 +87,8 @@
                                 *ngIf="rejectingId !== c.id"
                                 (click)="startReject(c.id)"
                                 [disabled]="actionInProgressId === c.id"
-                                aria-label="Recusar {{ c.nome }}">
+                                [attr.aria-label]="'Recusar ' + c.nome"
+                            >
                                 Recusar
                             </button>
                         </td>
@@ -72,23 +97,44 @@
                     <!-- Linha de recusa (única por item) -->
                     <tr class="reject-row" *ngIf="rejectingId === c.id">
                         <td colspan="8">
-                            <div class="reject-box" role="region" aria-label="Motivo da recusa">
-                                <label for="reason-{{c.id}}">Motivo da recusa:</label>
+                            <div
+                                class="reject-box"
+                                role="region"
+                                aria-label="Motivo da recusa"
+                            >
+                                <label for="reason-{{ c.id }}"
+                                    >Motivo da recusa:</label
+                                >
                                 <textarea
-                                    id="reason-{{c.id}}"
+                                    id="reason-{{ c.id }}"
                                     [(ngModel)]="rejectReason"
                                     rows="2"
                                     placeholder="Descreva o motivo"
                                     aria-label="Motivo da recusa"
                                 ></textarea>
                                 <div class="reject-actions">
-                                    <button class="btn small" (click)="cancelReject()">Cancelar</button>
+                                    <button
+                                        class="btn small"
+                                        (click)="cancelReject()"
+                                    >
+                                        Cancelar
+                                    </button>
                                     <button
                                         class="btn reject small"
-                                        [disabled]="!rejectReason.trim() || actionInProgressId === c.id"
-                                        (click)="confirmReject()">
-                                        <span *ngIf="actionInProgressId !== c.id">Confirmar Recusa</span>
-                                        <span *ngIf="actionInProgressId === c.id">Processando...</span>
+                                        [disabled]="
+                                            !rejectReason.trim() ||
+                                            actionInProgressId === c.id
+                                        "
+                                        (click)="confirmReject()"
+                                    >
+                                        <span
+                                            *ngIf="actionInProgressId !== c.id"
+                                            >Confirmar Recusa</span
+                                        >
+                                        <span
+                                            *ngIf="actionInProgressId === c.id"
+                                            >Processando...</span
+                                        >
                                     </button>
                                 </div>
                             </div>
@@ -101,12 +147,12 @@
 
     <div id="legend" class="legend" *ngIf="!isLoading && filtered.length > 0">
         <p>
-            <strong>Regra de limite:</strong> Salário &gt;= 2.000 => Limite = 50% do salário;
-            caso contrário, sem limite.
+            <strong>Regra de limite:</strong> Salário &gt;= 2.000 => Limite =
+            50% do salário; caso contrário, sem limite.
         </p>
         <p>
-            Ao aprovar: sistema atribui automaticamente o gerente com menos clientes e gera
-            número de conta de 4 dígitos.
+            Ao aprovar: sistema atribui automaticamente o gerente com menos
+            clientes e gera número de conta de 4 dígitos.
         </p>
     </div>
 </div>
