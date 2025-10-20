@@ -155,4 +155,74 @@ export class ManagerListComponent implements OnInit, OnDestroy {
             this.refreshFilteredManagers();
         }
     }
+
+    private refreshFilteredManagers2(): void {
+        const term = this.searchTerm.toLowerCase().trim();
+        let result = this.managers;
+
+        if (term) {
+            result = result.filter(
+                (m) =>
+                    m.name.toLowerCase().includes(term) ||
+                    m.email?.toLowerCase().includes(term) ||
+                    m.cpf?.includes(term)
+            );
+        }
+
+        if (this.sortColumn) {
+            result = result.sort((a, b) => {
+                const aVal = (a[this.sortColumn!] ?? '').toString().toLowerCase();
+                const bVal = (b[this.sortColumn!] ?? '').toString().toLowerCase();
+
+                if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
+                if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        this.totalPages = Math.ceil(result.length / this.itemsPerPage);
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+        this.filteredManagers = result.slice(startIndex, endIndex);
+    }
+
+    // Busca dinâmica
+    onSearchChange2(value: string): void {
+        this.searchTerm = value;
+        this.currentPage = 1;
+        this.refreshFilteredManagers();
+    }
+
+    // Ordenação clicando em cabeçalhos
+    sortBy2(column: keyof Manager): void {
+        if (this.sortColumn === column) {
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortColumn = column;
+            this.sortDirection = 'asc';
+        }
+        this.refreshFilteredManagers();
+    }
+
+    // Paginação simples
+    goToPage2(page: number): void {
+        if (page >= 1 && page <= this.totalPages) {
+            this.currentPage = page;
+            this.refreshFilteredManagers();
+        }
+    }
+
+    nextPage2(): void {
+        if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+            this.refreshFilteredManagers();
+        }
+    }
+
+    prevPage2(): void {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            this.refreshFilteredManagers();
+        }
+    }
 }
