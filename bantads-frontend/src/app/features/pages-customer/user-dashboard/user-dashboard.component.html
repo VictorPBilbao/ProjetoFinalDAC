@@ -2,6 +2,11 @@
     <header class="dashboard-header">
         <h1>Olá, Usuário!</h1>
         <p>Bem-vindo(a) de volta à sua conta.</p>
+
+        <!-- botão de alternância do tema -->
+        <button type="button" class="theme-toggle" (click)="toggleDarkMode()" [attr.aria-pressed]="darkMode" aria-label="Alternar modo escuro">
+            <img [src]="darkMode ? 'images/icon-sun.svg' : 'images/icon-moon.svg'" alt="" />
+        </button>
     </header>
 
     <section class="main-card">

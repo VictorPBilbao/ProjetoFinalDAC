@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { Cliente } from '../../models/cliente.model';
@@ -23,6 +23,8 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
 
     hideBalance = false;
 
+    @HostBinding('class.dark') darkMode = false;
+
     constructor(
         private clientService: ClientService,
         private transactionService: TransactionService
@@ -33,6 +35,10 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
         this.balance = this.user?.saldo ?? 0;
 
         this.depositsThisMonth = this.transactionService.getMonthlyDeposits(this.user?.id || '');
+
+        // opcional: ler preferência salva
+        const saved = localStorage.getItem('dashboardDarkMode');
+        if (saved !== null) this.darkMode = saved === 'true';
     }
 
     ngOnDestroy(): void {
@@ -41,5 +47,11 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
 
     toggleBalanceVisibility(): void {
         this.hideBalance = !this.hideBalance;
+    }
+
+    toggleDarkMode() {
+        this.darkMode = !this.darkMode;
+        // opcional: salvar preferência no localStorage
+        localStorage.setItem('dashboardDarkMode', String(this.darkMode));
     }
 }
