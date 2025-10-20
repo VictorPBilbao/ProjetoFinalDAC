@@ -239,3 +239,79 @@ body {
         font-size: 28px;
     }
 }
+
+/* --- Dark mode variables e overrides --- */
+:host(.dark) {
+    --primary-green: #29d7a7;
+    --dark-green: #0bb38f;
+    --background-color: #0f1720;
+    --card-background: #0a0f16;
+    --text-primary: #e6eef3;
+    --text-secondary: #9fb0bd;
+    --red-negative: #ff7b7b;
+    --border-color: rgba(255,255,255,0.06);
+}
+
+:host(.dark)::before {
+    background: radial-gradient(1000px 180px at 50% -60px, rgba(14, 192, 147, 0.12) 0%, rgba(14, 192, 147, 0.03) 40%, transparent 75%);
+}
+
+/* cards */
+:host(.dark) .main-card,
+:host(.dark) .recent-activity {
+    background-color: var(--card-background);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.03);
+}
+
+/* textos */
+:host(.dark) .dashboard-header p,
+:host(.dark) .monthly-deposits,
+:host(.dark) .transaction-date {
+    color: var(--text-secondary);
+}
+:host(.dark) .dashboard-header h1,
+:host(.dark) .balance-value,
+:host(.dark) .transaction-description,
+:host(.dark) .transaction-amount {
+    color: var(--text-primary);
+}
+
+/* ícones / backgrounds */
+:host(.dark) .icon-background {
+    background-color: rgba(255,255,255,0.03);
+}
+:host(.dark) .action-item:hover .icon-background {
+    background-color: rgba(11, 179, 143, 0.14);
+}
+:host(.dark) .visibility-icon,
+:host(.dark) .action-item img,
+:host(.dark) .theme-toggle img {
+    filter: brightness(0.95) saturate(0.9);
+    /* Se usar PNGs coloridos e quiser inverter: use invert(1) */
+}
+
+/* botão de alternância de tema */
+.theme-toggle {
+    border: 0;
+    background: transparent;
+    padding: 6px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+.theme-toggle img {
+    width: 20px;
+    height: 20px;
+}
+:host(.dark) .theme-toggle:focus-visible {
+    outline: 2px solid var(--primary-green);
+    outline-offset: 2px;
+}
+
+/* pequenas adaptações de contraste para transições */
+:host(.dark) .view-all { color: var(--primary-green); }
+:host(.dark) .transaction-amount.positive { color: var(--primary-green); }
+:host(.dark) .transaction-amount.negative { color: var(--red-negative); }

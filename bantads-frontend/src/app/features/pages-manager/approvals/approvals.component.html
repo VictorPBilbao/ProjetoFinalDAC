@@ -1,8 +1,8 @@
-<div
+<div>
     class="approvals-container"
     role="region"
     aria-label="Pedidos de Autocadastro"
->
+<div/>
     <h2>Pedidos de Autocadastro</h2>
 
     <div
@@ -20,12 +20,10 @@
             type="text"
             placeholder="Pesquisar por nome, CPF ou email"
             [(ngModel)]="search"
-            (ngModelChange)="onSearchChange($event)"
-            aria-label="Pesquisar pedidos"
+            (input)="applyFilter()"
         />
         <span class="count" *ngIf="filtered.length"
-            >{{ filtered.length }} pendente(s)</span
-        >
+            >{{ filtered.length }} pendente(s)</span>
     </div>
 
     <div *ngIf="isLoading" class="empty" aria-busy="true">Carregando...</div>
@@ -35,24 +33,26 @@
         class="empty"
         role="status"
     >
+
         Nenhum pedido pendente.
     </div>
 
-    <div class="table-wrapper" *ngIf="!isLoading && filtered.length > 0">
-        <table aria-describedby="legend">
+    <div class="table-wrapper" *ngIf="filtered.length > 0">
+        <table>
             <thead>
                 <tr>
-                    <th scope="col">CPF</th>
-                    <th scope="col">Nome</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Salário</th>
-                    <th scope="col">Cidade</th>
-                    <th scope="col">Estado</th>
-                    <th scope="col">Solicitado em</th>
-                    <th scope="col">Ações</th>
+                    <th>CPF</th>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Salário</th>
+                    <th>Cidade</th>
+                    <th>Estado</th>
+                    <th>Solicitado em</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
+              
                 <ng-container *ngFor="let c of filtered; trackBy: trackById">
                     <tr>
                         <td>{{ c.cpf | cpf }}</td>
@@ -138,15 +138,16 @@
                                     </button>
                                 </div>
                             </div>
-                        </td>
-                    </tr>
-                </ng-container>
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
 
-    <div id="legend" class="legend" *ngIf="!isLoading && filtered.length > 0">
+    <div class="legend" *ngIf="filtered.length > 0">
         <p>
+
             <strong>Regra de limite:</strong> Salário &gt;= 2.000 => Limite =
             50% do salário; caso contrário, sem limite.
         </p>
