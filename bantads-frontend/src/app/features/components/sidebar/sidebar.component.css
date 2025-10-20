@@ -1,176 +1,174 @@
 aside {
-  height: 100vh;
-  background-color: #0EC093;
-  border-radius: 0 30px 30px 0;
-  color: white;
-  overflow-y: auto;
-  transition: width 0.3s ease-in-out;
-  position: relative;
+    height: 100vh;
+    background-color: #0ec093;
+    color: white;
+    overflow-y: auto;
+    transition: width 0.3s ease-in-out;
+    position: relative;
 }
 
 aside::-webkit-scrollbar {
-  width: 0px;
-  height: 0px;
+    width: 0px;
+    height: 0px;
 }
 
 /* largura do sidebar */
 .sidebar.open {
-  width: 320px;
+    width: 320px;
 }
 
 .sidebar.close {
-  width: 62px;
+    width: 62px;
 }
 
 /* botão fechar/abrir */
 .close-sidebar-container {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  color: white;
-  font-size: 30px;
-  cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
 }
 
 /* padding padrão dos itens */
 .menu-padding {
-  padding: 15px 20px;
+    padding: 15px 20px;
 }
 
 /* container do usuário */
 .menu-user-container {
-  border-bottom: 2px solid #d1f2f9;
-  width: 100%;
-  gap: 20px;
+    border-bottom: 2px solid #d1f2f9;
+    width: 100%;
+    gap: 20px;
 }
 
 .menu-name-initials-container {
-  width: 50px;
-  height: 50px;
-  background-color: #4D73E4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    background-color: #4d73e4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
 }
 
 .menu-user-name {
-  margin-left: 10px;
-  font-weight: 500;
+    margin-left: 10px;
+    font-weight: 500;
 }
 
 /* navegação */
 .menu-nav .nav {
-  width: 100%;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+    width: 100%;
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
 .menu-nav .nav-item,
 .menu-nav .nav-link {
-  width: 100%;
+    width: 100%;
 }
 
 .menu-nav .nav-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: white;
-  font-size: 18px;
-  font-weight: 400;
-  padding: 12px 20px;
-  transition: background 0.2s, color 0.2s;
-  text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    font-size: 18px;
+    font-weight: 400;
+    padding: 12px 20px;
+    transition: background 0.2s, color 0.2s;
+    text-decoration: none;
 }
 
 .menu-nav .nav-link:hover,
 .menu-nav .nav-link:focus {
-  text-decoration: none;
-  color: #d1f2f9;
-  background-color: rgba(224, 224, 224, 0.7);
-  cursor: pointer;
+    text-decoration: none;
+    color: #d1f2f9;
+    background-color: #0b8164;
+    cursor: pointer;
 }
 
 .menu-nav .active {
-  background-color: rgba(224, 224, 224, 0.7);
+    background-color: #0c9271;
 }
 
 /* separador */
 .nav-item-seperator {
-  padding: 10px 0;
+    padding: 10px 0;
 }
 
 .nav-border {
-  height: 2px;
-  width: 100%;
-  background-color: white;
+    height: 2px;
+    width: 100%;
+    background-color: white;
 }
 
 /* remove bullets e espaçamentos estranhos */
 .menu-nav ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
 /* links do menu */
 .menu-nav .nav-link {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem; /* espaço entre ícone e texto */
-  padding: 0.75rem 1rem;
-  color: #ffffff;
-  text-decoration: none;
-  transition: background 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* espaço entre ícone e texto */
+    padding: 0.75rem 1rem;
+    color: #ffffff;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
 }
 
 /* texto dentro do link */
 .menu-nav .nav-link-text {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 500;
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
 }
 
 /* ícones svg */
 .menu-nav svg {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  color: #ffffff;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    color: #ffffff;
 }
-
 
 /* responsivo */
 @media (max-width: 768px) {
-  .sidebar.open {
-    overflow-x: hidden;
-    overflow-y: auto;
-    position: fixed;
-    z-index: 1000;
-    top: 0;
-    left: 0;
-    height: 100vh;
-  }
+    .sidebar.open {
+        overflow-x: hidden;
+        overflow-y: auto;
+        position: fixed;
+        z-index: 1000;
+        top: 0;
+        left: 0;
+        height: 100vh;
+    }
 
-  .close-sidebar-container {
-    top: 10px;
-    right: 10px;
-    font-size: 30px;
-  }
+    .close-sidebar-container {
+        top: 10px;
+        right: 10px;
+        font-size: 30px;
+    }
 
-  .nav-link-text,
-  .menu-user-name {
-    display: none;
-  }
+    .nav-link-text,
+    .menu-user-name {
+        display: none;
+    }
 
-  .menu-padding {
-    padding: 14px;
-  }
+    .menu-padding {
+        padding: 14px;
+    }
 
-  .menu-name-initials-container {
-    margin-top: 50px;
-    width: 40px;
-    height: 40px;
-  }
+    .menu-name-initials-container {
+        margin-top: 50px;
+        width: 40px;
+        height: 40px;
+    }
 }

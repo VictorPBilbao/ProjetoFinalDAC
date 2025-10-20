@@ -1,28 +1,24 @@
-import { Component, OnInit } from '@angular/core';
-import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { NgxMaskDirective, provideNgxMask } from 'ngx-mask';
+import { Observable } from 'rxjs';
+import Swal from 'sweetalert2';
+
 import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
 import {
     FormBuilder,
     FormGroup,
     ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
-import { ManagerService } from '../../services/manager/manager.service';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+
 import { Manager } from '../../models/manager.model';
-import { NgxMaskDirective, NgxMaskPipe, provideNgxMask } from 'ngx-mask';
-import Swal from 'sweetalert2';
-import { Observable } from 'rxjs';
+import { ManagerService } from '../../services/manager/manager.service';
 
 @Component({
     selector: 'app-manager-details',
     standalone: true,
-    imports: [
-        CommonModule,
-        RouterLink,
-        ReactiveFormsModule,
-        NgxMaskDirective,
-        NgxMaskPipe,
-    ],
+    imports: [CommonModule, RouterLink, ReactiveFormsModule, NgxMaskDirective],
     providers: [provideNgxMask()],
     templateUrl: './manager-details.component.html',
     styleUrls: ['./manager-details.component.css'],

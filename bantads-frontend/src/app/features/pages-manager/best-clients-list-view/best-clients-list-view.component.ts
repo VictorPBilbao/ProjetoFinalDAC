@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { Subscription, forkJoin } from 'rxjs';
 
 import { Cliente } from './../../models/cliente.model';
-import { Manager } from './../../models/manager.model';
 
 import { ClientService } from '../../services/client/client.service';
 import { ManagerService } from '../../services/manager/manager.service';
@@ -19,9 +18,10 @@ import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 })
 export class BestClientsListViewComponent implements OnInit, OnDestroy {
     clientesEmDestaque: Cliente[] = [];
-    feedbackMessage: string = '';
     isLoading: boolean = true;
     private dataSubscription?: Subscription;
+    selectedClient: Cliente | null = null;
+    errorMsg: string = '';
 
     constructor(
         private clientService: ClientService,
@@ -39,7 +39,7 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
 
         if (!loggedUser || loggedUser.role !== 'gerente') {
             this.isLoading = false;
-            this.feedbackMessage = 'Nenhum gerente logado.';
+            this.errorMsg = 'Nenhum gerente logado.';
             return;
         }
 
@@ -56,6 +56,7 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
                     const managerClients = clients.filter(
                         (c) => c.manager?.id === currentManager.id
                     );
+                    console.log('Clientes encontrados para este gerente:', managerClients.length, managerClients);
 
                     const clientesOrdenados = managerClients.sort((a, b) => {
                         return b.saldo - a.saldo;
@@ -67,12 +68,24 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
                 this.isLoading = false;
             },
             error: (err) => {
-                this.feedbackMessage =
+                this.errorMsg =
                     'Não foi possível carregar a lista de clientes.';
                 console.error('Erro ao carregar dados:', err);
                 this.isLoading = false;
             },
         });
+    }
+
+    selectHighlight(cliente: Cliente): void {
+        if (this.selectedClient?.id === cliente.id) {
+            this.selectedClient = null;
+        } else {
+            this.selectedClient = cliente;
+        }
+    }
+
+    trackById(index: number, cliente: Cliente): string {
+        return cliente.id;
     }
 
     ngOnDestroy(): void {

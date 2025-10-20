@@ -1,7 +1,17 @@
-<div class="approvals-container">
+<div>
+    class="approvals-container"
+    role="region"
+    aria-label="Pedidos de Autocadastro"
+<div/>
     <h2>Pedidos de Autocadastro</h2>
 
-    <div class="feedback" *ngIf="feedbackMsg" [ngClass]="feedbackType">
+    <div
+        class="feedback"
+        *ngIf="feedbackMsg"
+        [ngClass]="feedbackType"
+        role="status"
+        aria-live="polite"
+    >
         {{ feedbackMsg }}
     </div>
 
@@ -13,11 +23,17 @@
             (input)="applyFilter()"
         />
         <span class="count" *ngIf="filtered.length"
-            >{{ filtered.length }} pendente(s)</span
-        >
+            >{{ filtered.length }} pendente(s)</span>
     </div>
 
-    <div *ngIf="filtered.length === 0" class="empty">
+    <div *ngIf="isLoading" class="empty" aria-busy="true">Carregando...</div>
+
+    <div
+        *ngIf="!isLoading && filtered.length === 0"
+        class="empty"
+        role="status"
+    >
+
         Nenhum pedido pendente.
     </div>
 
@@ -36,52 +52,91 @@
                 </tr>
             </thead>
             <tbody>
-                <tr *ngFor="let c of filtered">
-                    <td>{{ c.cpf | cpf }}</td>
-                    <td>{{ c.nome }}</td>
-                    <td>{{ c.email }}</td>
-                    <td>
-                        {{ c.salario | currency : "BRL" : "symbol" : "1.2-2" }}
-                    </td>
-                    <td>{{ c.endereco.cidade }}</td>
-                    <td>{{ c.endereco.estado }}</td>
-                    <td>{{ c.criadoEm | date : "dd/MM/yyyy HH:mm" }}</td>
-                    <td class="actions">
-                        <button class="btn approve" (click)="approve(c.id)">
-                            Aprovar
-                        </button>
-                        <button
-                            class="btn reject"
-                            (click)="startReject(c.id)"
-                            *ngIf="rejectingId !== c.id"
-                        >
-                            Recusar
-                        </button>
-                    </td>
-                </tr>
-                <tr class="reject-row" *ngFor="let c of filtered">
-                    <td colspan="8" *ngIf="rejectingId === c.id">
-                        <div class="reject-box">
-                            <label>Motivo da recusa:</label>
-                            <textarea
-                                [(ngModel)]="rejectReason"
-                                rows="2"
-                                placeholder="Descreva o motivo"
-                            ></textarea>
-                            <div class="reject-actions">
-                                <button
-                                    class="btn small"
-                                    (click)="cancelReject()"
+              
+                <ng-container *ngFor="let c of filtered; trackBy: trackById">
+                    <tr>
+                        <td>{{ c.cpf | cpf }}</td>
+                        <td>{{ c.nome }}</td>
+                        <td>{{ c.email }}</td>
+                        <td>
+                            {{
+                                c.salario
+                                    | currency : "BRL" : "symbol" : "1.2-2"
+                            }}
+                        </td>
+                        <td>{{ c.endereco.cidade }}</td>
+                        <td>{{ c.endereco.estado }}</td>
+                        <td>{{ c.criadoEm | date : "dd/MM/yyyy HH:mm" }}</td>
+                        <td class="actions">
+                            <button
+                                class="btn approve"
+                                (click)="approve(c.id)"
+                                [disabled]="actionInProgressId === c.id"
+                                [attr.aria-label]="'Aprovar ' + c.nome"
+                            >
+                                <span *ngIf="actionInProgressId !== c.id"
+                                    >Aprovar</span
                                 >
-                                    Cancelar
-                                </button>
-                                <button
-                                    class="btn reject small"
-                                    [disabled]="!rejectReason.trim()"
-                                    (click)="confirmReject()"
+                                <span *ngIf="actionInProgressId === c.id"
+                                    >Processando...</span
                                 >
-                                    Confirmar Recusa
-                                </button>
+                            </button>
+
+                            <button
+                                class="btn reject"
+                                *ngIf="rejectingId !== c.id"
+                                (click)="startReject(c.id)"
+                                [disabled]="actionInProgressId === c.id"
+                                [attr.aria-label]="'Recusar ' + c.nome"
+                            >
+                                Recusar
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Linha de recusa (única por item) -->
+                    <tr class="reject-row" *ngIf="rejectingId === c.id">
+                        <td colspan="8">
+                            <div
+                                class="reject-box"
+                                role="region"
+                                aria-label="Motivo da recusa"
+                            >
+                                <label for="reason-{{ c.id }}"
+                                    >Motivo da recusa:</label
+                                >
+                                <textarea
+                                    id="reason-{{ c.id }}"
+                                    [(ngModel)]="rejectReason"
+                                    rows="2"
+                                    placeholder="Descreva o motivo"
+                                    aria-label="Motivo da recusa"
+                                ></textarea>
+                                <div class="reject-actions">
+                                    <button
+                                        class="btn small"
+                                        (click)="cancelReject()"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        class="btn reject small"
+                                        [disabled]="
+                                            !rejectReason.trim() ||
+                                            actionInProgressId === c.id
+                                        "
+                                        (click)="confirmReject()"
+                                    >
+                                        <span
+                                            *ngIf="actionInProgressId !== c.id"
+                                            >Confirmar Recusa</span
+                                        >
+                                        <span
+                                            *ngIf="actionInProgressId === c.id"
+                                            >Processando...</span
+                                        >
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </td>
@@ -92,8 +147,9 @@
 
     <div class="legend" *ngIf="filtered.length > 0">
         <p>
-            <strong>Regra de limite:</strong> Salário >= 2.000 => Limite = 50%
-            do salário; caso contrário, sem limite.
+
+            <strong>Regra de limite:</strong> Salário &gt;= 2.000 => Limite =
+            50% do salário; caso contrário, sem limite.
         </p>
         <p>
             Ao aprovar: sistema atribui automaticamente o gerente com menos

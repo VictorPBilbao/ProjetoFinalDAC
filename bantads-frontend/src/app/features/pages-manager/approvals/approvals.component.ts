@@ -30,8 +30,53 @@ export class ApprovalsComponent implements OnInit {
     }
 
     load(): void {
-        this.pending = this.managerService.getPending();
-        this.applyFilter();
+
+        this.isLoading = true;
+        const res = this.managerService.getPending();
+
+        // Observable
+        if (res && typeof (res as any).subscribe === 'function') {
+            (res as any).subscribe({
+                next: (data: Cliente[]) => {
+                    this.pending = Array.isArray(data) ? data : [];
+                    this.applyFilter();
+                },
+                error: (err: any) => {
+                    this.setFeedback(false, err?.message ?? 'Erro ao carregar pendentes');
+                    this.isLoading = false;
+                },
+                complete: () => {
+                    this.isLoading = false;
+                },
+            });
+            return;
+        }
+
+        // Promise
+        if (res && typeof (res as any).then === 'function') {
+            (res as any)
+                .then((data: Cliente[]) => {
+                    this.pending = Array.isArray(data) ? data : [];
+                    this.applyFilter();
+                })
+                .catch((err: any) => this.setFeedback(false, err?.message ?? 'Erro ao carregar pendentes'))
+                .finally(() => (this.isLoading = false));
+            return;
+        }
+
+        // Síncrono
+        try {
+            this.pending = Array.isArray(res) ? res : [];
+            this.applyFilter();
+        } catch (err: any) {
+            this.setFeedback(false, err?.message ?? 'Erro ao carregar pendentes');
+        } finally {
+            this.isLoading = false;
+        }
+    }
+
+    onSearchChange(value: string): void {
+        this.search$.next(value || '');
     }
 
     applyFilter(): void {

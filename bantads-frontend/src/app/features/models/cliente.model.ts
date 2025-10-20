@@ -25,4 +25,5 @@ export interface Cliente {
     agencia: string;
     conta: string;
     criadoEm: string;
+    avatarUrl?: string;
 }

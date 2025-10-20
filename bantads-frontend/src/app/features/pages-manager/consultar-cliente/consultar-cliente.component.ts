@@ -1,8 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
 import { CpfPipe } from '../../shared/pipes/cpf.pipe';
@@ -10,7 +8,7 @@ import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 @Component({
     selector: 'app-consultar-cliente',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink, CpfPipe],
+    imports: [CommonModule, FormsModule, CpfPipe],
     templateUrl: './consultar-cliente.component.html',
     styleUrls: ['./consultar-cliente.component.css'],
 })

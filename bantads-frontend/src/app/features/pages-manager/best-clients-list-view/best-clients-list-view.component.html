@@ -1,45 +1,117 @@
-<div class="container">
+
+<div
+    class="best-clients-container"
+    role="region"
+    aria-label="Clientes em destaque"
+>
     <header class="page-header">
-        <h1>Clientes em Destaque<span style="font-weight: bold"></span></h1>
-        <p>Os 3 clientes com os maiores saldos da sua carteira.</p>
+        <h1>Clientes em Destaque</h1>
+        <p class="subtitle">
+            Os 3 clientes com os maiores saldos da sua carteira.
+        </p>
     </header>
 
-    <div class="podium">
+    <!-- Estado de carregamento -->
+    <div
+        *ngIf="isLoading"
+        class="podium loading"
+        aria-busy="true"
+        aria-live="polite"
+    >
+        f
+        <div class="client-card skeleton" *ngFor="let i of [1, 2, 3]">
+            <div class="card-header">
+                <span class="rank-number skeleton-box"></span>
+                <div class="client-name skeleton-box"></div>
+            </div>
+            <div class="client-cpf skeleton-box"></div>
+            <div class="client-location skeleton-box"></div>
+            <div class="client-balance">
+                <span class="balance-label skeleton-box"></span>
+                <span class="balance-amount skeleton-box"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensagem de erro -->
+    <div
+        *ngIf="!isLoading && errorMsg"
+        class="no-clients-message error"
+        role="alert"
+    >
+        <p>{{ errorMsg }}</p>
+    </div>
+
+    <!-- Lista de clientes em destaque -->
+    <div class="podium" *ngIf="!isLoading && clientesEmDestaque.length > 0">
         <div
-            *ngFor="let cliente of clientesEmDestaque; let i = index"
+            *ngFor="
+                let cliente of clientesEmDestaque;
+                let i = index;
+                trackBy: trackById
+            "
             class="client-card"
-            [ngClass]="'rank-' + (i + 1)"
+            [ngClass]="{
+                'rank-1': i === 0,
+                'rank-2': i === 1,
+                'rank-3': i === 2
+            }"
+            tabindex="0"
+            role="article"
+            [attr.aria-label]="
+                'Cliente ' + cliente.nome + ' - posição ' + (i + 1)
+            "
         >
             <div class="card-header">
-                <span class="rank-number">
-                    <span class="material-symbols-outlined">
-                        workspace_premium
-                    </span>
+                <span class="rank-number" aria-hidden="true">
+                    <span
+                        class="material-symbols-outlined medal-icon"
+                        aria-hidden="true"
+                        >workspace_premium</span
+                    >
                     {{ i + 1 }}
                 </span>
-                <h2 class="client-name">{{ cliente.nome }}</h2>
+
+                <div class="client-meta">
+                    <h2 class="client-name">{{ cliente.nome }}</h2>
+                    <p class="client-cpf" aria-label="CPF">
+                        {{ cliente.cpf | cpf }}
+                    </p>
+                </div>
             </div>
 
-            <p class="client-cpf">{{ cliente.cpf | cpf }}</p>
-
-            <div class="client-location">
-                <span class="material-symbols-outlined">location_on</span>
+            <div class="client-location" aria-hidden="false">
+                <span
+                    class="material-symbols-outlined location-icon"
+                    aria-hidden="true"
+                    >location_on</span
+                >
                 <span
                     >{{ cliente.endereco.cidade }},
                     {{ cliente.endereco.estado }}</span
                 >
             </div>
 
-            <div class="client-balance">
+            <div class="client-balance" aria-label="Saldo em conta">
                 <span class="balance-label">Saldo em Conta</span>
                 <span class="balance-amount">{{
                     cliente.saldo | currency : "BRL" : "symbol" : "1.2-2"
                 }}</span>
             </div>
+
+            <footer class="card-actions"></footer>
         </div>
     </div>
 
-    <div *ngIf="clientesEmDestaque.length === 0" class="no-clients-message">
+    <!-- Estado vazio -->
+    <div
+        *ngIf="
+            !isLoading &&
+            (!clientesEmDestaque || clientesEmDestaque.length === 0)
+        "
+        class="no-clients-message"
+        role="status"
+    >
         <p>Nenhum cliente para exibir no momento.</p>
     </div>
 </div>

@@ -16,7 +16,7 @@ export class ManagerService {
         private readonly storage: LocalStorageServiceService,
         private readonly authService: AuthService,
         private readonly loadingService: LoadingService
-    ) {}
+    ) { }
 
     getManagersWithTotals(): Observable<Manager[]> {
         this.loadingService.show();
@@ -45,8 +45,11 @@ export class ManagerService {
 
     getPending(): Cliente[] {
         this.loadingService.show();
-        return this.storage.getClientesPendentes();
-        this.loadingService.hide();
+        try {
+            return this.storage.getClientesPendentes();
+        } finally {
+            this.loadingService.hide();
+        }
     }
 
     approve(clientId: string): { ok: boolean; message: string } {

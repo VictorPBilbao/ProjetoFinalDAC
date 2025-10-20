@@ -1,8 +1,8 @@
-import { Component, OnInit, HostListener, OnDestroy } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
@@ -11,7 +11,7 @@ import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 @Component({
     selector: 'app-list-clients',
     standalone: true,
-    imports: [FormsModule, CommonModule, RouterLink, CpfPipe],
+    imports: [FormsModule, CommonModule, CpfPipe],
     templateUrl: './list-clients.component.html',
     styleUrl: './list-clients.component.css',
 })
