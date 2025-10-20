@@ -1,6 +1,6 @@
 <main class="dashboard-container">
     <header class="dashboard-header">
-        <h1>Olá, Usuário!</h1>
+        <h1>Olá, {{ user?.nome }}!</h1>
         <p>Bem-vindo(a) de volta à sua conta.</p>
     </header>
 
@@ -18,11 +18,19 @@
                     type="button"
                     class="icon-button"
                     (click)="toggleBalanceVisibility()"
-                    [attr.aria-label]="hideBalance ? 'Mostrar saldo' : 'Ocultar saldo'">
+                    [attr.aria-label]="
+                        hideBalance ? 'Mostrar saldo' : 'Ocultar saldo'
+                    "
+                >
                     <img
-                        [src]="hideBalance ? 'images/eye-closed.png' : 'images/eye-icon.png'"
+                        [src]="
+                            hideBalance
+                                ? 'images/eye-closed.png'
+                                : 'images/eye-icon.png'
+                        "
                         alt=""
-                        class="visibility-icon" />
+                        class="visibility-icon"
+                    />
                 </button>
             </h2>
 
@@ -65,33 +73,24 @@
     <section class="recent-activity">
         <h3>Atividade Recente</h3>
         <ul>
+            @if (recentActivity.length > 0) { @for (transaction of
+            recentActivity; track $index) {
             <li class="transaction-item">
                 <div class="transaction-details">
-                    <strong class="transaction-description"
-                        >Transferência Recebida</strong
-                    >
-                    <span class="transaction-date">05 de Out, 2025</span>
+                    <strong class="transaction-description">{{
+                        transaction.operation
+                    }}</strong>
+                    <span class="transaction-date">{{
+                        transaction.dateTime | date : "dd 'de' MMM, yyyy"
+                    }}</span>
                 </div>
-                <span class="transaction-amount positive">+ R$ 250,00</span>
+                <span class="transaction-amount negative">{{
+                    transaction.amount | currency : "BRL" : "symbol" : "1.2-2"
+                }}</span>
             </li>
-            <li class="transaction-item">
-                <div class="transaction-details">
-                    <strong class="transaction-description"
-                        >Pagamento Spotify</strong
-                    >
-                    <span class="transaction-date">02 de Out, 2025</span>
-                </div>
-                <span class="transaction-amount negative">- R$ 34,90</span>
-            </li>
-            <li class="transaction-item">
-                <div class="transaction-details">
-                    <strong class="transaction-description"
-                        >Compra no Supermercado</strong
-                    >
-                    <span class="transaction-date">01 de Out, 2025</span>
-                </div>
-                <span class="transaction-amount negative">- R$ 187,30</span>
-            </li>
+            } } @else {
+            <li>Nenhuma operação recente.</li>
+            }
         </ul>
         <a href="/cliente/extrato" class="view-all">Ver extrato completo</a>
     </section>
