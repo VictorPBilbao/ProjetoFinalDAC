@@ -16,8 +16,10 @@ import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PostMapping; 
 import org.springframework.web.bind.annotation.RequestBody;
+
+import br.ufpr.client_service.model.RejectReasonDTO;
 
 @RestController
 @RequestMapping("/clientes")
@@ -64,6 +66,32 @@ public class ClientController {
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("✅ Client Service is running!");
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<List<ClientDTO>> getPendingClients() {
+        List<ClientDTO> clients = clientService.getAllPendingClients();
+        return ResponseEntity.ok(clients);
+    }
+
+    @PostMapping("/{cpf}/approve")
+    public ResponseEntity<Void> approveClient(@PathVariable String cpf) {
+        try {
+            clientService.approveClient(cpf);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/{cpf}/reject")
+    public ResponseEntity<Void> rejectClient(@PathVariable String cpf, @Valid @RequestBody RejectReasonDTO dto) {
+        try {
+            clientService.rejectClient(cpf, dto.getMotivo());
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
 }

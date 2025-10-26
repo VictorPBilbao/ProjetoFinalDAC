@@ -11,8 +11,15 @@ import br.ufpr.client_service.model.ClientDTO;
 import br.ufpr.client_service.repository.ClientRepository;
 import jakarta.transaction.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+
 @Service
 public class ClientService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ClientService.class);
 
     private final ClientRepository clientRepository;
 
@@ -69,6 +76,43 @@ public class ClientService {
     // ? Get pending clients
     public List<ClientDTO> getAllPendingClients() {
         return clientRepository.findByAprovadoFalse().stream().map(this::convertToDTO).toList();
+    }
+
+    //get approve client
+    @Transactional
+    public void approveClient(String cpf) {
+        logger.info("[Gerente] Iniciando aprovação para CPF: {}", cpf);
+
+        Client client = clientRepository.findById(cpf)
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com CPF: " + cpf));
+
+        if (client.getAprovado()) {
+            logger.warn("[Gerente] Cliente {} já está aprovado. Nenhuma ação tomada.", cpf);
+            return;
+        }
+        client.setAprovado(true);
+        clientRepository.save(client);
+        
+        logger.info("[Gerente] Cliente {} APROVADO com sucesso no client-service.", cpf);
+
+    }
+
+    //get reject client
+    @Transactional
+    public void rejectClient(String cpf, String motivo) {
+        logger.info("[Gerente] Iniciando rejeição para CPF: {}. Motivo: {}", cpf, motivo);
+        
+        Client client = clientRepository.findById(cpf)
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com CPF: " + cpf));
+
+        if (client.getAprovado()) {
+            logger.error("[Gerente] Tentativa de rejeitar cliente {} que JÁ ESTÁ APROVADO.", cpf);
+            throw new IllegalStateException("Não é possível rejeitar um cliente que já foi aprovado.");
+        }
+
+        clientRepository.delete(client);
+        
+        logger.info("[Gerente] Cliente {} REJEITADO e removido com sucesso do client-service.", cpf);
     }
 
     private ClientDTO convertToDTO(Client client) {
