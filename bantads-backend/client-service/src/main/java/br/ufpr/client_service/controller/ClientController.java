@@ -53,7 +53,16 @@ public class ClientController {
         return ResponseEntity.ok(clients);
     }
 
-    @GetMapping("/{cpf}")
+    // @GetMapping("/{cpf}")
+    // public ResponseEntity<ClientDTO> getClientByCpf(@PathVariable String cpf) {
+    //     try {
+    //         ClientDTO client = clientService.getClientByCpf(cpf);
+    //         return ResponseEntity.ok(client);
+    //     } catch (RuntimeException e) {
+    //         return ResponseEntity.notFound().build();
+    //     }
+    // }
+    @GetMapping("/{cpf:\\d+}")
     public ResponseEntity<ClientDTO> getClientByCpf(@PathVariable String cpf) {
         try {
             ClientDTO client = clientService.getClientByCpf(cpf);
