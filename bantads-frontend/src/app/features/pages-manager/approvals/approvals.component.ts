@@ -23,6 +23,9 @@ export class ApprovalsComponent implements OnInit {
     search = '';
     filtered: Cliente[] = [];
 
+    isLoading = false;
+    actionInProgressId: string | null = null;
+
     constructor(private readonly managerService: ManagerService) { }
 
     ngOnInit(): void {
@@ -30,7 +33,6 @@ export class ApprovalsComponent implements OnInit {
     }
 
     load(): void {
-
         this.isLoading = true;
         const res = this.managerService.getPending();
 
@@ -75,10 +77,6 @@ export class ApprovalsComponent implements OnInit {
         }
     }
 
-    onSearchChange(value: string): void {
-        this.search$.next(value || '');
-    }
-
     applyFilter(): void {
         const term = this.search.toLowerCase().trim();
         if (!term) {
@@ -93,10 +91,12 @@ export class ApprovalsComponent implements OnInit {
         );
     }
 
-    approve(id: string): void {
-        const result = this.managerService.approve(id);
-        this.setFeedback(result.ok, result.message);
-        this.load();
+    async approve(id: string): Promise<void> {
+        const res = this.managerService.approve(id);
+        const result = await this.handleActionResult(res, id);
+        if (result?.ok) {
+            await this.load();
+        }
     }
 
     startReject(id: string): void {
@@ -109,7 +109,7 @@ export class ApprovalsComponent implements OnInit {
         this.rejectReason = '';
     }
 
-    confirmReject(): void {
+    async confirmReject(): Promise<void> {
         if (!this.rejectingId) {
             return;
         }
@@ -117,12 +117,51 @@ export class ApprovalsComponent implements OnInit {
             this.rejectingId,
             this.rejectReason
         );
-        this.setFeedback(res.ok, res.message);
-        if (res.ok) {
+        const result = await this.handleActionResult(res, this.rejectingId);
+        if (result?.ok) {
             this.rejectingId = null;
             this.rejectReason = '';
-            this.load();
+            await this.load();
         }
+    }
+
+    private async handleActionResult(res: any, id?: string): Promise<any> {
+        this.actionInProgressId = id ?? null;
+        try {
+            // Observable
+            if (res && typeof res.subscribe === 'function') {
+                const promise = new Promise<any>((resolve, reject) => {
+                    (res as any).subscribe({
+                        next: (v: any) => resolve(v),
+                        error: (e: any) => reject(e),
+                    });
+                });
+                const result = await promise;
+                this.setFeedback(result?.ok ?? true, result?.message ?? '');
+                return result;
+            }
+
+            // Promise
+            if (res && typeof res.then === 'function') {
+                const result = await res;
+                this.setFeedback(result?.ok ?? true, result?.message ?? '');
+                return result;
+            }
+
+            // Síncrono
+            const result = res;
+            this.setFeedback(result?.ok ?? true, result?.message ?? '');
+            return result;
+        } catch (err: any) {
+            this.setFeedback(false, err?.message ?? 'Erro na operação');
+            return null;
+        } finally {
+            this.actionInProgressId = null;
+        }
+    }
+
+    trackById(_index: number, item: Cliente): string {
+        return item.id;
     }
 
     private setFeedback(ok: boolean, msg: string): void {
