@@ -4,19 +4,20 @@
 
         <p>Bem-vindo(a) de volta à sua conta.</p>
 
-        <!-- botão de alternância do tema -->
+
+        <!-- botão de alternância do tema: usa assets e ficará fixo via CSS -->
         <button
             type="button"
             class="theme-toggle"
             (click)="toggleDarkMode()"
             [attr.aria-pressed]="darkMode"
             aria-label="Alternar modo escuro"
+
+            title="Alternar tema"
         >
             <img
-                [src]="
-                    darkMode ? 'images/icon-sun.svg' : 'images/icon-moon.svg'
-                "
-                alt=""
+                [src]="darkMode ? 'assets/images/icon-sun.svg' : 'assets/images/icon-moon.svg'"
+                alt="Alternar tema"
             />
         </button>
     </header>
@@ -95,36 +96,37 @@
     <section class="recent-activity">
         <h3>Atividade Recente</h3>
 
-        <ul>
-            @if (recentActivity.length > 0) { @for (transaction of
-            recentActivity; track $index) {
 
-            <li class="transaction-item">
+        <ul *ngIf="(recentActivity?.length ?? 0) > 0; else noRecent">
+            <li
+                class="transaction-item"
+                *ngFor="let transaction of recentActivity; let i = index"
+            >
                 <div class="transaction-details">
                     <strong class="transaction-description">
                         {{ transaction.operation }}
                     </strong>
-
                     <span class="transaction-date">
                         {{ transaction.dateTime | date : "dd 'de' MMM, yyyy" }}
                     </span>
                 </div>
-
-                <span class="transaction-amount negative">
-                    {{
-                        transaction.amount
-                            | currency : "BRL" : "symbol" : "1.2-2"
-                    }}
+                <span
+                    class="transaction-amount"
+                    [ngClass]="{
+                        positive: transaction.amount > 0,
+                        negative: transaction.amount < 0
+                    }"
+                >
+                    {{ transaction.amount | currency : 'BRL' : 'symbol' : '1.2-2' }}
                 </span>
             </li>
-
-            } } @else {
-
-            <li>Nenhuma operação recente.</li>
-
-            }
         </ul>
 
-        <a href="/cliente/extrato" class="view-all"> Ver extrato completo </a>
+        <ng-template #noRecent>
+            <li>Nenhuma operação recente.</li>
+        </ng-template>
+
+        <a href="/cliente/extrato" class="view-all">Ver extrato completo</a>
+                          
     </section>
 </main>
