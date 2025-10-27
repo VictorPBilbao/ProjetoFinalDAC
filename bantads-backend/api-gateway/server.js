@@ -100,6 +100,52 @@ app.post(
     })
 );
 
+// R9: Listar clientes pendentes (GERENTE)
+app.get(
+    "/clientes/pending",
+    authenticateToken,
+    requireRole("GERENTE"),
+    proxy(process.env.CLIENT_SERVICE_URL, {
+        proxyReqPathResolver: (req) => {
+            console.log(`[PROXY] R9: ${req.url}`);
+            return req.originalUrl;
+        },
+        proxyErrorHandler: (err, res, next) => {
+            res.status(503).json({ error: "Client Service unavailable", message: err.message });
+        },
+    })
+);
+// R10: Aprovar cliente (GERENTE)
+app.post(
+    "/clientes/:cpf/approve",
+    authenticateToken,
+    requireRole("GERENTE"),
+    proxy(process.env.CLIENT_SERVICE_URL, {
+        proxyReqPathResolver: (req) => {
+            console.log(`[PROXY] R10: ${req.url}`);
+            return req.originalUrl;
+        },
+        proxyErrorHandler: (err, res, next) => {
+            res.status(503).json({ error: "Client Service unavailable", message: err.message });
+        },
+    })
+);
+// R11: Rejeitar cliente (GERENTE)
+app.post(
+    "/clientes/:cpf/reject",
+    authenticateToken,
+    requireRole("GERENTE"),
+    proxy(process.env.CLIENT_SERVICE_URL, {
+        proxyReqPathResolver: (req) => {
+            console.log(`[PROXY] R11: ${req.url}`);
+            return req.originalUrl;
+        },
+        proxyErrorHandler: (err, res, next) => {
+            res.status(503).json({ error: "Client Service unavailable", message: err.message });
+        },
+    })
+);
+
 app.get(
     "/clientes/:cpf",
     authenticateToken,
