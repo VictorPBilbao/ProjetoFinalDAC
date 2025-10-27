@@ -1,23 +1,36 @@
 <main class="dashboard-container">
     <header class="dashboard-header">
         <h1>Olá, {{ user?.nome }}!</h1>
+
         <p>Bem-vindo(a) de volta à sua conta.</p>
 
         <!-- botão de alternância do tema -->
-        <button type="button" class="theme-toggle" (click)="toggleDarkMode()" [attr.aria-pressed]="darkMode" aria-label="Alternar modo escuro">
-            <img [src]="darkMode ? 'images/icon-sun.svg' : 'images/icon-moon.svg'" alt="" />
+        <button
+            type="button"
+            class="theme-toggle"
+            (click)="toggleDarkMode()"
+            [attr.aria-pressed]="darkMode"
+            aria-label="Alternar modo escuro"
+        >
+            <img
+                [src]="
+                    darkMode ? 'images/icon-sun.svg' : 'images/icon-moon.svg'
+                "
+                alt=""
+            />
         </button>
     </header>
 
     <section class="main-card">
         <div class="balance-info">
-            <span class="balance-title">Saldo disponível</span>
+            <span class="balance-title"> Saldo disponível </span>
 
             <h2 class="balance-value">
                 <ng-container *ngIf="!hideBalance; else hiddenBalance">
                     {{ balance | currency : "BRL" }}
                 </ng-container>
-                <ng-template #hiddenBalance>••••••</ng-template>
+
+                <ng-template #hiddenBalance> •••••• </ng-template>
 
                 <button
                     type="button"
@@ -40,7 +53,8 @@
             </h2>
 
             <p class="monthly-deposits">
-                Depositados este mês: {{ depositsThisMonth | currency : "BRL" }}
+                Depositados este mês:
+                {{ depositsThisMonth | currency : "BRL" }}
             </p>
         </div>
 
@@ -49,14 +63,16 @@
                 <div class="icon-background">
                     <img src="images/deposito.png" alt="Ícone de depósito" />
                 </div>
-                <span>Depositar</span>
+                <span> Depositar </span>
             </a>
+
             <a href="/cliente/saque" class="action-item">
                 <div class="icon-background">
                     <img src="images/saque.png" alt="Ícone de saque" />
                 </div>
-                <span>Sacar</span>
+                <span> Sacar </span>
             </a>
+
             <a href="/cliente/extrato" class="action-item">
                 <div class="icon-background">
                     <img
@@ -64,39 +80,51 @@
                         alt="Ícone de extrato"
                     />
                 </div>
-                <span>Extrato</span>
+                <span> Extrato </span>
             </a>
+
             <a href="/cliente/detalhes" class="action-item">
                 <div class="icon-background">
                     <img src="images/conta-bancaria.png" alt="Ícone da conta" />
                 </div>
-                <span>Minha Conta</span>
+                <span> Minha Conta </span>
             </a>
         </nav>
     </section>
 
     <section class="recent-activity">
         <h3>Atividade Recente</h3>
+
         <ul>
             @if (recentActivity.length > 0) { @for (transaction of
             recentActivity; track $index) {
+
             <li class="transaction-item">
                 <div class="transaction-details">
-                    <strong class="transaction-description">{{
-                        transaction.operation
-                    }}</strong>
-                    <span class="transaction-date">{{
-                        transaction.dateTime | date : "dd 'de' MMM, yyyy"
-                    }}</span>
+                    <strong class="transaction-description">
+                        {{ transaction.operation }}
+                    </strong>
+
+                    <span class="transaction-date">
+                        {{ transaction.dateTime | date : "dd 'de' MMM, yyyy" }}
+                    </span>
                 </div>
-                <span class="transaction-amount negative">{{
-                    transaction.amount | currency : "BRL" : "symbol" : "1.2-2"
-                }}</span>
+
+                <span class="transaction-amount negative">
+                    {{
+                        transaction.amount
+                            | currency : "BRL" : "symbol" : "1.2-2"
+                    }}
+                </span>
             </li>
+
             } } @else {
+
             <li>Nenhuma operação recente.</li>
+
             }
         </ul>
-        <a href="/cliente/extrato" class="view-all">Ver extrato completo</a>
+
+        <a href="/cliente/extrato" class="view-all"> Ver extrato completo </a>
     </section>
 </main>
