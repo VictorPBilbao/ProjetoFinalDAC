@@ -33,9 +33,11 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
+        // lê preferência de tema salva
+        this.darkMode = localStorage.getItem('dashboardDarkMode') === 'true';
+
         this.user = this.clientService.getLoggedClient() || null;
         this.balance = this.user?.saldo ?? 0;
-
 
         this.depositsThisMonth = this.transactionService.getMonthlyDeposits(
             this.user?.id || ''
@@ -48,7 +50,7 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         sevenDaysAgo.setHours(0, 0, 0, 0);
 
-        this.recentActivity = recentActivity.filter((transaction) => {
+        this.recentActivity = (recentActivity || []).filter((transaction) => {
             const transactionDate = new Date(transaction.dateTime);
             return transactionDate >= sevenDaysAgo;
         });
