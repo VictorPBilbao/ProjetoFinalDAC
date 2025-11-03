@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import {
@@ -7,7 +7,6 @@ import {
     ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
-// ...existing code...
 import { Cliente } from '../../models/cliente.model';
 import { Manager } from '../../models/manager.model';
 import { Observable, Subscription, of } from 'rxjs';
@@ -23,7 +22,7 @@ import { Transaction } from '../../models/transaction.model';
     templateUrl: './transfer.component.html',
     styleUrls: ['./transfer.component.css'],
 })
-export class TransferComponent implements OnDestroy {
+export class TransferComponent implements OnDestroy, OnInit {
     private fb = inject(FormBuilder);
 
     cliente$!: Observable<Cliente | null>;
@@ -48,6 +47,8 @@ export class TransferComponent implements OnDestroy {
         timestamp: string;
     } | null = null;
 
+    darkMode: boolean = false;
+
     constructor(
         private clientService: ClientService,
         private storageService: LocalStorageServiceService,
@@ -55,6 +56,12 @@ export class TransferComponent implements OnDestroy {
     ) {}
 
     ngOnInit(): void {
+        // restaura preferência de tema
+        try {
+            this.darkMode = localStorage.getItem('transfer_dark') === 'true';
+        } catch {
+            this.darkMode = false;
+        }
         this.cliente = this.clientService.getLoggedClient() || null;
         this.lastAccess$ = this.clientService.getLastAccess();
         // expõe como observable para o template
@@ -69,6 +76,15 @@ export class TransferComponent implements OnDestroy {
     }
 
     ngOnDestroy(): void {}
+
+    toggleDarkMode() {
+        this.darkMode = !this.darkMode;
+        try {
+            localStorage.setItem('transfer_dark', String(this.darkMode));
+        } catch {
+            /* noop */
+        }
+    }
 
     submit() {
         this.message = null;

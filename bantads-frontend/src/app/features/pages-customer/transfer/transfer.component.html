@@ -1,7 +1,10 @@
-<main class="deposit-main">
+<main [class.dark]="darkMode" class="deposit-main">
 		<div class="page-header">
 			<h1>Transferência</h1>
-			<span class="last-access">Último acesso: {{ lastAccess$ | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+			<div style="display:flex; align-items:center; gap:12px;">
+				<span class="last-access">Último acesso: {{ lastAccess$ | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+				<button type="button" class="btn-toggle" (click)="toggleDarkMode()">{{ darkMode ? 'Modo Claro' : 'Modo Escuro' }}</button>
+			</div>
 		</div>
 
 	<section class="content-grid">
