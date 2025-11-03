@@ -31,6 +31,7 @@ export class StatementComponent implements OnInit, OnDestroy {
 
     cliente: Cliente | null = null;
     private sub?: Subscription;
+isLoading: any;
 
     constructor(
         private transactionService: TransactionService,
