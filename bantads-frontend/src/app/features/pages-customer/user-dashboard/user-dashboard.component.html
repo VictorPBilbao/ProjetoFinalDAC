@@ -4,7 +4,6 @@
 
         <p>Bem-vindo(a) de volta à sua conta.</p>
 
-
         <!-- botão de alternância do tema: usa assets e ficará fixo via CSS -->
         <button
             type="button"
@@ -12,11 +11,14 @@
             (click)="toggleDarkMode()"
             [attr.aria-pressed]="darkMode"
             aria-label="Alternar modo escuro"
-
             title="Alternar tema"
         >
             <img
-                [src]="darkMode ? 'assets/images/icon-sun.svg' : 'assets/images/icon-moon.svg'"
+                [src]="
+                    darkMode
+                        ? 'assets/images/icon-sun.svg'
+                        : 'assets/images/icon-moon.svg'
+                "
                 alt="Alternar tema"
             />
         </button>
@@ -96,7 +98,6 @@
     <section class="recent-activity">
         <h3>Atividade Recente</h3>
 
-
         <ul *ngIf="(recentActivity?.length ?? 0) > 0; else noRecent">
             <li
                 class="transaction-item"
@@ -117,7 +118,10 @@
                         negative: transaction.amount < 0
                     }"
                 >
-                    {{ transaction.amount | currency : 'BRL' : 'symbol' : '1.2-2' }}
+                    {{
+                        transaction.amount
+                            | currency : "BRL" : "symbol" : "1.2-2"
+                    }}
                 </span>
             </li>
         </ul>
@@ -127,6 +131,5 @@
         </ng-template>
 
         <a href="/cliente/extrato" class="view-all">Ver extrato completo</a>
-                          
     </section>
 </main>
