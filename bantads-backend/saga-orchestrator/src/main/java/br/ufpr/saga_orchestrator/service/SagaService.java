@@ -1,12 +1,13 @@
 package br.ufpr.saga_orchestrator.service;
 
-import br.ufpr.saga_orchestrator.result.SagaResult;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Map;
+import br.ufpr.saga_orchestrator.result.SagaResult;
 
 @Service
 public class SagaService {
@@ -16,17 +17,20 @@ public class SagaService {
     private final String clientsEndpoint;
     private final String managersEndpoint;
     private final String notificationsEndpoint;
+    private final String accountsEndpoint; //this method will use accounts endpoint in future implementations
 
     public SagaService(WebClient webClient,
             @Value("${api.gateway.base-url}") String gatewayBase,
             @Value("${clients.endpoint}") String clientsEndpoint,
             @Value("${managers.endpoint}") String managersEndpoint,
-            @Value("${notifications.endpoint}") String notificationsEndpoint) {
+            @Value("${notifications.endpoint}") String notificationsEndpoint,
+            @Value("${accounts.endpoint}") String accountsEndpoint) { //this method will use accounts endpoint in future implementations
         this.webClient = webClient;
         this.gatewayBase = gatewayBase;
         this.clientsEndpoint = clientsEndpoint;
         this.managersEndpoint = managersEndpoint;
         this.notificationsEndpoint = notificationsEndpoint;
+        this.accountsEndpoint = accountsEndpoint; //this method will use accounts endpoint in future implementations
     }
 
     public SagaResult approveClient(String clientId, String managerId, String password) {
@@ -79,4 +83,62 @@ public class SagaService {
         return new SagaResult(true, "completed", "Cliente aprovado e gerente notificado",
                 Map.of("client", clientResp, "manager", managerInfo));
     }
+
+    //this method will use accounts endpoint in future implementations
+    //method to update client profile
+    public SagaResult updateClientProfile(String clientId, Map<String, Object> clientUpdateData) {
+
+        //update client data in Client MS
+        //we need the endpoint updateLimitByClientId in Account MS to recalculate limit if salary is updated
+        try {
+            webClient.put()
+                    .uri(gatewayBase + clientsEndpoint + "/" + clientId)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(clientUpdateData)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+        } catch (Exception ex) {
+            return new SagaResult(false, "CLIENT_UPDATE", "Falha ao atualizar dados no MS Cliente", ex.getMessage());
+        }
+
+        //if salary is updated, we need to recalculate account limit in Account MS
+        if (clientUpdateData.containsKey("salario")) {
+            try {
+
+                Object novoSalario = clientUpdateData.get("salario");
+
+                webClient.put()
+                        .uri(gatewayBase + accountsEndpoint + "/client/" + clientId + "/update-limit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(Map.of("salario", novoSalario))
+                        .retrieve()
+                        .toBodilessEntity()
+                        .block();
+
+            } catch (Exception ex) {
+                //rollback client update
+                //this part is optional and can be implemented in futures
+                //if updating account limit fails, we undo the client update
+
+                //
+                // try {
+                //     webClient.put()
+                //             .uri(gatewayBase + clientsEndpoint + "/" + clientId)
+                //             .contentType(MediaType.APPLICATION_JSON)
+                //             .bodyValue(oldClientData) // Restaura os dados antigos
+                //             .retrieve()
+                //             .toBodilessEntity()
+                //             .block();
+                // } catch (Exception rollbackEx) {
+                //     return new SagaResult(false, "ACCOUNT_UPDATE_ROLLBACK_FAIL", "Falha ao atualizar limite e falha ao reverter alteração do cliente.", rollbackEx.getMessage());
+                // }
+                return new SagaResult(false, "ACCOUNT_UPDATE", "Dados do cliente atualizados, mas falha ao recalcular limite no MS Conta", ex.getMessage());
+            }
+        }
+
+        return new SagaResult(true, "completed", "Perfil do cliente e limite atualizados com sucesso", null);
+
+    }
+
 }
