@@ -13,45 +13,98 @@ import { LocalStorageServiceService } from '../local-storages/local-storage-serv
 })
 export class UserService {
 
+  private apiUrl = 'http://localhost:3000';
+  
   constructor(
     private http: HttpClient,
     private loadingService: LoadingService,
     private localStorageService: LocalStorageServiceService
   ) { }
 
-   createUser(clienteData: Cliente): Observable<any> {
+  createUser(clienteData: Cliente): Observable<any> {
     console.log('Dados recebidos para criar usuário:', clienteData);
 
-    // Monta o novo cliente com dados calculados
-    const newCliente: Cliente = {
-      ...clienteData,
-      id: Date.now().toString(), // ou uuid
-      saldo: 0,
-      limite: clienteData.salario * 2,
-      criadoEm: new Date().toISOString()
+    // Transforma os dados do frontend para o formato do backend
+    const autocadastroRequest = {
+      cpf: clienteData.cpf.replace(/[^\d]/g, ''), // Remove formatação
+      nome: clienteData.nome,
+      email: clienteData.email.trim().toLowerCase(),
+      telefone: clienteData.telefone,
+      salario: clienteData.salario,
+      endereco: `${clienteData.endereco.logradouro}, ${clienteData.endereco.numero}${clienteData.endereco.complemento ? ' - ' + clienteData.endereco.complemento : ''}`,
+      cep: clienteData.endereco.cep.replace(/[^\d]/g, ''), // Remove formatação
+      cidade: clienteData.endereco.cidade,
+      estado: clienteData.endereco.estado.toUpperCase()
     };
 
-    // Salva de verdade no localStorage
-    this.localStorageService.addCliente(newCliente);
+    console.log('Dados enviados para o backend:', autocadastroRequest);
 
-    // Simula resposta de API
-    const fakeResponse = {
-      success: true,
-      message: 'Cliente criado com sucesso!',
-      data: newCliente
-    };
+    this.loadingService.show();
 
-    return of(fakeResponse).pipe(delay(1000));
+    return this.http
+      .post<any>(`${this.apiUrl}/clientes`, autocadastroRequest)
+      .pipe(
+        map(response => {
+          console.log('Resposta do backend:', response);
+          
+          // Se sucesso, salva no localStorage também
+          if (response.success && response.data) {
+            const newCliente: Cliente = {
+              ...clienteData,
+              id: response.data.cpf, // Usa CPF como ID
+              cpf: response.data.cpf,
+              saldo: 0,
+              limite: clienteData.salario * 2,
+              criadoEm: response.data.createdAt || new Date().toISOString(),
+              manager: response.data.manager || clienteData.manager
+            };
+            
+            this.localStorageService.addCliente(newCliente);
+          }
+          
+          return response;
+        }),
+        finalize(() => this.loadingService.hide()),
+        catchError((error) => {
+          console.error('Erro ao criar usuário:', error);
+          
+          // Retorna erro formatado
+          const errorMessage = error.error?.message || 'Erro ao cadastrar cliente';
+          return throwError(() => new Error(errorMessage));
+        })
+      );
   }
 
   verifyUserByCpf(cpf: string): Observable<boolean> {
-    const existingCliente = this.localStorageService.getClientes().find(c => c.cpf === cpf);
-    return of(!!existingCliente).pipe(delay(500));
+    this.loadingService.show();
+    
+    // Remove formatação do CPF (apenas números)
+    const cleanCpf = cpf.replace(/[^\d]/g, '');
+    
+    return this.http
+        .post<{ exists: boolean }>('http://localhost:3000/clientes/validate', { cpf: cleanCpf })
+        .pipe(
+            map(response => response.exists),
+            finalize(() => this.loadingService.hide()),
+            catchError((error) => {
+                console.error('Erro ao verificar CPF:', error);
+                return of(false);
+            })
+        );
   }
 
   verifyEmailAvailability(email: string): Observable<boolean> {
-    const existingCliente = this.localStorageService.getClientes().find(c => c.email === email);
-    return of(!existingCliente).pipe(delay(500));
+    this.loadingService.show();
+    return this.http
+        .post<{ exists: boolean }>('http://localhost:3000/clientes/validateEmail', { email })
+        .pipe(
+            map(response => response.exists),
+            finalize(() => this.loadingService.hide()),
+            catchError((error) => {
+                console.error('Erro ao verificar email:', error);
+                return of(false);
+            })
+        );
   }
 
   // valid o cep do usuário

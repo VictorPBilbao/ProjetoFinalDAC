@@ -68,10 +68,20 @@ public class ClientService {
 
     // ? Get client by CPF
     public ClientDTO getClientByCpf(String cpf) {
-        Client client = clientRepository.findById(cpf)
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com CPF: " + cpf));
+        return clientRepository.findById(cpf)
+                .map(this::convertToDTO)
+                .orElse(null); // não lança exceção
+    }
+
+    public ClientDTO findByEmail(String email) {
+        Client client = clientRepository.findByEmail(email);
+        if (client == null) {
+            return null; // sem exception
+        }
         return convertToDTO(client);
     }
+
+
 
     // ? Get pending clients
     public List<ClientDTO> getAllPendingClients() {
