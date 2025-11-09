@@ -240,9 +240,9 @@ export class RegisterComponent {
                 this.registerForm?.controls['email']?.value || ''
             )
             .subscribe({
-                next: (available) => {
-                    this.isEmailAvailable = available;
-                    if (!available) {
+                next: (exists) => {
+                    this.isEmailAvailable = !exists;
+                    if (exists) {
                         this.message =
                             'E-mail já cadastrado. Por favor, utilize outro e-mail.';
                         Swal.fire({
@@ -272,6 +272,9 @@ export class RegisterComponent {
     }
 
     onValidateUser(): void {
+        if (this.registerForm?.controls['cpf']?.value.length !== 11)
+            return;
+
         this.userService
             .verifyUserByCpf(this.registerForm?.controls['cpf']?.value || '')
             .subscribe({

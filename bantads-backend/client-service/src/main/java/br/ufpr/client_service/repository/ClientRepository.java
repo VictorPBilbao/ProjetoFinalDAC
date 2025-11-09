@@ -17,4 +17,6 @@ public interface ClientRepository extends JpaRepository<Client, String> {
 
     // Find clients waiting for approval
     List<Client> findByAprovadoFalse();
+
+    Client findByCpf(String cpf);
 }
