@@ -29,11 +29,9 @@
             <span class="balance-title"> Saldo disponível </span>
 
             <h2 class="balance-value">
-                <ng-container *ngIf="!hideBalance; else hiddenBalance">
-                    {{ balance | currency : "BRL" }}
-                </ng-container>
-
-                <ng-template #hiddenBalance> •••••• </ng-template>
+                @if (!hideBalance) {
+                {{ balance | currency : "BRL" }}
+                } @else { •••••• }
 
                 <button
                     type="button"
@@ -98,7 +96,8 @@
     <section class="recent-activity">
         <h3>Atividade Recente</h3>
 
-        <ul *ngIf="(recentActivity?.length ?? 0) > 0; else noRecent">
+        @if (recentActivity.length > 0) {
+        <ul>
             <li
                 class="transaction-item"
                 *ngFor="let transaction of recentActivity; let i = index"
@@ -125,10 +124,9 @@
                 </span>
             </li>
         </ul>
-
-        <ng-template #noRecent>
-            <li>Nenhuma operação recente.</li>
-        </ng-template>
+        } @else {
+        <li>Nenhuma operação recente.</li>
+        }
 
         <a href="/cliente/extrato" class="view-all">Ver extrato completo</a>
     </section>
