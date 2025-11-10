@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import br.ufpr.account_service.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping; // Novo Import
+
 
 @RestController
 @RequestMapping("/accounts")
@@ -28,5 +30,14 @@ public class AccountController {
         Account updatedAccount = accountService.updateLimitByClientId(clientId, salaryData);
         return ResponseEntity.ok(updatedAccount);
     }
+    //GET /accounts/client/{id}
+    @GetMapping("/client/{id}")
+    public ResponseEntity<Account> getAccount(
+            @PathVariable("id") Long clientId) {
+
+        Account account = accountService.getAccountByClientId(clientId);
+        return ResponseEntity.ok(account);
+    }
 
 }
+

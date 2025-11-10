@@ -49,4 +49,15 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
+    /**
+     * Busca a conta de um cliente pelo seu ID.
+     * @param clientId O ID do cliente.
+     * @return A conta do cliente.
+     * @throws ResponseStatusException se a conta não for encontrada.
+     */
+    public Account getAccountByClientId(Long clientId) {
+        return accountRepository.findByClientId(clientId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta não encontrada para o cliente ID: " + clientId));
+    }
+
 }
