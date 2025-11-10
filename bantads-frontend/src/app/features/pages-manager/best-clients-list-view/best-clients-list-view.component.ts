@@ -1,12 +1,12 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { forkJoin, Subscription } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { Subscription, forkJoin } from 'rxjs';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 
-import { Cliente } from './../../models/cliente.model';
-
+import { Cliente } from '../../models/cliente.model';
+import { AuthService } from '../../services/auth/auth.service';
 import { ClientService } from '../../services/client/client.service';
 import { ManagerService } from '../../services/manager/manager.service';
-import { AuthService } from '../../services/auth/auth.service';
 import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 
 @Component({
@@ -27,7 +27,7 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
         private clientService: ClientService,
         private managerService: ManagerService,
         private authService: AuthService
-    ) { }
+    ) {}
 
     ngOnInit(): void {
         this.carregarClientesDoGerente();
@@ -56,7 +56,11 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
                     const managerClients = clients.filter(
                         (c) => c.manager?.id === currentManager.id
                     );
-                    console.log('Clientes encontrados para este gerente:', managerClients.length, managerClients);
+                    console.log(
+                        'Clientes encontrados para este gerente:',
+                        managerClients.length,
+                        managerClients
+                    );
 
                     const clientesOrdenados = managerClients.sort((a, b) => {
                         return b.saldo - a.saldo;

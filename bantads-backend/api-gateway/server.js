@@ -86,15 +86,177 @@ app.get(
 );
 
 app.post(
-    "/clientes",
+    "/clientes/validate",
+    express.json(),
     proxy(process.env.CLIENT_SERVICE_URL, {
         proxyReqPathResolver: (req) => {
-            return `${req.url}`;
+            console.log(`[PROXY] Redirecionando para: /clientes/validateCPF`);
+            return "/clientes/validateCPF";
+        },
+        proxyReqBodyDecorator: (bodyContent, srcReq) => {
+            // Valida e sanitiza o CPF no body
+            if (!bodyContent.cpf) {
+                throw new Error("CPF é obrigatório");
+            }
+            
+            const cpf = bodyContent.cpf.replace(/[^\d]/g, '');
+            
+            if (cpf.length !== 11) {
+                throw new Error("CPF inválido");
+            }
+            
+            console.log(`[PROXY] CPF sanitizado: ${cpf}`);
+            return { cpf }; // Retorna o body sanitizado
+        },
+        userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+            console.log(`[PROXY] Status recebido: ${proxyRes.statusCode}`);
+            
+            // Se o microserviço retornar 404, significa que o CPF não existe
+            if (proxyRes.statusCode === 404) {
+                console.log(`[PROXY] CPF não encontrado (404) - retornando exists: false`);
+                return JSON.stringify({ exists: false });
+            }
+            
+            // Trata outros status codes de erro
+            if (proxyRes.statusCode >= 400) {
+                console.log(`[PROXY] Erro ${proxyRes.statusCode} - retornando exists: false`);
+                return JSON.stringify({ exists: false });
+            }
+            
+            // Converte a resposta do microserviço para o formato esperado pelo frontend
+            try {
+                const apiResponse = JSON.parse(proxyResData.toString('utf8'));
+                console.log(`[PROXY] ApiResponse recebida:`, apiResponse);
+                
+                // Extrai o valor de 'data' do ApiResponse<Boolean>
+                const exists = apiResponse.data === true;
+                console.log(`[PROXY] CPF exists: ${exists}`);
+                
+                return JSON.stringify({ exists });
+            } catch (error) {
+                console.error(`[PROXY] Erro ao processar resposta:`, error);
+                // Em caso de erro, assume que não existe
+                return JSON.stringify({ exists: false });
+            }
         },
         proxyErrorHandler: (err, res, next) => {
+            console.error(`[PROXY] Erro:`, err.message);
             res.status(503).json({
                 error: "Client Service unavailable",
                 message: err.message,
+            });
+        },
+    })
+);
+
+// Verifica email do cliente
+app.post(
+    "/clientes/validateEmail",
+    express.json(),
+    proxy(process.env.CLIENT_SERVICE_URL, {
+        proxyReqPathResolver: (req) => {
+            console.log(`[PROXY] Redirecionando para: /clientes/validateEmail`);
+            return "/clientes/validateEmail";
+        },
+        proxyReqBodyDecorator: (bodyContent, srcReq) => {
+            // Valida o email no body
+            if (!bodyContent.email) {
+                throw new Error("Email é obrigatório");
+            }
+
+            const email = bodyContent.email.trim().toLowerCase();
+            console.log(`[PROXY] Email processado: ${email}`);
+            return { email }; // Retorna o body processado
+        },
+        userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+            console.log(`[PROXY] Status recebido: ${proxyRes.statusCode}`);
+            
+            // Trata status codes de erro
+            if (proxyRes.statusCode >= 400) {
+                console.log(`[PROXY] Erro ${proxyRes.data} - retornando exists: false`);
+                return JSON.stringify({ exists: false });
+            }
+            
+            // Converte a resposta do microserviço para o formato esperado pelo frontend
+            try {
+                const apiResponse = JSON.parse(proxyResData.toString('utf8'));
+                console.log(`[PROXY] ApiResponse recebida:`, apiResponse);
+                
+                // Extrai o valor de 'data' do ApiResponse<Boolean>
+                const exists = apiResponse.data === true;
+                console.log(`[PROXY] Email exists: ${exists}`);
+                
+                return JSON.stringify({ exists });
+            } catch (error) {
+                console.error(`[PROXY] Erro ao processar resposta:`, error);
+                // Em caso de erro, assume que não existe
+                return JSON.stringify({ exists: false });
+            }
+        },
+        proxyErrorHandler: (err, res, next) => {
+            console.error(`[PROXY] Erro:`, err.message);
+            res.status(503).json({
+                error: "Client Service unavailable",
+                message: err.message,
+            });
+        },
+    })
+);
+
+app.post(
+    "/clientes",
+    express.json(),
+    proxy(process.env.CLIENT_SERVICE_URL, {
+        proxyReqPathResolver: (req) => {
+            console.log(`[PROXY] Redirecionando para: /clientes/cadastro`);
+            return "/clientes/cadastro";
+        },
+        proxyReqBodyDecorator: (bodyContent, srcReq) => {
+            console.log(`[PROXY] Dados recebidos para cadastro:`, bodyContent);
+            
+            // Valida campos obrigatórios
+            const requiredFields = ['cpf', 'nome', 'email', 'telefone', 'salario', 'endereco', 'cep', 'cidade', 'estado'];
+            for (const field of requiredFields) {
+                if (!bodyContent[field]) {
+                    throw new Error(`Campo obrigatório ausente: ${field}`);
+                }
+            }
+            
+            // Sanitiza CPF e CEP (remove formatação)
+            const sanitizedBody = {
+                ...bodyContent,
+                cpf: bodyContent.cpf.replace(/[^\d]/g, ''),
+                cep: bodyContent.cep.replace(/[^\d]/g, ''),
+                email: bodyContent.email.trim().toLowerCase(),
+                estado: bodyContent.estado.toUpperCase()
+            };
+            
+            console.log(`[PROXY] Dados sanitizados:`, sanitizedBody);
+            return sanitizedBody;
+        },
+        userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
+            console.log(`[PROXY] Status recebido: ${proxyRes.statusCode}`);
+            
+            try {
+                const apiResponse = JSON.parse(proxyResData.toString('utf8'));
+                console.log(`[PROXY] Resposta do microserviço:`, apiResponse);
+                
+                // Retorna a resposta do microserviço como está (ApiResponse)
+                return JSON.stringify(apiResponse);
+            } catch (error) {
+                console.error(`[PROXY] Erro ao processar resposta:`, error);
+                return JSON.stringify({
+                    success: false,
+                    message: "Erro ao processar resposta do servidor"
+                });
+            }
+        },
+        proxyErrorHandler: (err, res, next) => {
+            console.error(`[PROXY] Erro no cadastro:`, err.message);
+            res.status(503).json({
+                success: false,
+                message: "Client Service unavailable",
+                error: err.message
             });
         },
     })

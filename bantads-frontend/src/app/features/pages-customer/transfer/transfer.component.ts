@@ -1,19 +1,21 @@
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { Observable, of, Subscription } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import {
     FormBuilder,
     FormGroup,
     ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+
 import { Cliente } from '../../models/cliente.model';
 import { Manager } from '../../models/manager.model';
-import { Observable, Subscription, of } from 'rxjs';
+import { Transaction } from '../../models/transaction.model';
+import { ClientService } from '../../services/client/client.service';
 import { LocalStorageServiceService } from '../../services/local-storages/local-storage-service.service';
 import { TransactionService } from '../../services/transaction/transaction.service';
-import { ClientService } from '../../services/client/client.service';
-import { Transaction } from '../../models/transaction.model';
 
 @Component({
     selector: 'app-transfer',

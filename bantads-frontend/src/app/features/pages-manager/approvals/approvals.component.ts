@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ManagerService } from '../../services/manager/manager.service';
+
 import { Cliente } from '../../models/cliente.model';
+import { ManagerService } from '../../services/manager/manager.service';
 import { CpfPipe } from '../../shared/pipes/cpf.pipe';
 
 @Component({
@@ -26,7 +27,7 @@ export class ApprovalsComponent implements OnInit {
     isLoading = false;
     actionInProgressId: string | null = null;
 
-    constructor(private readonly managerService: ManagerService) { }
+    constructor(private readonly managerService: ManagerService) {}
 
     ngOnInit(): void {
         this.load();
@@ -44,7 +45,10 @@ export class ApprovalsComponent implements OnInit {
                     this.applyFilter();
                 },
                 error: (err: any) => {
-                    this.setFeedback(false, err?.message ?? 'Erro ao carregar pendentes');
+                    this.setFeedback(
+                        false,
+                        err?.message ?? 'Erro ao carregar pendentes'
+                    );
                     this.isLoading = false;
                 },
                 complete: () => {
@@ -61,7 +65,12 @@ export class ApprovalsComponent implements OnInit {
                     this.pending = Array.isArray(data) ? data : [];
                     this.applyFilter();
                 })
-                .catch((err: any) => this.setFeedback(false, err?.message ?? 'Erro ao carregar pendentes'))
+                .catch((err: any) =>
+                    this.setFeedback(
+                        false,
+                        err?.message ?? 'Erro ao carregar pendentes'
+                    )
+                )
                 .finally(() => (this.isLoading = false));
             return;
         }
@@ -71,7 +80,10 @@ export class ApprovalsComponent implements OnInit {
             this.pending = Array.isArray(res) ? res : [];
             this.applyFilter();
         } catch (err: any) {
-            this.setFeedback(false, err?.message ?? 'Erro ao carregar pendentes');
+            this.setFeedback(
+                false,
+                err?.message ?? 'Erro ao carregar pendentes'
+            );
         } finally {
             this.isLoading = false;
         }
@@ -95,7 +107,7 @@ export class ApprovalsComponent implements OnInit {
         const res = this.managerService.approve(id);
         const result = await this.handleActionResult(res, id);
         if (result?.ok) {
-            await this.load();
+            this.load();
         }
     }
 

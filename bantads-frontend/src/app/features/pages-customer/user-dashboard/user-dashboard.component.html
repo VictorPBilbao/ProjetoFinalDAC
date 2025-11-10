@@ -4,7 +4,6 @@
 
         <p>Bem-vindo(a) de volta à sua conta.</p>
 
-
         <!-- botão de alternância do tema: usa assets e ficará fixo via CSS -->
         <button
             type="button"
@@ -12,11 +11,14 @@
             (click)="toggleDarkMode()"
             [attr.aria-pressed]="darkMode"
             aria-label="Alternar modo escuro"
-
             title="Alternar tema"
         >
             <img
-                [src]="darkMode ? 'assets/images/icon-sun.svg' : 'assets/images/icon-moon.svg'"
+                [src]="
+                    darkMode
+                        ? 'assets/images/icon-sun.svg'
+                        : 'assets/images/icon-moon.svg'
+                "
                 alt="Alternar tema"
             />
         </button>
@@ -27,11 +29,9 @@
             <span class="balance-title"> Saldo disponível </span>
 
             <h2 class="balance-value">
-                <ng-container *ngIf="!hideBalance; else hiddenBalance">
-                    {{ balance | currency : "BRL" }}
-                </ng-container>
-
-                <ng-template #hiddenBalance> •••••• </ng-template>
+                @if (!hideBalance) {
+                {{ balance | currency : "BRL" }}
+                } @else { •••••• }
 
                 <button
                     type="button"
@@ -96,8 +96,8 @@
     <section class="recent-activity">
         <h3>Atividade Recente</h3>
 
-
-        <ul *ngIf="(recentActivity?.length ?? 0) > 0; else noRecent">
+        @if (recentActivity.length > 0) {
+        <ul>
             <li
                 class="transaction-item"
                 *ngFor="let transaction of recentActivity; let i = index"
@@ -117,16 +117,17 @@
                         negative: transaction.amount < 0
                     }"
                 >
-                    {{ transaction.amount | currency : 'BRL' : 'symbol' : '1.2-2' }}
+                    {{
+                        transaction.amount
+                            | currency : "BRL" : "symbol" : "1.2-2"
+                    }}
                 </span>
             </li>
         </ul>
-
-        <ng-template #noRecent>
-            <li>Nenhuma operação recente.</li>
-        </ng-template>
+        } @else {
+        <li>Nenhuma operação recente.</li>
+        }
 
         <a href="/cliente/extrato" class="view-all">Ver extrato completo</a>
-                          
     </section>
 </main>

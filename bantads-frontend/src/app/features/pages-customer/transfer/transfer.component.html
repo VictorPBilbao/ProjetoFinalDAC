@@ -1,74 +1,182 @@
 <main [class.dark]="darkMode" class="deposit-main">
-		<div class="page-header">
-			<h1>Transferência</h1>
-			<div style="display:flex; align-items:center; gap:12px;">
-				<span class="last-access">Último acesso: {{ lastAccess$ | date:'dd/MM/yyyy HH:mm:ss' }}</span>
-				<button type="button" class="btn-toggle" (click)="toggleDarkMode()">{{ darkMode ? 'Modo Claro' : 'Modo Escuro' }}</button>
-			</div>
-		</div>
+    <div class="page-header">
+        <h1>Transferência</h1>
+        <div style="display: flex; align-items: center; gap: 12px">
+            <span class="last-access"
+                >Último acesso:
+                {{ lastAccess$ | date : "dd/MM/yyyy HH:mm:ss" }}</span
+            >
+            <button type="button" class="btn-toggle" (click)="toggleDarkMode()">
+                {{ darkMode ? "Modo Claro" : "Modo Escuro" }}
+            </button>
+        </div>
+    </div>
 
-	<section class="content-grid">
+    <section class="content-grid">
+        <div class="main-content">
+            <section
+                class="card account-info"
+                *ngIf="cliente$ | async as cliente"
+            >
+                <h2>Informações da Conta</h2>
+                <div class="info-row">
+                    <span>Agência</span><strong>{{ cliente.agencia }}</strong>
+                </div>
+                <div class="info-row">
+                    <span>Conta Corrente</span
+                    ><strong>{{ cliente.conta }}</strong>
+                </div>
+                <div class="balances">
+                    <div class="balance-item">
+                        <span>Saldo</span>
+                        <strong
+                            [class.negative]="cliente.saldo < 0"
+                            [class.positive]="cliente.saldo >= 0"
+                            >{{
+                                cliente.saldo
+                                    | currency : "BRL" : "symbol" : "1.2-2"
+                            }}</strong
+                        >
+                    </div>
+                    <div class="balance-item">
+                        <span>Limite</span>
+                        <strong class="positive">{{
+                            cliente.limite
+                                | currency : "BRL" : "symbol" : "1.2-2"
+                        }}</strong>
+                    </div>
+                </div>
+            </section>
 
-		<div class="main-content">
-			<section class="card account-info" *ngIf="cliente$ | async as cliente">
-				<h2>Informações da Conta</h2>
-				<div class="info-row"><span>Agência</span><strong>{{ cliente.agencia }}</strong></div>
-				<div class="info-row"><span>Conta Corrente</span><strong>{{ cliente.conta }}</strong></div>
-				<div class="balances">
-					<div class="balance-item">
-						<span>Saldo</span>
-						<strong [class.negative]="cliente.saldo < 0" [class.positive]="cliente.saldo >= 0">{{ cliente.saldo | currency:'BRL':'symbol':'1.2-2' }}</strong>
-					</div>
-					<div class="balance-item">
-						<span>Limite</span>
-						<strong class="positive">{{ cliente.limite | currency:'BRL':'symbol':'1.2-2' }}</strong>
-					</div>
-				</div>
-			</section>
+            <section class="card deposit-form">
+                <h2>Realizar Transferência</h2>
 
-			<section class="card deposit-form">
-				<h2>Realizar Transferência</h2>
+                <form [formGroup]="form" (ngSubmit)="submit()">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="agencia">Agência (origem)</label>
+                            <input
+                                id="agencia"
+                                type="text"
+                                formControlName="agencia"
+                            />
+                            <small
+                                class="error"
+                                *ngIf="
+                                    form.get('agencia')?.touched &&
+                                    form.get('agencia')?.invalid
+                                "
+                                >Informe a agência.</small
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="conta">Conta Corrente (origem)</label>
+                            <input
+                                id="conta"
+                                type="text"
+                                formControlName="conta"
+                            />
+                            <small
+                                class="error"
+                                *ngIf="
+                                    form.get('conta')?.touched &&
+                                    form.get('conta')?.invalid
+                                "
+                                >Informe a conta.</small
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="contaDestino"
+                                >Conta Corrente (destino)</label
+                            >
+                            <input
+                                id="contaDestino"
+                                type="text"
+                                formControlName="contaDestino"
+                            />
+                            <small
+                                class="error"
+                                *ngIf="
+                                    form.get('contaDestino')?.touched &&
+                                    form.get('contaDestino')?.invalid
+                                "
+                                >Informe a conta destino.</small
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="valor">Valor</label>
+                            <input
+                                id="valor"
+                                type="number"
+                                step="0.01"
+                                formControlName="valor"
+                                placeholder="0,00"
+                            />
+                            <small
+                                class="error"
+                                *ngIf="form.get('valor')?.touched && form.get('valor')?.errors?.['min']"
+                                >O valor deve ser maior que zero.</small
+                            >
+                            <small
+                                class="error"
+                                *ngIf="form.get('valor')?.touched && form.get('valor')?.errors?.['required']"
+                                >Informe um valor.</small
+                            >
+                        </div>
+                    </div>
 
-				<form [formGroup]="form" (ngSubmit)="submit()">
-					<div class="form-grid">
-						<div class="form-group">
-							<label for="agencia">Agência (origem)</label>
-							<input id="agencia" type="text" formControlName="agencia" />
-							<small class="error" *ngIf="form.get('agencia')?.touched && form.get('agencia')?.invalid">Informe a agência.</small>
-						</div>
-						<div class="form-group">
-							<label for="conta">Conta Corrente (origem)</label>
-							<input id="conta" type="text" formControlName="conta" />
-							<small class="error" *ngIf="form.get('conta')?.touched && form.get('conta')?.invalid">Informe a conta.</small>
-						</div>
-						<div class="form-group">
-							<label for="contaDestino">Conta Corrente (destino)</label>
-							<input id="contaDestino" type="text" formControlName="contaDestino" />
-							<small class="error" *ngIf="form.get('contaDestino')?.touched && form.get('contaDestino')?.invalid">Informe a conta destino.</small>
-						</div>
-						<div class="form-group">
-							<label for="valor">Valor</label>
-							<input id="valor" type="number" step="0.01" formControlName="valor" placeholder="0,00" />
-							<small class="error" *ngIf="form.get('valor')?.touched && form.get('valor')?.errors?.['min']">O valor deve ser maior que zero.</small>
-							<small class="error" *ngIf="form.get('valor')?.touched && form.get('valor')?.errors?.['required']">Informe um valor.</small>
-						</div>
-					</div>
+                    <div class="actions">
+                        <button
+                            type="submit"
+                            class="btn-primary"
+                            [disabled]="form.invalid"
+                        >
+                            Continuar
+                        </button>
+                        <button
+                            type="reset"
+                            class="btn-outline"
+                            (click)="form.reset()"
+                        >
+                            Limpar
+                        </button>
+                    </div>
 
-					<div class="actions">
-						<button type="submit" class="btn-primary" [disabled]="form.invalid">Continuar</button>
-						<button type="reset" class="btn-outline" (click)="form.reset()">Limpar</button>
-					</div>
+                    <p
+                        *ngIf="message"
+                        [class.msg-success]="message.type === 'success'"
+                        [class.msg-error]="message.type === 'error'"
+                    >
+                        {{ message.text }}
+                    </p>
 
-					<p *ngIf="message" [class.msg-success]="message.type==='success'" [class.msg-error]="message.type==='error'">{{ message.text }}</p>
-
-					<section *ngIf="lastTransfer" class="card" style="margin-top:12px;">
-						<h3>Última Transferência</h3>
-						<div class="info-row"><span>Para Conta</span><strong>{{ lastTransfer.destinoConta }}</strong></div>
-						<div class="info-row"><span>Valor</span><strong>{{ lastTransfer.valor | currency:'BRL':'symbol':'1.2-2' }}</strong></div>
-						<div class="info-row"><span>Data/Hora</span><strong>{{ lastTransfer.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}</strong></div>
-					</section>
-				</form>
-			</section>
-		</div>
-	</section>
+                    <section
+                        *ngIf="lastTransfer"
+                        class="card"
+                        style="margin-top: 12px"
+                    >
+                        <h3>Última Transferência</h3>
+                        <div class="info-row">
+                            <span>Para Conta</span
+                            ><strong>{{ lastTransfer.destinoConta }}</strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Valor</span
+                            ><strong>{{
+                                lastTransfer.valor
+                                    | currency : "BRL" : "symbol" : "1.2-2"
+                            }}</strong>
+                        </div>
+                        <div class="info-row">
+                            <span>Data/Hora</span
+                            ><strong>{{
+                                lastTransfer.timestamp
+                                    | date : "dd/MM/yyyy HH:mm:ss"
+                            }}</strong>
+                        </div>
+                    </section>
+                </form>
+            </section>
+        </div>
+    </section>
 </main>

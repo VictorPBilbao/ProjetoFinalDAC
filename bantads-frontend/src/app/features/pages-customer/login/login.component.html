@@ -1,20 +1,11 @@
 <main class="home-main">
     <section class="hero-section">
         <div class="picture-big">
-            <img
-                *ngFor="let imagem of heroImages; let i = index"
-                [src]="imagem"
-                alt="Hero Image {{ i + 1 }}"
-                class="hero-img"
-                [class.active]="i === currentIndex"
-            />
+            <img *ngFor="let imagem of heroImages; let i = index" [src]="imagem" alt="Hero Image {{ i + 1 }}"
+                class="hero-img" [class.active]="i === currentIndex" />
             <div class="slider-dots">
-                <span
-                    *ngFor="let slide of heroImages; let i = index"
-                    class="dot"
-                    [class.active]="i === currentIndex"
-                    (click)="irParaSlide(i)"
-                ></span>
+                <span *ngFor="let slide of heroImages; let i = index" class="dot" [class.active]="i === currentIndex"
+                    (click)="irParaSlide(i)"></span>
             </div>
         </div>
         <div class="hero-content">
@@ -24,11 +15,7 @@
                 seu potencial em <strong>realidade!</strong>
             </p>
             <div class="hero-actions">
-                <button
-                    type="button"
-                    class="btn-primary"
-                    (click)="abrirCadastro()"
-                >
+                <button type="button" class="btn-primary" (click)="abrirCadastro()">
                     ABRIR CONTA
                 </button>
                 <button class="btn-outline">ATENDIMENTO</button>
@@ -36,14 +23,24 @@
         </div>
     </section>
 
+    <br><br><br><br>
     <section class="partners-section">
         <h2>BUSINESS PARTNERS</h2>
-        <div class="partners-logos">
-            <img src="images/image-30.png" alt="Partner 1" />
-            <img src="images/image-40.png" alt="Partner 2" />
-            <img src="images/image-50.png" alt="Partner 3" />
-            <img src="images/image-60.png" alt="Partner 4" />
+        <div class="partners-viewport">
+            <div class="partners-track">
+                <ng-container *ngFor="let p of partners">
+                    <div class="partner-item">
+                        <img [src]="p" [alt]="'Partner ' + (partners.indexOf(p) + 1)" />
+                    </div>
+                </ng-container>
+                <ng-container *ngFor="let p of partners">
+                    <div class="partner-item">
+                        <img [src]="p" [alt]="'Partner duplicate ' + (partners.indexOf(p) + 1)" />
+                    </div>
+                </ng-container>
+            </div>
         </div>
+
         <div class="ellipse-pagination">
             <div class="ellipse pink"></div>
             <div class="ellipse gray"></div>
