@@ -24,7 +24,7 @@ public class SagaController {
         this.sagaService = sagaService;
     }
 
-    //this endpoint will approve a client
+    // this endpoint will approve a client
     @PostMapping("/clients/approve/{clientId}")
     public ResponseEntity<SagaResult> approveClient(
             @PathVariable @NotBlank String clientId,
@@ -33,14 +33,28 @@ public class SagaController {
         SagaResult result = sagaService.approveClient(clientId, managerId, password);
         return ResponseEntity.ok(result);
     }
-    
-    //this endpoint will update client profile
+
+    // this endpoint will update client profile
     @PutMapping("/clients/update/{clientId}")
     public ResponseEntity<SagaResult> updateClientProfile(
             @PathVariable @NotBlank String clientId,
-            @RequestBody Map<String, Object> clientUpdateData) { 
-        
+            @RequestBody Map<String, Object> clientUpdateData) {
+
         SagaResult result = sagaService.updateClientProfile(clientId, clientUpdateData);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/managers/create-saga")
+    public ResponseEntity<SagaResult> createManagerSaga(@RequestBody Map<String, Object> managerDto) {
+        SagaResult result = sagaService.createManagerSaga(managerDto);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/managers/delete-saga/{managerId}")
+    public ResponseEntity<SagaResult> deleteManagerSaga(
+            @PathVariable String managerId,
+            @RequestParam(required = false) String recipientId) {
+        SagaResult result = sagaService.deleteManagerSaga(managerId, recipientId);
         return ResponseEntity.ok(result);
     }
 }
