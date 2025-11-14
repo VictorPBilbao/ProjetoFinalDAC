@@ -1,68 +1,70 @@
 import { Injectable } from '@angular/core';
-import { LocalStorageServiceService } from '../local-storages/local-storage-service.service';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError, tap } from 'rxjs';
 
-@Injectable({
-    providedIn: 'root'
-})
+interface LoginResponse {
+  token: string;   // Bearer <jwt> ou apenas <jwt>
+  cpf: string;
+  tipo: string;    // ADMIN | GERENTE | CLIENTE
+  exp?: number;
+}
+
+@Injectable({ providedIn: 'root' })
 export class AuthService {
+  private apiUrl = 'http://localhost:3000';
+  private TOKEN_KEY = 'auth_token';
+  private USER_KEY = 'auth_user';
 
-    constructor(
-        private localStorageService: LocalStorageServiceService
-    ) { }
+  constructor(private http: HttpClient) {}
 
-    private saveUserInCookie(user: any): void { //save user in cookie for 24 hours
-        const expires = new Date(); //set expiration time to 24 hours
-        expires.setTime(expires.getTime() + 24 * 60 * 60 * 1000);
-
-        const userString = encodeURIComponent(JSON.stringify(user)); //encode user object to string
-        document.cookie = `user=${userString}; path=/; secure; samesite=strict; expires=${expires.toUTCString()}`; //set cookie
-    }
-
-    private removeUserCookie(): void { //remove user cookie
-        document.cookie = 'user=; path=/; secure; samesite=strict; expires=Thu, 01 Jan 1970 00:00:00 UTC;'; //set cookie expiration to past date
-    }
-
-    login(user: string, password: string): boolean { //find user in USERS array
-        // busca todos os usuários no localStorage
-        const users = this.localStorageService.getUsers();
-
-        // procura se existe um usuário que bate com email/username + senha
-        const foundUser = users.find(u => u.user === user && u.password === password);
-
-        if (foundUser) {
-            this.saveUserInCookie(foundUser); // salva user em cookie
-            return true;
+  login(login: string, senha: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { login, senha }).pipe(
+      tap(resp => {
+        if (resp?.token) {
+          const token = resp.token.startsWith('Bearer') ? resp.token : `Bearer ${resp.token}`;
+            localStorage.setItem(this.TOKEN_KEY, token);
+            localStorage.setItem(this.USER_KEY, JSON.stringify({
+              cpf: resp.cpf,
+              tipo: resp.tipo,
+              exp: resp.exp
+            }));
         }
+      }),
+      this.handleError()
+    );
+  }
 
-        return false;
-    }
+  logout(): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/logout`, {}).pipe(
+      tap(() => {
+        localStorage.removeItem(this.TOKEN_KEY);
+        localStorage.removeItem(this.USER_KEY);
+      }),
+      this.handleError()
+    );
+  }
 
-    logout(): void { //remove user cookie
-        this.removeUserCookie();
-    }
+  getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
 
-    getUser(): any { //get user from cookie
-        const cookies = document.cookie.split(';');
-        for (const cookie of cookies) {
-            const [key, value] = cookie.trim().split('=');
-            if (key === 'user') {
-                try {
-                    return JSON.parse(decodeURIComponent(value));
-                } catch (e) {
-                    console.error('Erro ao parsear o cookie do usuário', e);
-                    return null;
-                }
-            }
-        }
-        return null;
-    }
+  isAuthenticated(): boolean {
+    return !!this.getToken();
+  }
 
-    getUserRole(): string | null { //get user role from cookie
-        const user = this.getUser();
-        return user ? user.role : null;
-    }
+  getUser(): { cpf: string; tipo: string; exp?: number } | null {
+    const raw = localStorage.getItem(this.USER_KEY);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  }
 
-    isAuthenticated(): boolean { //check if user cookie exists
-        return !!this.getUser();
-    }
+  getUserRole(): string | null {
+    return this.getUser()?.tipo || null;
+  }
+
+  private handleError<T>() {
+    return (source: Observable<T>) => source.pipe(
+      // simples: deixar passar; adicione catchError se quiser tratar globalmente
+    );
+  }
 }

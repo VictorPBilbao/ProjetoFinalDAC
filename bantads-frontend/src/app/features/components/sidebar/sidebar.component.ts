@@ -32,7 +32,7 @@ export class MenuSidebarComponent {
   ngOnInit(): void {
     this.checkScreenSize(); // Verifica o tamanho da tela ao carregar o componente
 
-    this.client = { nome: this.authService.getUser().user } as Cliente;
+    this.client = { nome: this.authService.getUser()?.cpf } as Cliente;
 
     var roleUser = this.authService.getUserRole();
 

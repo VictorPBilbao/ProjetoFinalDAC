@@ -34,28 +34,48 @@ export class HeaderComponent {
   }
 
   onSubmit(): void {
-    if (this.loginForm.valid) {
-      const { user, password } = this.loginForm.value;
-      if (this.authService.login(user, password)) {
+    if (this.loginForm.invalid) return;
+
+    const { user, password } = this.loginForm.value;
+
+    this.authService.login(user, password).subscribe({
+      next: (ok) => {
+        if (!ok) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Acesso Negado',
+            text: 'Login ou senha inválidos, tente novamente.',
+            confirmButtonColor: '#d33'
+          });
+          return;
+        }
+
         const role = this.authService.getUserRole();
         console.log('ROLE DO USUÁRIO LOGADO:', role);
-        if (role === 'cliente') {
-          this.router.navigate(['/cliente/dashboard']);
-        } else if (role === 'gerente') {
-          this.router.navigate(['/gerente/aprovacoes']);
-        } else if (role === 'admin') {
-          this.router.navigate(['/admin/dashboard']);
-        } else {
-          this.router.navigate(['/login']);
+
+        switch (role) {
+          case 'cliente':
+            this.router.navigate(['/cliente/dashboard']);
+            break;
+          case 'gerente':
+            this.router.navigate(['/gerente/aprovacoes']);
+            break;
+          case 'admin':
+            this.router.navigate(['/admin/dashboard']);
+            break;
+          default:
+            this.router.navigate(['/login']);
+            break;
         }
-      } else {
+      },
+      error: (err) => {
         Swal.fire({
           icon: 'error',
           title: 'Acesso Negado',
-          text: 'Login ou senha inválidos, tente novamente.',
+          text: err?.message || 'Falha no login. Tente novamente.',
           confirmButtonColor: '#d33'
         });
       }
-    }
+    });
   }
 }

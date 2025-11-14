@@ -2,7 +2,7 @@ const express = require("express");
 const proxy = require("express-http-proxy");
 const cors = require("cors");
 const morgan = require("morgan");
-const { authenticateToken, requireRole, requireOwnerOrAdmin } = require("./middleware/auth");
+const { authenticateToken, requireRole } = require("./middleware/auth");
 
 require("dotenv").config();
 
@@ -10,377 +10,394 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================================
+// Helpers de autorização
+// ============================================
+const requireOneOfRoles = (...roles) => (req, res, next) => {
+  const tipo = req.user?.tipo;
+  if (roles.includes(tipo)) return next();
+  return res.status(403).json({ error: "Forbidden" });
+};
+
+// GET /clientes: regra por filtro
+const authorizeClientesList = (req, res, next) => {
+  const filtro = req.query?.filtro;
+  const tipo = req.user?.tipo;
+
+  // Relatório do ADM só para ADMINISTRADOR
+  if (filtro === "adm_relatorio_clientes") {
+    if (tipo !== "ADMINISTRADOR") return res.status(403).json({ error: "Forbidden" });
+    return next();
+  }
+
+  // Demais listagens: GERENTE ou ADMINISTRADOR
+  if (tipo === "GERENTE" || tipo === "ADMINISTRADOR") return next();
+  return res.status(403).json({ error: "Forbidden" });
+};
+
+// GET /clientes/:cpf: ADMIN, GERENTE, ou o próprio CLIENTE
+const authorizeClienteByCpf = (paramName = "cpf") => (req, res, next) => {
+  const tipo = req.user?.tipo;
+  const userCpf = req.user?.cpf;
+  const targetCpf = req.params?.[paramName];
+
+  if (tipo === "ADMINISTRADOR" || tipo === "GERENTE") return next();
+  if (tipo === "CLIENTE" && userCpf && targetCpf && userCpf === targetCpf) return next();
+  return res.status(403).json({ error: "Forbidden" });
+};
+
+// ============================================
 // MIDDLEWARE CONFIGURATION
 // ============================================
-
-// Enable CORS for all origins (adjust in production)
 app.use(cors());
-
-// Parse JSON request bodies
 app.use(express.json());
-
-// Log all HTTP requests
 app.use(morgan("dev"));
 
 // ============================================
 // HEALTH CHECK ENDPOINT
 // ============================================
-
 app.get("/health", (req, res) => {
-    res.json({
-        status: "✅ API Gateway is running!",
-        timestamp: new Date().toISOString(),
-        services: {
-            client: process.env.CLIENT_SERVICE_URL,
-            account: process.env.ACCOUNT_SERVICE_URL,
-            manager: process.env.MANAGER_SERVICE_URL,
-            auth: process.env.AUTH_SERVICE_URL,
-        },
-    });
+  res.json({
+    status: "✅ API Gateway is running!",
+    timestamp: new Date().toISOString(),
+    services: {
+      client: process.env.CLIENT_SERVICE_URL,
+      account: process.env.ACCOUNT_SERVICE_URL,
+      manager: process.env.MANAGER_SERVICE_URL,
+      auth: process.env.AUTH_SERVICE_URL,
+    },
+  });
 });
 
 // ============================================
 // SERVICE HEALTH CHECKS (Individual)
 // ============================================
-
-app.get("/health/auth", proxy(process.env.AUTH_SERVICE_URL));
-
-app.get("/health/client", proxy(process.env.CLIENT_SERVICE_URL));
+app.get("/health/auth", proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084"));
+app.get("/health/client", proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081"));
+app.get("/health/account", proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"));
+app.get("/health/manager", proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083"));
 
 // ============================================
-// REBOOT ENDPOINT (R01 - Initialize Database)
+// REBOOT ENDPOINT (R00 - Initialize Database)
 // ============================================
-
 app.get(
-    "/reboot",
-    proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
-        proxyErrorHandler: (err, res, next) => {
-            console.error("❌ Reboot proxy error:", err.message);
-            res.status(503).json({
-                error: "Service unavailable",
-                message: "Could not initialize database",
-            });
-        },
-    })
+  "/reboot",
+  proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+    proxyErrorHandler: (err, res, next) => {
+      console.error("❌ Reboot proxy error:", err.message);
+      res.status(503).json({
+        error: "Service unavailable",
+        message: "Could not initialize database",
+      });
+    },
+  })
 );
 
 // ============================================
 // CLIENT SERVICE ROUTES
 // ============================================
 
+// GET /clientes (R09, R12, R14, R16) com autorização por filtro
 app.get(
-    "/clientes",
-    authenticateToken,
-    requireRole("ADMINISTRADOR"),
-    proxy(process.env.CLIENT_SERVICE_URL, {
-        proxyReqPathResolver: (req) => {
-            return `${req.url}`;
-        },
-        proxyErrorHandler: (err, res, next) => {
-            res.status(503).json({
-                error: "Client Service unavailable",
-                message: err.message,
-            });
-        },
-    })
+  "/clientes",
+  authenticateToken,
+  authorizeClientesList,
+  proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+      res.status(503).json({
+        error: "Client Service unavailable",
+        message: err.message,
+      });
+    },
+  })
 );
 
+// POST /clientes/validate -> validado no service (pass-through)
 app.post(
-    "/clientes/validate",
-    express.json(),
-    proxy(process.env.CLIENT_SERVICE_URL, {
-        proxyReqPathResolver: (req) => {
-            console.log(`[PROXY] Redirecionando para: /clientes/validateCPF`);
-            return "/clientes/validateCPF";
-        },
-        proxyReqBodyDecorator: (bodyContent, srcReq) => {
-            // Valida e sanitiza o CPF no body
-            if (!bodyContent.cpf) {
-                throw new Error("CPF é obrigatório");
-            }
-            
-            const cpf = bodyContent.cpf.replace(/[^\d]/g, '');
-            
-            if (cpf.length !== 11) {
-                throw new Error("CPF inválido");
-            }
-            
-            console.log(`[PROXY] CPF sanitizado: ${cpf}`);
-            return { cpf }; // Retorna o body sanitizado
-        },
-        userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
-            console.log(`[PROXY] Status recebido: ${proxyRes.statusCode}`);
-            
-            // Se o microserviço retornar 404, significa que o CPF não existe
-            if (proxyRes.statusCode === 404) {
-                console.log(`[PROXY] CPF não encontrado (404) - retornando exists: false`);
-                return JSON.stringify({ exists: false });
-            }
-            
-            // Trata outros status codes de erro
-            if (proxyRes.statusCode >= 400) {
-                console.log(`[PROXY] Erro ${proxyRes.statusCode} - retornando exists: false`);
-                return JSON.stringify({ exists: false });
-            }
-            
-            // Converte a resposta do microserviço para o formato esperado pelo frontend
-            try {
-                const apiResponse = JSON.parse(proxyResData.toString('utf8'));
-                console.log(`[PROXY] ApiResponse recebida:`, apiResponse);
-                
-                // Extrai o valor de 'data' do ApiResponse<Boolean>
-                const exists = apiResponse.data === true;
-                console.log(`[PROXY] CPF exists: ${exists}`);
-                
-                return JSON.stringify({ exists });
-            } catch (error) {
-                console.error(`[PROXY] Erro ao processar resposta:`, error);
-                // Em caso de erro, assume que não existe
-                return JSON.stringify({ exists: false });
-            }
-        },
-        proxyErrorHandler: (err, res, next) => {
-            console.error(`[PROXY] Erro:`, err.message);
-            res.status(503).json({
-                error: "Client Service unavailable",
-                message: err.message,
-            });
-        },
-    })
+  "/clientes/validate",
+  express.json(),
+  proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    userResDecorator: (proxyRes, proxyResData) => {
+      try {
+        const json = JSON.parse(proxyResData.toString("utf8"));
+        return JSON.stringify({ exists: !!json?.data });
+      } catch {
+        return proxyResData;
+      }
+    },
+  })
 );
 
-// Verifica email do cliente
+// POST /clientes/validateEmail -> validado no service (pass-through)
 app.post(
-    "/clientes/validateEmail",
-    express.json(),
-    proxy(process.env.CLIENT_SERVICE_URL, {
-        proxyReqPathResolver: (req) => {
-            console.log(`[PROXY] Redirecionando para: /clientes/validateEmail`);
-            return "/clientes/validateEmail";
-        },
-        proxyReqBodyDecorator: (bodyContent, srcReq) => {
-            // Valida o email no body
-            if (!bodyContent.email) {
-                throw new Error("Email é obrigatório");
-            }
-
-            const email = bodyContent.email.trim().toLowerCase();
-            console.log(`[PROXY] Email processado: ${email}`);
-            return { email }; // Retorna o body processado
-        },
-        userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
-            console.log(`[PROXY] Status recebido: ${proxyRes.statusCode}`);
-            
-            // Trata status codes de erro
-            if (proxyRes.statusCode >= 400) {
-                console.log(`[PROXY] Erro ${proxyRes.data} - retornando exists: false`);
-                return JSON.stringify({ exists: false });
-            }
-            
-            // Converte a resposta do microserviço para o formato esperado pelo frontend
-            try {
-                const apiResponse = JSON.parse(proxyResData.toString('utf8'));
-                console.log(`[PROXY] ApiResponse recebida:`, apiResponse);
-                
-                // Extrai o valor de 'data' do ApiResponse<Boolean>
-                const exists = apiResponse.data === true;
-                console.log(`[PROXY] Email exists: ${exists}`);
-                
-                return JSON.stringify({ exists });
-            } catch (error) {
-                console.error(`[PROXY] Erro ao processar resposta:`, error);
-                // Em caso de erro, assume que não existe
-                return JSON.stringify({ exists: false });
-            }
-        },
-        proxyErrorHandler: (err, res, next) => {
-            console.error(`[PROXY] Erro:`, err.message);
-            res.status(503).json({
-                error: "Client Service unavailable",
-                message: err.message,
-            });
-        },
-    })
+  "/clientes/validateEmail",
+  express.json(),
+  proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    userResDecorator: (proxyRes, proxyResData) => {
+      try {
+        const json = JSON.parse(proxyResData.toString("utf8"));
+        return JSON.stringify({ exists: !!json?.data });
+      } catch {
+        return proxyResData;
+      }
+    },
+  })
 );
 
+// POST /clientes (R01) autocadastro, apenas normalização leve
 app.post(
-    "/clientes",
-    express.json(),
-    proxy(process.env.CLIENT_SERVICE_URL, {
-        proxyReqPathResolver: (req) => {
-            console.log(`[PROXY] Redirecionando para: /clientes/cadastro`);
-            return "/clientes/cadastro";
-        },
-        proxyReqBodyDecorator: (bodyContent, srcReq) => {
-            console.log(`[PROXY] Dados recebidos para cadastro:`, bodyContent);
-            
-            // Valida campos obrigatórios
-            const requiredFields = ['cpf', 'nome', 'email', 'telefone', 'salario', 'endereco', 'cep', 'cidade', 'estado'];
-            for (const field of requiredFields) {
-                if (!bodyContent[field]) {
-                    throw new Error(`Campo obrigatório ausente: ${field}`);
-                }
-            }
-            
-            // Sanitiza CPF e CEP (remove formatação)
-            const sanitizedBody = {
-                ...bodyContent,
-                cpf: bodyContent.cpf.replace(/[^\d]/g, ''),
-                cep: bodyContent.cep.replace(/[^\d]/g, ''),
-                email: bodyContent.email.trim().toLowerCase(),
-                estado: bodyContent.estado.toUpperCase()
-            };
-            
-            console.log(`[PROXY] Dados sanitizados:`, sanitizedBody);
-            return sanitizedBody;
-        },
-        userResDecorator: (proxyRes, proxyResData, userReq, userRes) => {
-            console.log(`[PROXY] Status recebido: ${proxyRes.statusCode}`);
-            
-            try {
-                const apiResponse = JSON.parse(proxyResData.toString('utf8'));
-                console.log(`[PROXY] Resposta do microserviço:`, apiResponse);
-                
-                // Retorna a resposta do microserviço como está (ApiResponse)
-                return JSON.stringify(apiResponse);
-            } catch (error) {
-                console.error(`[PROXY] Erro ao processar resposta:`, error);
-                return JSON.stringify({
-                    success: false,
-                    message: "Erro ao processar resposta do servidor"
-                });
-            }
-        },
-        proxyErrorHandler: (err, res, next) => {
-            console.error(`[PROXY] Erro no cadastro:`, err.message);
-            res.status(503).json({
-                success: false,
-                message: "Client Service unavailable",
-                error: err.message
-            });
-        },
-    })
+  "/clientes",
+  express.json(),
+  proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+    proxyReqPathResolver: () => "/clientes/cadastro",
+    proxyReqBodyDecorator: (bodyContent) => {
+      const sanitized = { ...bodyContent };
+      // normaliza CPF
+      if (sanitized.cpf) sanitized.cpf = String(sanitized.cpf).replace(/[^\d]/g, "");
+      // aceita CEP (maiúsculo) e cep (minúsculo)
+      const cepRaw = sanitized.cep ?? sanitized.CEP;
+      if (cepRaw !== undefined) {
+        sanitized.cep = String(cepRaw).replace(/[^\d]/g, "");
+        delete sanitized.CEP;
+      }
+      // normaliza email e UF
+      if (sanitized.email) sanitized.email = String(sanitized.email).trim().toLowerCase();
+      if (sanitized.estado) sanitized.estado = String(sanitized.estado).toUpperCase();
+      return sanitized;
+    },
+    userResDecorator: (proxyRes, proxyResData) => proxyResData,
+    proxyErrorHandler: (err, res, next) => {
+      console.error(`[PROXY] Erro no cadastro:`, err.message);
+      res.status(503).json({
+        success: false,
+        message: "Client Service unavailable",
+        error: err.message,
+      });
+    },
+  })
 );
 
-// R9: Listar clientes pendentes (GERENTE)
+app.put(
+  "/clientes/:cpf",
+  authenticateToken,
+  authorizeClienteByCpf("cpf"),
+  proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+      res.status(503).json({
+        error: "Client Service unavailable",
+        message: err.message,
+      });
+    },
+  })
+);
+
+// POST /clientes/:cpf/aprovar (R10) - GERENTE
+app.post(
+  "/clientes/:cpf/aprovar",
+  authenticateToken,
+  requireRole("GERENTE"),
+  proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+      res.status(503).json({ error: "Client Service unavailable", message: err.message });
+    },
+  })
+);
+
+// POST /clientes/:cpf/rejeitar (R11) - GERENTE
+app.post(
+  "/clientes/:cpf/rejeitar",
+  authenticateToken,
+  requireRole("GERENTE"),
+  proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+      res.status(503).json({ error: "Client Service unavailable", message: err.message });
+    },
+  })
+);
+
+// GET /clientes/:cpf (R13) - ADMIN, GERENTE, ou o próprio CLIENTE
 app.get(
-    "/clientes/pending",
-    authenticateToken,
-    requireRole("GERENTE"),
-    proxy(process.env.CLIENT_SERVICE_URL, {
-        proxyReqPathResolver: (req) => {
-            console.log(`[PROXY] R9: ${req.url}`);
-            return req.originalUrl;
-        },
-        proxyErrorHandler: (err, res, next) => {
-            res.status(503).json({ error: "Client Service unavailable", message: err.message });
-        },
-    })
+  "/clientes/:cpf",
+  authenticateToken,
+  authorizeClienteByCpf("cpf"),
+  proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+      res.status(503).json({
+        error: "Client Service unavailable",
+        message: err.message,
+      });
+    },
+  })
 );
-// R10: Aprovar cliente (GERENTE)
-app.post(
-    "/clientes/:cpf/approve",
-    authenticateToken,
-    requireRole("GERENTE"),
-    proxy(process.env.CLIENT_SERVICE_URL, {
-        proxyReqPathResolver: (req) => {
-            console.log(`[PROXY] R10: ${req.url}`);
-            return req.originalUrl;
-        },
-        proxyErrorHandler: (err, res, next) => {
-            res.status(503).json({ error: "Client Service unavailable", message: err.message });
-        },
-    })
+
+// (Opcional) Rota de pendentes - não usada nos testes, mantida
+app.get(
+  "/clientes/pending",
+  authenticateToken,
+  requireRole("GERENTE"),
+  proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+      res.status(503).json({ error: "Client Service unavailable", message: err.message });
+    },
+  })
 );
-// R11: Rejeitar cliente (GERENTE)
-app.post(
-    "/clientes/:cpf/reject",
-    authenticateToken,
-    requireRole("GERENTE"),
-    proxy(process.env.CLIENT_SERVICE_URL, {
-        proxyReqPathResolver: (req) => {
-            console.log(`[PROXY] R11: ${req.url}`);
-            return req.originalUrl;
-        },
-        proxyErrorHandler: (err, res, next) => {
-            res.status(503).json({ error: "Client Service unavailable", message: err.message });
-        },
-    })
+
+// ============================================
+// MANAGER SERVICE ROUTES (/gerentes) - R15..R20
+// ============================================
+app.get(
+  "/gerentes",
+  authenticateToken,
+  requireRole("ADMINISTRADOR"),
+  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+      res.status(503).json({ error: "Manager Service unavailable", message: err.message });
+    },
+  })
 );
 
 app.get(
-    "/clientes/:cpf",
-    authenticateToken,
-    requireOwnerOrAdmin("cpf"),
-    proxy(process.env.CLIENT_SERVICE_URL, {
-        proxyReqPathResolver: (req) => {
-            return `${req.url}`;
-        },
-        proxyErrorHandler: (err, res, next) => {
-            res.status(503).json({
-                error: "Client Service unavailable",
-                message: err.message,
-            });
-        },
-    })
+  "/gerentes/:cpf",
+  authenticateToken,
+  requireRole("ADMINISTRADOR"),
+  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+  })
+);
+
+app.post(
+  "/gerentes",
+  authenticateToken,
+  requireRole("ADMINISTRADOR"),
+  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+  })
+);
+
+app.put(
+  "/gerentes/:cpf",
+  authenticateToken,
+  requireRole("ADMINISTRADOR"),
+  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+  })
+);
+
+app.delete(
+  "/gerentes/:cpf",
+  authenticateToken,
+  requireRole("ADMINISTRADOR"),
+  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+  })
+);
+
+// ============================================
+// ACCOUNT SERVICE ROUTES (/contas) - R03..R08
+// ============================================
+app.get(
+  "/contas/:conta/saldo",
+  authenticateToken,
+  proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+      res.status(503).json({ error: "Account Service unavailable", message: err.message });
+    },
+  })
+);
+
+app.post(
+  "/contas/:conta/depositar",
+  authenticateToken,
+  proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+  })
+);
+
+app.post(
+  "/contas/:conta/sacar",
+  authenticateToken,
+  proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+  })
+);
+
+app.post(
+  "/contas/:conta/transferir",
+  authenticateToken,
+  proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+  })
+);
+
+app.get(
+  "/contas/:conta/extrato",
+  authenticateToken,
+  proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+  })
 );
 
 // ============================================
 // AUTH SERVICE ROUTES
 // ============================================
-
-// All auth routes proxy directly without path manipulation
 app.use(
-    ["/login", "/logout", "/validate"],
-    proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084", {
-        proxyReqPathResolver: (req) => {
-            console.log(`📤 [AUTH] ${req.method} ${req.originalUrl}`);
-            return req.originalUrl;
-        },
-        proxyErrorHandler: (err, res, next) => {
-            console.error("❌ Auth Service error:", err.message);
-            res.status(503).json({
-                error: "Auth Service unavailable",
-                message: err.message,
-            });
-        },
-    })
+  ["/login", "/logout", "/validate"],
+  proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084", {
+    proxyReqPathResolver: (req) => {
+      console.log(`📤 [AUTH] ${req.method} ${req.originalUrl}`);
+      return req.originalUrl;
+    },
+    proxyErrorHandler: (err, res, next) => {
+      console.error("❌ Auth Service error:", err.message);
+      res.status(503).json({
+        error: "Auth Service unavailable",
+        message: err.message,
+      });
+    },
+  })
 );
 
 // ============================================
 // 404 HANDLER - Route Not Found
 // ============================================
-
 app.use((req, res) => {
-    console.log(`❌ Route not found: ${req.method} ${req.originalUrl}`);
-    res.status(404).json({
-        error: "Route not found",
-        path: req.originalUrl,
-        method: req.method,
-    });
+  console.log(`❌ Route not found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({
+    error: "Route not found",
+    path: req.originalUrl,
+    method: req.method,
+  });
 });
 
 // ============================================
 // START SERVER
 // ============================================
-
 app.listen(PORT, () => {
-    console.log("\n🚀 =============================================");
-    console.log(`   BANTADS API GATEWAY`);
-    console.log("   =============================================");
-    console.log(`   📍 Running on: http://localhost:${PORT}`);
-    console.log(`   🕐 Started at: ${new Date().toLocaleString("pt-BR")}`);
-    console.log("   =============================================");
-    console.log("\n📡 Microservices Configuration:");
-    console.log(
-        `   • Client Service:  ${process.env.CLIENT_SERVICE_URL || "http://localhost:8081"}`
-    );
-    console.log(
-        `   • Account Service: ${process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"}`
-    );
-    console.log(
-        `   • Manager Service: ${process.env.MANAGER_SERVICE_URL || "http://localhost:8083"}`
-    );
-    console.log(`   • Auth Service:    ${process.env.AUTH_SERVICE_URL || "http://localhost:8084"}`);
-    console.log("   =============================================\n");
+  console.log("\n🚀 =============================================");
+  console.log(`   BANTADS API GATEWAY`);
+  console.log("   =============================================");
+  console.log(`   📍 Running on: http://localhost:${PORT}`);
+  console.log(`   🕐 Started at: ${new Date().toLocaleString("pt-BR")}`);
+  console.log("   =============================================");
+  console.log("\n📡 Microservices Configuration:");
+  console.log(
+    `   • Client Service:  ${process.env.CLIENT_SERVICE_URL || "http://localhost:8081"}`
+  );
+  console.log(
+    `   • Account Service: ${process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"}`
+  );
+  console.log(
+    `   • Manager Service: ${process.env.MANAGER_SERVICE_URL || "http://localhost:8083"}`
+  );
+  console.log(`   • Auth Service:    ${process.env.AUTH_SERVICE_URL || "http://localhost:8084"}`);
+  console.log("   =============================================\n");
 });

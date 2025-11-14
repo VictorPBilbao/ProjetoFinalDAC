@@ -61,6 +61,24 @@ public class ClientService {
         return convertToDTO(savedClient);
     }
 
+    public ClientDTO updateClient(String cpf, ClientDTO updatedData) {
+        Client client = clientRepository.findById(cpf)
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com CPF: " + cpf));
+
+        // Update fields
+        client.setNome(updatedData.getNome());
+        client.setEmail(updatedData.getEmail());
+        client.setTelefone(updatedData.getTelefone());
+        client.setSalario(updatedData.getSalario());
+        client.setEndereco(updatedData.getEndereco());
+        client.setCep(updatedData.getCep());
+        client.setCidade(updatedData.getCidade());
+        client.setEstado(updatedData.getEstado());
+
+        Client savedClient = clientRepository.save(client);
+        return convertToDTO(savedClient);
+    }
+
     // ? Get all approved clients
     public List<ClientDTO> getAllApprovedClients() {
         return clientRepository.findByAprovadoTrue().stream().map(this::convertToDTO).toList();
@@ -80,8 +98,6 @@ public class ClientService {
         }
         return convertToDTO(client);
     }
-
-
 
     // ? Get pending clients
     public List<ClientDTO> getAllPendingClients() {

@@ -37,7 +37,7 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
         this.isLoading = true;
         const loggedUser = this.authService.getUser();
 
-        if (!loggedUser || loggedUser.role !== 'gerente') {
+        if (!loggedUser || loggedUser.tipo !== 'gerente') {
             this.isLoading = false;
             this.errorMsg = 'Nenhum gerente logado.';
             return;
@@ -49,7 +49,7 @@ export class BestClientsListViewComponent implements OnInit, OnDestroy {
         }).subscribe({
             next: ({ clients, managers }) => {
                 const currentManager = managers.find(
-                    (m) => m.email === loggedUser.user
+                    (m) => m.email === loggedUser.cpf
                 );
 
                 if (currentManager) {
