@@ -29,9 +29,15 @@ public class ManagerController {
         return new ResponseEntity<>(createdManager, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Manager> updateManager(@PathVariable String id, @Valid @RequestBody ManagerDTO dto) {
-        Manager updatedManager = managerService.updateManager(id, dto);
+    @GetMapping("/{id}")
+    public ResponseEntity<Manager> getManagerById(@PathVariable String id) {
+        Manager manager = managerService.getManagerById(id);
+        return ResponseEntity.ok(manager);
+    }
+
+    @PutMapping("/{cpf}")
+    public ResponseEntity<Manager> updateManager(@PathVariable String cpf, @Valid @RequestBody ManagerDTO dto) {
+        Manager updatedManager = managerService.updateManager(cpf, dto);
         return ResponseEntity.ok(updatedManager);
     }
 

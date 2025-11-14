@@ -36,11 +36,11 @@ export class MenuSidebarComponent {
 
     var roleUser = this.authService.getUserRole();
 
-    if(roleUser === 'cliente') {
+    if(roleUser === 'CLIENTE') {
         this.clientLinksVisible = true;
-    } else if (roleUser === 'admin') {
+    } else if (roleUser === 'ADMINISTRADOR') {
         this.adminLinksVisible = true;
-    } else if (roleUser === 'gerente') {
+    } else if (roleUser === 'GERENTE') {
         this.managerLinksVisible = true;
     }
   }
@@ -104,7 +104,13 @@ export class MenuSidebarComponent {
   }
 
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/']);
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/']);
+      },
+      error: () => {
+        this.router.navigate(['/']);
+      }
+    });
   }
 }

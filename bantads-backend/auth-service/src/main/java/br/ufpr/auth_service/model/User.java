@@ -19,7 +19,7 @@ public class User {
     private String id;
 
     @Indexed(unique = true)
-    private String cpf;
+    private String cpf; // apenas índice único
 
     @Indexed(unique = true)
     private String email;

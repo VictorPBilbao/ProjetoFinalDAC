@@ -1,8 +1,7 @@
 const jwt = require("jsonwebtoken");
 
-const { JWT_SECRET } = process.env;
-
 function authenticateToken(req, res, next) {
+    const JWT_SECRET = process.env.JWT_SECRET;
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
 
@@ -14,6 +13,7 @@ function authenticateToken(req, res, next) {
     }
 
     try {
+        console.log(JWT_SECRET);
         const decoded = jwt.verify(token, JWT_SECRET);
 
         // Attach user info to request object
