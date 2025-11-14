@@ -55,7 +55,7 @@ export class UserDetailsComponent implements OnInit {
         this.clientService.getClients().subscribe({
             next: (clients) => {
                 const userClient = clients.find(
-                    (c) => c.email === loggedUser.user
+                    (c) => c.email === loggedUser.cpf
                 );
                 if (userClient) {
                     // Ensure client has all required fields with defaults if missing

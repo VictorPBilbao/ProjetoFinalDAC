@@ -64,7 +64,7 @@ export class ManagerService {
         }
 
         const currentUser = this.authService.getUser();
-        if (!currentUser || currentUser.role !== 'gerente') {
+        if (!currentUser || currentUser.tipo !== 'gerente') {
             this.loadingService.hide();
             return {
                 ok: false,
@@ -74,7 +74,7 @@ export class ManagerService {
 
         const managers = this.storage.getManagers();
         const approvingManager = managers.find(
-            (m) => m.email === currentUser.user
+            (m) => m.email === ""
         );
 
         if (!approvingManager) {
@@ -140,7 +140,7 @@ export class ManagerService {
         // Find manager by email
         const managers = this.storage.getManagers();
         const currentManager = managers.find(
-            (m) => m.email === currentUser.user
+            (m) => m.email === ""
         );
         if (!currentManager) {
             this.loadingService.hide();

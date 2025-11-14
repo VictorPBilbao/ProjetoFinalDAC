@@ -16,8 +16,8 @@ export class ClientService {
 
     getLoggedClient(): Cliente | undefined {
         const user = this.authService.getUser();
-        if (user && user.role === 'cliente') {
-            return this.storage.getClienteByUsername(user.user);
+        if (user && user.tipo === 'cliente') {
+            return this.storage.getClienteByUsername(user.cpf);
         }
 
         return undefined;
@@ -25,7 +25,7 @@ export class ClientService {
 
     getLastAccess(): string {
         const user = this.authService.getUser();
-        return user?.lastAccess;
+        return Date.now().toString();
     }
 
     getClients(): Observable<Cliente[]> {
