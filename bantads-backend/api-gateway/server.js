@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const proxy = require("express-http-proxy");
 const cors = require("cors");
@@ -273,11 +274,20 @@ app.get(
   })
 );
 
+app.get(
+  "/gerentes/:id",
+  authenticateToken,
+  requireRole("ADMINISTRADOR"),
+  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+  })
+);
+
 app.post(
   "/gerentes",
   authenticateToken,
   requireRole("ADMINISTRADOR"),
-  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
+  proxy(process.env.SAGA_SERVICE_URL || "http://localhost:8085", {
     proxyReqPathResolver: (req) => req.originalUrl,
   })
 );
@@ -286,7 +296,7 @@ app.put(
   "/gerentes/:cpf",
   authenticateToken,
   requireRole("ADMINISTRADOR"),
-  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
+  proxy(process.env.SAGA_SERVICE_URL || "http://localhost:8085", {
     proxyReqPathResolver: (req) => req.originalUrl,
   })
 );
@@ -342,6 +352,37 @@ app.get(
   "/contas/:conta/extrato",
   authenticateToken,
   proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+  })
+);
+
+app.post(
+  "/login",
+  express.json(),
+  proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084", {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+      proxyReqOpts.headers["Content-Type"] = "application/json";
+      return proxyReqOpts;
+    },
+    proxyReqBodyDecorator: (bodyContent, srcReq) => {
+      console.log("📤 [LOGIN] Body recebido:", bodyContent);
+      return bodyContent;
+    },
+    proxyErrorHandler: (err, res, next) => {
+      console.error("❌ Auth Service error:", err.message);
+      res.status(503).json({
+        error: "Auth Service unavailable",
+        message: err.message,
+      });
+    },
+  })
+);
+
+app.post(
+  "/logout",
+  authenticateToken,
+  proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084", {
     proxyReqPathResolver: (req) => req.originalUrl,
   })
 );

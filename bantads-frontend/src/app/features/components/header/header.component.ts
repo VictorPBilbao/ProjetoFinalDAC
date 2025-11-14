@@ -51,16 +51,15 @@ export class HeaderComponent {
         }
 
         const role = this.authService.getUserRole();
-        console.log('ROLE DO USUÁRIO LOGADO:', role);
 
         switch (role) {
-          case 'cliente':
+          case 'CLIENTE':
             this.router.navigate(['/cliente/dashboard']);
             break;
-          case 'gerente':
+          case 'GERENTE':
             this.router.navigate(['/gerente/aprovacoes']);
             break;
-          case 'admin':
+          case 'ADMINISTRADOR':
             this.router.navigate(['/admin/dashboard']);
             break;
           default:

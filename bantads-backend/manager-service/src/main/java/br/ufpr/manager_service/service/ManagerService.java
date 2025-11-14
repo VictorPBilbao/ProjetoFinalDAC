@@ -54,6 +54,12 @@ public class ManagerService {
         return newManager;
     }
 
+    @Transactional(readOnly = true)
+    public Manager getManagerById(String id) {
+        return managerRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Gerente não encontrado."));
+    }
+
     private Optional<Manager> findDonorManager(String newManagerId) {
         Map<String, Long> clientCounts = getManagerClientCountsFromClientService();
         List<Manager> candidates = managerRepository.findAll().stream()
@@ -97,8 +103,8 @@ public class ManagerService {
     }
 
     @Transactional
-    public Manager updateManager(String id, ManagerDTO details) {
-        Manager manager = managerRepository.findById(id)
+    public Manager updateManager(String cpf, ManagerDTO details) {
+        Manager manager = managerRepository.findByCpf(cpf)
                 .orElseThrow(() -> new IllegalArgumentException("Gerente não encontrado."));
 
         if (StringUtils.hasText(details.getName())) {
