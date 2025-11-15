@@ -1,4 +1,4 @@
-package main.java.br.ufpr.account_query_service.repository;
+package br.ufpr.account_query_service.repository;
 
 import br.ufpr.account_query_service.model.TransactionView;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -4,6 +4,7 @@ const proxy = require("express-http-proxy");
 const cors = require("cors");
 const morgan = require("morgan");
 const { authenticateToken, requireRole } = require("./middleware/auth");
+const axios = require("axios"); //add 
 
 require("dotenv").config();
 
@@ -52,6 +53,88 @@ const authorizeClienteByCpf = (paramName = "cpf") => (req, res, next) => {
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
+
+// ============================================
+// API COMPOSITION LOGIC
+// ============================================
+
+/**
+ * R13: Consultar Cliente Detalhado (Agregação)
+ * Combina dados do Client-Service e do Account-Query-Service
+ */
+app.get(
+  "/relatorio/cliente-detalhado/:cpf",
+  authenticateToken,
+  authorizeClienteByCpf("cpf"), 
+  async (req, res) => {
+
+    const { cpf } = req.params;
+    const authHeader = req.headers.authorization; 
+
+    const clientServiceUrl = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+    const accountServiceUrl = process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082";
+
+    try {
+      const config = {
+        headers: { 
+          'Authorization': authHeader,
+          'X-User-CPF': cpf 
+        },
+      };
+
+      // Chamada 1: Client Service (GET /clientes/:cpf)
+      const clientPromise = axios.get(
+        `${clientServiceUrl}/clientes/${cpf}`, 
+        config 
+      );
+
+      // Chamada 2: Account Query Service (GET /query/my-account)
+      const accountPromise = axios.get(
+        `${accountServiceUrl}/query/my-account`, 
+        config 
+      ); 
+
+      const [clientResponse, accountResponse] = await Promise.all([
+        clientPromise,
+        accountPromise,
+      ]);
+
+      const clientData = clientResponse.data;
+      const accountData = accountResponse.data;
+
+      const composedResponse = {
+        cpf: clientData.cpf,
+        nome: clientData.nome,
+        email: clientData.email,
+        endereco: clientData.endereco, 
+        salario: clientData.salario,
+
+        conta: {
+          id: accountData.id,
+          numero: accountData.numero, 
+          saldo: accountData.saldo,
+          limite: accountData.limite,
+          dataCriacao: accountData.dataCriacao,
+          gerente: accountData.gerente, 
+        },
+      };
+
+      res.status(200).json(composedResponse);
+
+    } catch (error) {
+      console.error(`[API COMPOSITION ERROR] R13 para CPF ${cpf}:`, error.message);
+
+      if (error.response) {
+        return res.status(error.response.status).json(error.response.data);
+      }
+
+      res.status(503).json({
+        error: "Serviço indisponível",
+        message: "Falha ao se comunicar com um ou mais microsserviços.",
+      });
+    }
+  }
+);
 
 // ============================================
 // HEALTH CHECK ENDPOINT

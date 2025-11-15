@@ -1,4 +1,4 @@
-package main.java.br.ufpr.account_query_service.model;
+package br.ufpr.account_query_service.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
