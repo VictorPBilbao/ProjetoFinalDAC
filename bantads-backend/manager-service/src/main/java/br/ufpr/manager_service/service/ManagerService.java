@@ -125,6 +125,7 @@ public class ManagerService {
 
         return managerRepository.save(manager);
     }
+    //
 
     private Map<String, Long> getManagerClientCountsFromClientService() {
         return Map.of();
