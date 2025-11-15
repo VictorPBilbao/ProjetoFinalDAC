@@ -1,6 +1,5 @@
 package br.ufpr.account_query_service.dto;
 
-// DTO para representar a mensagem de Conta vinda do RabbitMQ
 public class AccountMessageDTO {
     private String id;
     private String clientCpf;
@@ -9,9 +8,6 @@ public class AccountMessageDTO {
     private double limite;
     private String numero;
     private java.util.Date dataCriacao;
-
-    // Adicione getters e setters para todos os campos
-    // (Omitidos para brevidade, mas necessários para o Jackson/JSON)
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

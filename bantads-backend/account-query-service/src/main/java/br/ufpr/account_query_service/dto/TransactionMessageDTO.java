@@ -1,6 +1,5 @@
 package br.ufpr.account_query_service.dto;
 
-// DTO para representar a mensagem de Transação vinda do RabbitMQ
 public class TransactionMessageDTO {
     private String id;
     private String tipo;
@@ -9,9 +8,6 @@ public class TransactionMessageDTO {
     private double valor;
     private java.util.Date dataHora;
     private String accountId;
-
-    // Adicione getters e setters para todos os campos
-    // (Omitidos para brevidade, mas necessários)
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
