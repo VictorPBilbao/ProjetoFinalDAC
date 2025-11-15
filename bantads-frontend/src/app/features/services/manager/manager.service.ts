@@ -243,6 +243,7 @@ export class ManagerService {
     updateManager(updated: Manager): Observable<any> {
         this.loadingService.show();
         const token = this.authService.getToken();
+        console.log('Atualizando gerente:', updated);
         return this.http.put<any>(
             `${this.apiUrl}/gerentes/${updated.cpf}`,
             updated,

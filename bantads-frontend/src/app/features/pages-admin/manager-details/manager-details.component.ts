@@ -107,19 +107,9 @@ export class ManagerDetailsComponent implements OnInit {
 
     private update(): Observable<any> {
         const formValues = this.managerForm.getRawValue();
-        // Monta o objeto de atualização apenas com os campos permitidos
-        const managerDataToUpdate: Partial<Manager> = {
-            id: this.managerId!,
-            name: formValues.name, // Nome é o único campo sempre enviado
-        };
-
-        // Só adiciona a senha ao payload se ela foi preenchida
-        if (formValues.password) {
-            managerDataToUpdate.password = formValues.password;
-        }
 
         return this.managerService.updateManager(
-            managerDataToUpdate as Manager
+            formValues as Manager
         );
     }
 
