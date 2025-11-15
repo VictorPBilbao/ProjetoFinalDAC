@@ -104,8 +104,11 @@ public class ManagerService {
 
     @Transactional
     public Manager updateManager(String cpf, ManagerDTO details) {
-        Manager manager = managerRepository.findByCpf(cpf)
-                .orElseThrow(() -> new IllegalArgumentException("Gerente não encontrado."));
+        Manager manager = managerRepository.findByCpf(cpf);
+
+        if (manager == null) {
+            throw new IllegalArgumentException("Gerente não encontrado.");
+        }
 
         if (StringUtils.hasText(details.getName())) {
             manager.setName(details.getName());
