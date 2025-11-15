@@ -1,4 +1,4 @@
-package main.java.br.ufpr.account_query_service.config;
+package br.ufpr.account_query_service.config;
 
 import org.springframework.amqp.core.*;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,3 +1,4 @@
+package br.ufpr.account_query_service.controller;
 import br.ufpr.account_query_service.model.AccountView;
 import br.ufpr.account_query_service.model.TransactionView;
 import br.ufpr.account_query_service.service.AccountQueryService;

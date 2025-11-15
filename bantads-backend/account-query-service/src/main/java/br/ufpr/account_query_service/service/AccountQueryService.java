@@ -1,4 +1,4 @@
-package main.java.br.ufpr.account_query_service.service;
+package br.ufpr.account_query_service.service;
 
 import br.ufpr.account_query_service.model.AccountView;
 import br.ufpr.account_query_service.model.TransactionView;
@@ -23,13 +23,13 @@ public class AccountQueryService {
     @Autowired
     private TransactionViewRepository transactionViewRepository;
 
-    public AccountView getAccountByCpf(String clientCpf) {
-        return accountViewRepository.findByClientId(clientCpf)
+    public AccountView getAccountByCpf(String authenticatedCpf) {
+        return accountViewRepository.findByClientId(authenticatedCpf)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta não encontrada."));
     }
 
-    public List<TransactionView> getStatement(String clientCpf, String startDateStr, String endDateStr) {
-        AccountView account = getAccountByCpf(clientCpf);
+    public List<TransactionView> getStatement(String authenticatedCpf, String startDateStr, String endDateStr) {
+        AccountView account = getAccountByCpf(authenticatedCpf);
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
         LocalDateTime startDate = LocalDate.parse(startDateStr, formatter).atStartOfDay();
