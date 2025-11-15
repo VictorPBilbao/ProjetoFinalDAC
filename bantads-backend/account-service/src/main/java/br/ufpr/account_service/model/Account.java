@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import br.ufpr.account_service.model.Transaction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -20,10 +19,10 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "client_id", nullable = false, length = 11)
+    @Column(name = "client_id", nullable = false, length = 11, unique = true)
     private String clientId;
 
-    @Column(name = "account_number", nullable = false, length = 20)
+    @Column(name = "account_number", nullable = false, length = 20, unique = true)
     private String accountNumber;
 
     @Column(name = "creation_date", nullable = false)
@@ -40,5 +39,4 @@ public class Account {
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Transaction> transactions;
-
 }

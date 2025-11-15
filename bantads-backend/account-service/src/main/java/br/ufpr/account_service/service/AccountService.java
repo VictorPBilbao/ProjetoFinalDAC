@@ -1,63 +1,150 @@
 package br.ufpr.account_service.service;
 
-import java.util.Map;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 import br.ufpr.account_service.model.Account;
+import br.ufpr.account_service.model.Transaction;
 import br.ufpr.account_service.repository.AccountRepository;
+import br.ufpr.account_service.repository.TransactionRepository;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Map;
 
 @Service
 public class AccountService {
 
     @Autowired
-    private AccountRepository accountRepository; // Injecting AccountRepository
+    private AccountRepository accountRepository;
+    @Autowired
+    private TransactionRepository transactionRepository;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
-    //method to update account limit based on new salary
-    public Account updateLimitByClientId(Long clientId, Map<String, Object> salaryData) {
-        //take the new salary (assuming it comes as Integer in cents)
-        Integer newSalaryInteger = (Integer) salaryData.get("salario");
-        if (newSalaryInteger == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Campo 'salario' é obrigatório.");
+    @Value("${rabbit.account.events.exchange:account.events.exchange}")
+    private String accountEventsExchange;
+
+    private Account findAccountByClientCpf(String clientCpf) {
+        return accountRepository.findByClientId(clientCpf)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Conta não encontrada para o cliente CPF: " + clientCpf));
+    }
+
+    @Transactional
+    public Account deposit(String clientCpf, BigDecimal amount) {
+        Account account = findAccountByClientCpf(clientCpf);
+        account.setBalance(account.getBalance().add(amount));
+
+        Transaction tx = new Transaction();
+        tx.setAccount(account);
+        tx.setType("DEPOSITO");
+        tx.setAmount(amount);
+        tx.setTimestamp(LocalDateTime.now());
+        transactionRepository.save(tx);
+
+        Account savedAccount = accountRepository.save(account);
+
+        publishCqrsEvent("account.updated", savedAccount);
+        publishCqrsEvent("transaction.created", tx);
+        return savedAccount;
+    }
+
+    @Transactional
+    public Account withdraw(String clientCpf, BigDecimal amount) {
+        Account account = findAccountByClientCpf(clientCpf);
+
+        BigDecimal availableBalance = account.getBalance().add(account.getLimit());
+        if (availableBalance.compareTo(amount) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Saldo insuficiente para saque.");
         }
 
-        BigDecimal newSalary = BigDecimal.valueOf(newSalaryInteger.intValue());
+        account.setBalance(account.getBalance().subtract(amount));
 
-        //find the account by CLIENT ID
-        Account account = accountRepository.findByClientId(clientId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta não encontrada para o cliente ID: " + clientId));
+        Transaction tx = new Transaction();
+        tx.setAccount(account);
+        tx.setType("SAQUE");
+        tx.setAmount(amount.negate());
+        tx.setTimestamp(LocalDateTime.now());
+        transactionRepository.save(tx);
 
-        //recalculate limit based on new salary
+        Account savedAccount = accountRepository.save(account);
+
+        publishCqrsEvent("account.updated", savedAccount);
+        publishCqrsEvent("transaction.created", tx);
+        return savedAccount;
+    }
+
+    @Transactional
+    public Account transfer(String clientCpf, String destinationAccountNumber, BigDecimal amount) {
+
+        Account originAccount = findAccountByClientCpf(clientCpf);
+
+        BigDecimal availableBalance = originAccount.getBalance().add(originAccount.getLimit());
+        if (availableBalance.compareTo(amount) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Saldo insuficiente para transferência.");
+        }
+        originAccount.setBalance(originAccount.getBalance().subtract(amount));
+
+        Account destAccount = accountRepository.findByAccountNumber(destinationAccountNumber)
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta de destino não encontrada."));
+        destAccount.setBalance(destAccount.getBalance().add(amount));
+
+        Transaction originTx = new Transaction();
+        originTx.setAccount(originAccount);
+        originTx.setType("TRANSFERENCIA_ENVIADA");
+        originTx.setAmount(amount.negate());
+        originTx.setDestinationClientId(destAccount.getClientId());
+        originTx.setTimestamp(LocalDateTime.now());
+        transactionRepository.save(originTx);
+
+        Transaction destTx = new Transaction();
+        destTx.setAccount(destAccount);
+        destTx.setType("TRANSFERENCIA_RECEBIDA");
+        destTx.setAmount(amount);
+        destTx.setOriginClientId(originAccount.getClientId());
+        destTx.setTimestamp(LocalDateTime.now());
+        transactionRepository.save(destTx);
+
+        accountRepository.save(destAccount);
+        Account savedOriginAccount = accountRepository.save(originAccount);
+
+        publishCqrsEvent("account.updated", savedOriginAccount);
+        publishCqrsEvent("account.updated", destAccount);
+        publishCqrsEvent("transaction.created", originTx);
+        publishCqrsEvent("transaction.created", destTx);
+
+        return savedOriginAccount;
+    }
+
+    @Transactional
+    public Account updateLimitByClientId(String clientId, BigDecimal newSalary) {
+        Account account = findAccountByClientCpf(clientId);
+
         BigDecimal newLimit = BigDecimal.ZERO;
-        BigDecimal threshold1 = BigDecimal.valueOf(20000);
-
-        if (newSalary.compareTo(threshold1) >= 0) {
+        if (newSalary.compareTo(new BigDecimal("2000.00")) >= 0) {
             newLimit = newSalary.divide(BigDecimal.valueOf(2));
         }
 
-        //if new limit is less than negative balance, adjust it
         BigDecimal currentBalance = account.getBalance();
 
-        if (currentBalance.compareTo(BigDecimal.ZERO) < 0 && newLimit.compareTo(currentBalance.multiply(BigDecimal.valueOf(-1))) < 0) {
-            newLimit = currentBalance.multiply(BigDecimal.valueOf(-1)); //adjust limit to cover negative balance
+        if (currentBalance.compareTo(BigDecimal.ZERO) < 0 && newLimit.compareTo(currentBalance.abs()) < 0) {
+            newLimit = currentBalance.abs();
         }
 
-        //update account limit
         account.setLimit(newLimit);
-        return accountRepository.save(account);
+        Account savedAccount = accountRepository.save(account);
+
+        publishCqrsEvent("account.updated", savedAccount);
+        return savedAccount;
     }
 
-    /**
-     * Busca a conta de um cliente pelo seu ID.
-     * @param clientId O ID do cliente.
-     * @return A conta do cliente.
-     * @throws ResponseStatusException se a conta não for encontrada.
-     */
-    public Account getAccountByClientId(Long clientId) {
-        return accountRepository.findByClientId(clientId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta não encontrada para o cliente ID: " + clientId));
+    public void publishCqrsEvent(String routingKey, Object event) {
+        rabbitTemplate.convertAndSend(accountEventsExchange, routingKey, event);
     }
-
 }
