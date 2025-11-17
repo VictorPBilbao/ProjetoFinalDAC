@@ -14,6 +14,11 @@ services:
             - ./init-scripts/postgres:/docker-entrypoint-initdb.d
         networks:
             - bantads-network
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
     # MongoDB container
     mongodb:
@@ -29,6 +34,11 @@ services:
             - ./init-scripts/mongodb:/docker-entrypoint-initdb.d
         networks:
             - bantads-network
+        healthcheck:
+            test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
     # RabbitMQ container
     rabbitmq:
@@ -39,6 +49,11 @@ services:
             - "15672:15672"
         networks:
             - bantads-network
+        healthcheck:
+            test: ["CMD", "rabbitmq-diagnostics", "ping"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
 
     # Client service container
     client-service:
@@ -49,8 +64,10 @@ services:
         ports:
             - "8081:8081"
         depends_on:
-            - postgres
-            - rabbitmq
+            postgres:
+                condition: service_healthy
+            rabbitmq:
+                condition: service_healthy
         environment:
             SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bantads
             SPRING_DATASOURCE_USERNAME: postgres
@@ -68,8 +85,8 @@ services:
         ports:
             - "8084:8084"
         depends_on:
-            - mongodb
-            - rabbitmq
+            mongodb:
+                condition: service_healthy
         environment:
             SPRING_DATA_MONGODB_HOST: mongodb
             SPRING_DATA_MONGODB_PORT: 27017
@@ -79,6 +96,101 @@ services:
             SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin
             JWT_SECRET: your-super-secret-jwt-key-change-in-production-12345
             JWT_EXPIRATION: 86400000
+        networks:
+            - bantads-network
+        restart: on-failure
+
+    # Manager service container
+    manager-service:
+        build:
+            context: ./bantads-backend/manager-service
+            dockerfile: Dockerfile
+        container_name: bantads-manager-service
+        ports:
+            - "8083:8083"
+        depends_on:
+            postgres:
+                condition: service_healthy
+            rabbitmq:
+                condition: service_healthy
+        environment:
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bantads
+            SPRING_DATASOURCE_USERNAME: postgres
+            SPRING_DATASOURCE_PASSWORD: postgres
+            SPRING_RABBITMQ_HOST: rabbitmq
+        networks:
+            - bantads-network
+        restart: on-failure
+
+    # Account service container (CQRS write side)
+    account-service:
+        build:
+            context: ./bantads-backend/account-service
+            dockerfile: Dockerfile
+        container_name: bantads-account-service
+        ports:
+            - "8082:8082"
+        depends_on:
+            postgres:
+                condition: service_healthy
+            rabbitmq:
+                condition: service_healthy
+        environment:
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bantads
+            SPRING_DATASOURCE_USERNAME: postgres
+            SPRING_DATASOURCE_PASSWORD: postgres
+            SPRING_RABBITMQ_HOST: rabbitmq
+        networks:
+            - bantads-network
+        restart: on-failure
+
+    # Account query service container (CQRS read side)
+    account-query-service:
+        build:
+            context: ./bantads-backend/account-query-service
+            dockerfile: Dockerfile
+        container_name: bantads-account-query-service
+        ports:
+            - "8086:8086"
+        depends_on:
+            postgres:
+                condition: service_healthy
+            rabbitmq:
+                condition: service_healthy
+        environment:
+            SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bantads
+            SPRING_DATASOURCE_USERNAME: postgres
+            SPRING_DATASOURCE_PASSWORD: postgres
+            SPRING_RABBITMQ_HOST: rabbitmq
+        networks:
+            - bantads-network
+        restart: on-failure
+
+    # Saga orchestrator container
+    saga-orchestrator:
+        build:
+            context: ./bantads-backend/saga-orchestrator
+            dockerfile: Dockerfile
+        container_name: bantads-saga-orchestrator
+        ports:
+            - "8085:8085"
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+            client-service:
+                condition: service_started
+            account-service:
+                condition: service_started
+            manager-service:
+                condition: service_started
+            auth-service:
+                condition: service_started
+        environment:
+            SPRING_RABBITMQ_HOST: rabbitmq
+            ACCOUNTS_ENDPOINT: http://account-service:8082/accounts
+            CLIENTS_ENDPOINT: http://client-service:8081/clientes
+            MANAGERS_ENDPOINT: http://manager-service:8083/gerentes
+            AUTH_ENDPOINT: http://auth-service:8084
         networks:
             - bantads-network
         restart: on-failure
@@ -93,16 +205,29 @@ services:
             PORT: 3000
             CLIENT_SERVICE_URL: http://client-service:8081
             ACCOUNT_SERVICE_URL: http://account-service:8082
+            ACCOUNT_QUERY_SERVICE_URL: http://account-query-service:8086
             MANAGER_SERVICE_URL: http://manager-service:8083
             AUTH_SERVICE_URL: http://auth-service:8084
+            SAGA_ORCHESTRATOR_URL: http://saga-orchestrator:8085
             JWT_SECRET: your-super-secret-jwt-key-change-in-production-12345
         ports:
             - "3000:3000"
         depends_on:
-            - client-service
-            - auth-service
+            client-service:
+                condition: service_started
+            auth-service:
+                condition: service_started
+            manager-service:
+                condition: service_started
+            account-service:
+                condition: service_started
+            account-query-service:
+                condition: service_started
+            saga-orchestrator:
+                condition: service_started
         networks:
             - bantads-network
+        restart: on-failure
 
 networks:
     bantads-network:
