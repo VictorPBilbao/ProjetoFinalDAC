@@ -3,6 +3,7 @@ const proxy = require("express-http-proxy");
 const cors = require("cors");
 const morgan = require("morgan");
 const { authenticateToken, requireRole, requireOwnerOrAdmin } = require("./middleware/auth");
+const axios = require("axios");
 
 require("dotenv").config();
 
@@ -345,6 +346,71 @@ app.use(
             });
         },
     })
+);
+
+// ============================================
+// API COMPOSITION ROUTES
+// ============================================
+
+// R13: Consultar Cliente Detalhado (Agregação)
+// (rota original mantida caso exista em outro arquivo)
+
+// R15: Admin Manager Dashboard (Agregação)
+app.get(
+    "/admin/dashboard/managers",
+    authenticateToken,
+    requireRole("ADMINISTRADOR"),
+    async (req, res) => {
+        const authHeader = req.headers.authorization;
+        const config = authHeader
+            ? { headers: { Authorization: authHeader } }
+            : {};
+
+        const managerServiceUrl = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
+        const clientServiceUrl = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+
+        try {
+            const [managersResponse, clientsResponse] = await Promise.all([
+                axios.get(`${managerServiceUrl}/gerentes`, config),
+                axios.get(`${clientServiceUrl}/clientes?filtro=adm_relatorio_clientes`, config),
+            ]);
+
+            const managers = Array.isArray(managersResponse.data) ? managersResponse.data : [];
+            const clients = Array.isArray(clientsResponse.data) ? clientsResponse.data : [];
+
+            const managerStats = new Map();
+
+            for (const manager of managers) {
+                managerStats.set(manager.cpf, {
+                    ...manager,
+                    clientCount: 0,
+                    totalSalary: 0,
+                });
+            }
+
+            for (const client of clients) {
+                const managerCpf = client?.gerente_cpf;
+                if (!managerCpf || !managerStats.has(managerCpf)) continue;
+
+                const stats = managerStats.get(managerCpf);
+                stats.clientCount += 1;
+                stats.totalSalary += Number(client.salario) || 0;
+            }
+
+            res.status(200).json(Array.from(managerStats.values()));
+        } catch (error) {
+            console.error("[API COMPOSITION ERROR] R15 Admin Dashboard:", error.message);
+
+            if (error.response) {
+                return res.status(error.response.status).json(error.response.data);
+            }
+
+            res.status(503).json({
+                error: "Serviço indisponível",
+                message: "Falha ao compor dados para o dashboard do administrador.",
+            });
+        }
+    }
 );
 
 // ============================================
