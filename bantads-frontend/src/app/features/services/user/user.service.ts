@@ -66,10 +66,14 @@ export class UserService {
         }),
         finalize(() => this.loadingService.hide()),
         catchError((error) => {
-          console.error('Erro ao criar usuário:', error);
-          
-          // Retorna erro formatado
-          const errorMessage = error.error?.message || 'Erro ao cadastrar cliente';
+          let errorMessage = 'Erro ao cadastrar cliente';
+          if (error.status === 409) {
+            errorMessage = 'Usuário já cadastrado (CPF ou e-mail já em uso).';
+          } else if (error.status === 400) {
+            errorMessage = 'Dados inválidos. Verifique os campos e tente novamente.';
+          } else if (error.status === 503) {
+            errorMessage = 'Serviço indisponível. Tente novamente mais tarde.';
+          }
           return throwError(() => new Error(errorMessage));
         })
       );

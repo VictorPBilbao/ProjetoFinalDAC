@@ -83,17 +83,19 @@ export class ManagerDetailsComponent implements OnInit {
 
         action$.subscribe({
             next: (response) => {
-                Swal.fire('Sucesso!', response.message, 'success').then(() =>
-                    this.router.navigate(['/admin/gerentes'])
-                );
+            if (response.success) {
+                Swal.fire('Sucesso!', response.message || 'Gerente salvo com sucesso!', 'success')
+                .then(() => this.router.navigate(['/admin/gerentes']));
+            } else {
+                // Caso o backend retorne success=false mas sem lançar erro HTTP
+                Swal.fire('Erro!', response.message || 'Falha ao salvar o gerente.', 'error');
+            }
             },
             error: (err) => {
-                Swal.fire(
-                    'Erro!',
-                    'Ocorreu um erro ao salvar o gerente.',
-                    'error'
-                );
-                console.error(err);
+                // Captura mensagem vinda do backend (SagaResult.message)
+                const backendMsg = err.error?.message || 'Ocorreu um erro inesperado ao salvar o gerente.';
+                Swal.fire('Erro!', backendMsg, 'error');
+                console.error('Erro ao salvar gerente:', err);
             },
         });
     }
@@ -105,19 +107,9 @@ export class ManagerDetailsComponent implements OnInit {
 
     private update(): Observable<any> {
         const formValues = this.managerForm.getRawValue();
-        // Monta o objeto de atualização apenas com os campos permitidos
-        const managerDataToUpdate: Partial<Manager> = {
-            id: this.managerId!,
-            name: formValues.name, // Nome é o único campo sempre enviado
-        };
-
-        // Só adiciona a senha ao payload se ela foi preenchida
-        if (formValues.password) {
-            managerDataToUpdate.password = formValues.password;
-        }
 
         return this.managerService.updateManager(
-            managerDataToUpdate as Manager
+            formValues as Manager
         );
     }
 

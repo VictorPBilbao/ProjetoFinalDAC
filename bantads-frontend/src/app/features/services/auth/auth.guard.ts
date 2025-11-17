@@ -12,7 +12,7 @@ export const authGuard: CanActivateFn = (route, state) => {
   //see if is authenticated
   if (authService.isAuthenticated()) {
     // check permission by role
-    if (route.data?.['role'] && route.data['role'].indexOf(role) === -1) {
+    if (route.data?.['auth_user'] && route.data['auth_user'].indexOf(role) === -1) {
       router.navigate(['/login'], { queryParams: { error: "Proibido o acesso a " + url } });
       authService.logout();
       return false;

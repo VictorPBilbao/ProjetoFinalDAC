@@ -13,13 +13,13 @@ export const loginGuard: CanActivateFn = (route, state) => {
     let targetDashboard = '/';
 
     switch (role) {
-      case 'cliente':
+      case 'CLIENTE':
         targetDashboard = '/cliente/dashboard';
         break;
-      case 'gerente':
+      case 'GERENTE':
         targetDashboard = '/gerente/dashboard';
         break;
-      case 'admin':
+      case 'ADMINISTRADOR':
         targetDashboard = '/admin/dashboard';
         break;
     }

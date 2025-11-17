@@ -17,20 +17,23 @@ public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "client_id", nullable = false, length = 11)
 
-    private String clientId;
-    @Column(name = "account_number", nullable = false)
-    private Long accountNumber;
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp = LocalDateTime.now();
-    @Column(name = "type", nullable = false, length = 20)
-    private String type; // depósito, saque, transferência
+
+    @Column(name = "type", nullable = false, length = 30)
+    private String type;
+
     @Column(name = "origin_client_id", length = 11)
-    private String originClientId; // para transferências
+    private String originClientId;
+
     @Column(name = "destination_client_id", length = 11)
-    private String destinationClientId; // para transferências
-    @Column(name = "amount", nullable = false, precision = 19, scale = 4)
+    private String destinationClientId;
+
+    @Column(name = "amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id", nullable = false)
+    private Account account;
 }

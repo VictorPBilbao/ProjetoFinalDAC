@@ -8,15 +8,19 @@ import {
 import { AuthService } from '../auth/auth.service';
 import { LoadingService } from '../utils/loading-service.service';
 import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { catchError, delay, finalize } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({ providedIn: 'root' })
 export class ManagerService {
     constructor(
         private readonly storage: LocalStorageServiceService,
         private readonly authService: AuthService,
-        private readonly loadingService: LoadingService
+        private readonly loadingService: LoadingService,
+        private http: HttpClient
     ) { }
+
+    private apiUrl = 'http://localhost:3000';
 
     getManagersWithTotals(): Observable<Manager[]> {
         this.loadingService.show();
@@ -64,7 +68,7 @@ export class ManagerService {
         }
 
         const currentUser = this.authService.getUser();
-        if (!currentUser || currentUser.role !== 'gerente') {
+        if (!currentUser || currentUser.tipo !== 'gerente') {
             this.loadingService.hide();
             return {
                 ok: false,
@@ -74,7 +78,7 @@ export class ManagerService {
 
         const managers = this.storage.getManagers();
         const approvingManager = managers.find(
-            (m) => m.email === currentUser.user
+            (m) => m.email === ""
         );
 
         if (!approvingManager) {
@@ -140,7 +144,7 @@ export class ManagerService {
         // Find manager by email
         const managers = this.storage.getManagers();
         const currentManager = managers.find(
-            (m) => m.email === currentUser.user
+            (m) => m.email === ""
         );
         if (!currentManager) {
             this.loadingService.hide();
@@ -179,24 +183,26 @@ export class ManagerService {
     // ---------------- CREATE ----------------
     createManager(manager: Manager): Observable<any> {
         this.loadingService.show();
-        // Gera ID simples
-        const newManager: Manager = {
-            ...manager,
-            id: Date.now().toString(),
-        };
 
-        // Salva no localStorage
-        this.storage.addManager(newManager);
+        const token = this.authService.getToken();
 
-        // Simula resposta da API
-        const response = {
-            success: true,
-            message: 'Gerente criado com sucesso!',
-            data: newManager,
-        };
+        return this.http.post<any>(
+            `${this.apiUrl}/gerentes`,
+            manager,
+            {
+                headers: token ? { Authorization: token } : {}
+            }
+        ).pipe(
+            catchError(err => {
+                // Aqui você captura o erro vindo do backend
+                console.error('Erro ao criar gerente:', err);
 
-        this.loadingService.hide();
-        return of(response).pipe(delay(1000)); // simula delay
+                // Se o backend devolveu SagaResult, você pode repassar a mensagem
+                const errorMsg = err.error?.message || 'Erro inesperado ao criar gerente';
+                return of({ success: false, message: errorMsg, detail: err.error });
+            }),
+            finalize(() => this.loadingService.hide())
+        );
     }
 
     verifyManagerByCPF(cpf: string): Observable<{ exists: boolean }> {
@@ -206,53 +212,74 @@ export class ManagerService {
 
     // ---------------- READ ----------------
     getManagers(): Observable<Manager[]> {
-        const managers = this.storage.getManagers();
-        return of(managers).pipe(delay(500));
+        this.loadingService.show();
+        const token = this.authService.getToken();
+        return this.http.get<Manager[]>(`${this.apiUrl}/gerentes`, {
+            headers: token ? { Authorization: token } : {}
+        }).pipe(
+            catchError(err => {
+                console.error('Erro ao buscar gerentes:', err);
+                return of([]);
+            }),
+            finalize(() => this.loadingService.hide())
+        );
     }
 
-    getManagerById(managerId: string): Observable<Manager | undefined> {
-        const manager = this.storage
-            .getManagers()
-            .find((m) => m.id === managerId);
-        return of(manager).pipe(delay(500));
+    getManagerById(id: string): Observable<Manager | undefined> {
+        this.loadingService.show();
+        const token = this.authService.getToken();
+        return this.http.get<Manager>(`${this.apiUrl}/gerentes/${id}`, {
+            headers: token ? { Authorization: token } : {}
+        }).pipe(
+            catchError(err => {
+                console.error('Erro ao buscar gerente por ID:', err);
+                return of(undefined);
+            }),
+            finalize(() => this.loadingService.hide())
+        );
     }
 
     // ---------------- UPDATE ----------------
     updateManager(updated: Manager): Observable<any> {
-
         this.loadingService.show();
-        const managers = this.storage
-            .getManagers()
-            .map((m) => (m.id === updated.id ? { ...m, ...updated } : m));
-        // Salva de volta
-        localStorage.setItem('managers', JSON.stringify(managers));
-
-        const response = {
-            success: true,
-            message: 'Gerente atualizado com sucesso!',
-            data: updated,
-        };
-
-        this.loadingService.hide();
-        return of(response).pipe(delay(1000));
+        const token = this.authService.getToken();
+        console.log('Atualizando gerente:', updated);
+        return this.http.put<any>(
+            `${this.apiUrl}/gerentes/${updated.cpf}`,
+            updated,
+            {
+                headers: token ? { Authorization: token } : {}
+            }
+        ).pipe(
+            catchError(err => {
+                console.error('Erro ao atualizar gerente:', err);
+                const errorMsg = err.error?.message || 'Erro inesperado ao atualizar gerente';
+                return of({ success: false, message: errorMsg, detail: err.error });
+            }
+            ),
+            finalize(() => this.loadingService.hide())
+        );
     }
 
     // ---------------- DELETE ----------------
     deleteManager(managerId: string): Observable<any> {
         this.loadingService.show();
-        const managers = this.storage
-            .getManagers()
-            .filter((m) => m.id !== managerId);
-        localStorage.setItem('managers', JSON.stringify(managers));
 
-        const response = {
-            success: true,
-            message: 'Gerente removido com sucesso!',
-            id: managerId,
-        };
+        const token = this.authService.getToken();
 
-        this.loadingService.hide();
-        return of(response).pipe(delay(1000));
+        return this.http.delete<any>(
+            `${this.apiUrl}/gerentes/${managerId}`,
+            {
+            headers: token ? { Authorization: token } : {}
+            }
+        ).pipe(
+            catchError(err => {
+            console.error('Erro ao deletar gerente:', err);
+            const errorMsg = err.error?.message || 'Erro inesperado ao deletar gerente';
+            return of({ success: false, message: errorMsg, detail: err.error });
+            }),
+            finalize(() => this.loadingService.hide())
+        );
     }
 
     // ---------------- REJECTED CLIENTS ----------------
