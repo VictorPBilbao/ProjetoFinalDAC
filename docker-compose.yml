@@ -87,6 +87,8 @@ services:
         depends_on:
             mongodb:
                 condition: service_healthy
+            rabbitmq:
+                condition: service_healthy
         environment:
             SPRING_DATA_MONGODB_HOST: mongodb
             SPRING_DATA_MONGODB_PORT: 27017
@@ -94,6 +96,10 @@ services:
             SPRING_DATA_MONGODB_USERNAME: mongo
             SPRING_DATA_MONGODB_PASSWORD: mongo
             SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin
+            SPRING_RABBITMQ_HOST: rabbitmq
+            SPRING_RABBITMQ_PORT: 5672
+            SPRING_RABBITMQ_USERNAME: guest
+            SPRING_RABBITMQ_PASSWORD: guest
             JWT_SECRET: your-super-secret-jwt-key-change-in-production-12345
             JWT_EXPIRATION: 86400000
         networks:
