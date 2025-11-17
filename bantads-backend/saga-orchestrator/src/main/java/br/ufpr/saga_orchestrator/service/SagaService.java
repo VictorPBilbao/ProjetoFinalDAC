@@ -2,6 +2,7 @@ package br.ufpr.saga_orchestrator.service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -29,6 +30,11 @@ public class SagaService {
     private final String authUpdateKey;
 
     private static final Logger log = LoggerFactory.getLogger(SagaService.class);
+    private final Map<String, SagaResult> sagaResults = new ConcurrentHashMap<>();
+    // guarda managerId (ou dados relevantes) por correlationId para rollback
+    private final Map<String, String> correlationToManagerId = new ConcurrentHashMap<>();
+    @Value("${saga.wait-millis:3000}")
+    private long waitMillis;
 
     public SagaService(
             RabbitTemplate rabbit,
@@ -53,49 +59,43 @@ public class SagaService {
         this.authUpdateKey = authUpdateKey;
     }
 
-    /**
-     * Publica eventos no RabbitMQ em vez de usar RPC.
-     *
-     * Observação: sem RPC não há resposta síncrona do service consumer.
-     * O fluxo torna-se baseado em eventos (event-driven). Consumidores
-     * devem publicar eventos de confirmação/erro para que o saga acompanhe
-     * o resultado (ex.: via filas de resposta ou outro mecanismo).
-     */
-    public SagaResult createManagerSaga(Map<String, Object> managerDto, String authorizationHeader) {
+    public SagaResult createManagerSaga(Map<String, Object> managerDto) {
         // gera correlationId para rastreamento entre eventos
         String correlationId = UUID.randomUUID().toString();
 
         try {
             // 1) publicar comando para criação do manager (consumer deve processar)
+            // publish only manager.create for now. After manager.created is received
+            // the saga will publish auth.create.
             sendEvent(managersExchange, managersCreateKey, managerDto, correlationId);
-            log.info("Published manager.create event correlationId={}", correlationId);
-
-            // 2) publicar comando para criação de usuário no auth.
-            // Sem RPC não temos createdManager com id; enviamos dados disponíveis.
-            String cpf = asString(managerDto, "cpf");
-            String nome = asString(managerDto, "nome");
-            String email = asString(managerDto, "email");
-            String senha = asString(managerDto, "senha");
-            Map<String, Object> authPayload = new HashMap<>();
-            if (cpf != null) authPayload.put("cpf", cpf);
-            if (nome != null) authPayload.put("nome", nome);
-            if (email != null) authPayload.put("email", email);
-            if (senha != null) authPayload.put("senha", senha);
-            authPayload.put("tipo", "MANAGER");
-            // inclui referência ao correlationId para rastrear o par de eventos
-            authPayload.put("correlationId", correlationId);
-
-            sendEvent(authExchange, authCreateKey, authPayload, correlationId);
-            log.info("Published auth.create event correlationId={}", correlationId);
 
             Map<String, Object> result = new HashMap<>();
             result.put("correlationId", correlationId);
-            result.put("status", "events-published");
+            result.put("status", "pending-manager");
 
-            return new SagaResult(true, "create-manager", "Eventos publicados para criação (async)", result);
+            // store initial pending result so API Gateway can poll for final state
+            SagaResult pending = new SagaResult(true, "create-manager", "Manager create event published, waiting result", result, 202);
+            sagaResults.put(correlationId, pending);
+
+            // wait a short time for manager to respond (synchronous fast failures like validation)
+            long start = System.currentTimeMillis();
+            while (System.currentTimeMillis() - start < waitMillis) {
+                SagaResult current = sagaResults.get(correlationId);
+                if (current != null && current.getStatusCode() != 202) {
+                    return current; // final result arrived
+                }
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+
+            // no final result within waitMillis -> return pending (202)
+            return pending;
         } catch (Exception ex) {
-            log.error("Falha ao publicar eventos de criação", ex);
-            return new SagaResult(false, "create-manager", "Erro ao publicar eventos: " + ex.getMessage(), null);
+            return new SagaResult(false, "create-manager", "Erro ao publicar eventos: " + ex.getMessage(), null, 500);
         }
     }
 
@@ -108,7 +108,6 @@ public class SagaService {
             updateCmd.put("id", managerId);
             updateCmd.put("payload", managerDto);
             sendEvent(managersExchange, managersUpdateKey, updateCmd, correlationId);
-            log.info("Published manager.update event correlationId={}, id={}", correlationId, managerId);
 
             System.out.println("managerDto: " + managerDto);
             // 2) publicar comando para atualizar credenciais no auth (dados disponíveis)
@@ -133,23 +132,19 @@ public class SagaService {
             authPayload.put("managerId", managerId);
 
             sendEvent(authExchange, authUpdateKey, authPayload, correlationId);
-            log.info("Published auth.update event correlationId={}, managerId={}", correlationId, managerId);
 
             Map<String, Object> result = new HashMap<>();
             result.put("correlationId", correlationId);
             result.put("status", "events-published");
 
-            return new SagaResult(true, "update-manager", "Eventos publicados para atualização (async)", result);
+            return new SagaResult(true, "update-manager", "Eventos publicados para atualização (async)", result, 200);
         } catch (Exception ex) {
-            log.error("Erro ao publicar eventos de update", ex);
-            return new SagaResult(false, "update-manager", "Erro ao publicar eventos: " + ex.getMessage(), null);
+            return new SagaResult(false, "update-manager", "Erro ao publicar eventos: " + ex.getMessage(), null, 500);
         }
     }
 
     // publica evento no exchange com routing key, adicionando correlation id no properties
     private void sendEvent(String exchange, String routingKey, Object payload, String correlationId) {
-        // rely on Jackson2JsonMessageConverter bean: send object (not serialized bytes)
-        log.info("Publishing event exchange={} routingKey={} correlationId={}", exchange, routingKey, correlationId);
         rabbit.convertAndSend(exchange, routingKey, payload, message -> {
             if (correlationId != null) {
                 message.getMessageProperties().setCorrelationId(correlationId);
@@ -182,5 +177,117 @@ public class SagaService {
         if (v == null) return null;
         String s = String.valueOf(v).trim();
         return "null".equalsIgnoreCase(s) || s.isBlank() ? null : s;
+    }
+
+    public void sendRollbackManager(String managerId, String correlationId) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("managerId", managerId);
+        payload.put("correlationId", correlationId);
+
+        log.warn("⏪ [SAGA] Publicando evento de rollback do manager {}", managerId);
+
+        sendEvent(
+            managersExchange,
+            managersDeleteKey,
+            payload,
+            correlationId
+        );
+    }
+
+    /**
+     * Called by SagaListener when a manager.created event is received.
+     * Will publish the auth.create-user event carrying correlationId.
+     */
+    public void handleManagerCreated(String correlationId, Map<String, Object> managerPayload) {
+        if (correlationId == null) {
+            log.warn("handleManagerCreated called without correlationId");
+            return;
+        }
+
+        // extract managerId for potential rollback
+        String managerId = null;
+        if (managerPayload != null) {
+            Object idObj = managerPayload.get("id");
+            if (idObj == null) idObj = managerPayload.get("managerId");
+            if (idObj != null) managerId = String.valueOf(idObj);
+        }
+        if (managerId != null) correlationToManagerId.put(correlationId, managerId);
+
+        // prepare auth payload from manager payload
+        String cpf = managerPayload != null && managerPayload.get("cpf") != null ? String.valueOf(managerPayload.get("cpf")) : null;
+        String nome = managerPayload != null && managerPayload.get("nome") != null ? String.valueOf(managerPayload.get("nome")) : null;
+        String email = managerPayload != null && managerPayload.get("email") != null ? String.valueOf(managerPayload.get("email")) : null;
+        String senha = managerPayload != null && managerPayload.get("senha") != null ? String.valueOf(managerPayload.get("senha")) : null;
+        String tipo = "MANAGER";
+        Map<String, Object> authPayload = new HashMap<>();
+        if (cpf != null) authPayload.put("cpf", cpf);
+        if (nome != null) authPayload.put("nome", nome);
+        if (email != null) authPayload.put("email", email);
+        authPayload.put("tipo", "MANAGER");
+        authPayload.put("correlationId", correlationId);
+        if (managerId != null) authPayload.put("managerId", managerId);
+
+        log.info("[SAGA] manager.created received; publishing auth.create-user correlationId={} managerId={}", correlationId, managerId);
+        try {
+            sendEvent(authExchange, authCreateKey, authPayload, correlationId);
+
+            Map<String, Object> pending = new HashMap<>();
+            pending.put("correlationId", correlationId);
+            pending.put("status", "pending-auth");
+            sagaResults.put(correlationId, new SagaResult(true, "create-manager", "Auth create event published, waiting result", pending, 202));
+        } catch (Exception ex) {
+            log.error("Failed to publish auth.create-user for correlationId={}", correlationId, ex);
+            notifyGatewayFailure(correlationId, "Erro ao publicar evento para auth: " + ex.getMessage(), 500);
+        }
+    }
+
+    /**
+     * Called when auth has failed. Will trigger rollback on manager if we have managerId.
+     */
+    public void handleAuthFailure(String correlationId, String errorMessage, int statusCode) {
+        log.warn("[SAGA] auth failed for correlationId={} error={} status={}", correlationId, errorMessage, statusCode);
+        // try rollback
+        String managerId = correlationToManagerId.get(correlationId);
+        if (managerId != null) {
+            sendRollbackManager(managerId, correlationId);
+        }
+        notifyGatewayFailure(correlationId, errorMessage != null ? errorMessage : "Auth failure", statusCode > 0 ? statusCode : 400);
+    }
+
+    public SagaResult getSagaResult(String correlationId) {
+        return sagaResults.get(correlationId);
+    }
+
+    public void notifyGatewaySuccess(String correlationId, String cpf, String nome) {
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("cpf", cpf);
+        detail.put("nome", nome);
+
+        SagaResult result = new SagaResult(
+                true,
+                "create-manager",
+                "Eventos publicados para criação (async)",
+                detail,
+                201
+        );
+
+        sagaResults.put(correlationId, result);
+    }
+
+    public void notifyGatewayFailure(String correlationId, String errorMessage, int statusCode) {
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("erro", errorMessage);
+
+        int code = statusCode <= 0 ? 400 : statusCode;
+
+        SagaResult result = new SagaResult(
+                false,
+                "create-manager",
+                errorMessage,
+                detail,
+                code
+        );
+
+        sagaResults.put(correlationId, result);
     }
 }

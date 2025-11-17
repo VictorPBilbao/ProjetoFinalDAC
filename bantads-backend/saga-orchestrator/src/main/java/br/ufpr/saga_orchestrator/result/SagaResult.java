@@ -5,15 +5,17 @@ public class SagaResult {
     private String step;
     private String message;
     private Object detail;
+    private int statusCode;
 
     public SagaResult() {
     }
 
-    public SagaResult(boolean success, String step, String message, Object detail) {
+    public SagaResult(boolean success, String step, String message, Object detail, int statusCode) {
         this.success = success;
         this.step = step;
         this.message = message;
         this.detail = detail;
+        this.statusCode = statusCode;
     }
 
     public boolean isSuccess() {
@@ -46,5 +48,13 @@ public class SagaResult {
 
     public void setDetail(Object detail) {
         this.detail = detail;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
     }
 }

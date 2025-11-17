@@ -26,10 +26,9 @@ public class ManagerService {
     @Transactional
     public Manager createManager(ManagerDTO dto) {
         if (!StringUtils.hasText(dto.getName()) || !StringUtils.hasText(dto.getCpf()) ||
-                !StringUtils.hasText(dto.getEmail()) || !StringUtils.hasText(dto.getTelephone()) ||
-                !StringUtils.hasText(dto.getPassword())) {
+                !StringUtils.hasText(dto.getEmail()) || !StringUtils.hasText(dto.getPassword())) {
             throw new IllegalArgumentException(
-                    "Todos os campos (Nome, CPF, E-mail, Telefone, Senha) são obrigatórios para criar um gerente.");
+                    "Todos os campos (Nome, CPF, E-mail, Senha) são obrigatórios para criar um gerente.");
         }
 
         if (managerRepository.existsByCpf(dto.getCpf()) || managerRepository.existsByEmail(dto.getEmail())) {
