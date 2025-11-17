@@ -40,14 +40,18 @@ public class ClientController {
 
     // R01 - Autocadastro: deve retornar o objeto "cru" (sem wrapper) e status 201
     @PostMapping("/cadastro")
-    public ResponseEntity<ClientDTO> autocadastro(@Valid @RequestBody AutocadastroRequestDTO request) {
+    public ResponseEntity<?> autocadastro(@Valid @RequestBody AutocadastroRequestDTO request) {
         try {
             ClientDTO createdClient = clientService.autocadastro(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdClient);
+            Map<String, Object> responseBody = Map.of(
+                "cpf", createdClient.getCpf(),
+                "email", createdClient.getEmail()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED).body(responseBody);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", "Erro ao processar autocadastro"));
         }
     }
 

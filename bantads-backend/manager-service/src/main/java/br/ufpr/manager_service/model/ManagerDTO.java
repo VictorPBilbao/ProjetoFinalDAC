@@ -6,10 +6,10 @@ import jakarta.validation.constraints.Size;
 
 public class ManagerDTO {
 
-    private String name;
-
     @Pattern(regexp = "\\d{11}", message = "CPF deve conter exatamente 11 dígitos")
     private String cpf;
+    
+    private String name;
 
     @Email(message = "Formato de e-mail inválido")
     private String email;

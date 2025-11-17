@@ -1,4 +1,3 @@
-// ...existing code...
 package br.ufpr.manager_service.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,6 +56,7 @@ public class ManagerListener {
         try {
             // convert incoming payload (supports both JSON and already-mapped string payload)
             Map<String, Object> payload = toMapFromBody(message.getBody(), raw);
+            normalizeManagerMap(payload);
             ManagerDTO dto = mapper.convertValue(payload, ManagerDTO.class);
             Manager created = managerService.createManager(dto);
 
@@ -88,15 +88,17 @@ public class ManagerListener {
                 json = mapper.readValue(json, String.class);
             }
 
-            Map<String, Object> payload = toMapFromBody(message.getBody(), json);
+                Map<String, Object> payload = toMapFromBody(message.getBody(), json);
             // extrai id
             String id = payload.containsKey("id") ? String.valueOf(payload.get("id"))
                     : (payload.get("cpf") != null ? String.valueOf(payload.get("cpf")) : null);
 
             // se payload estiver aninhado em "payload"
-            Map<String, Object> dtoMap = payload.containsKey("payload")
+                Map<String, Object> dtoMap = payload.containsKey("payload")
                     ? (Map<String, Object>) payload.get("payload")
                     : payload;
+
+                normalizeManagerMap(dtoMap);
 
             ManagerDTO dto = mapper.convertValue(dtoMap, ManagerDTO.class);
             Manager updated = managerService.updateManager(id, dto);
@@ -111,6 +113,25 @@ public class ManagerListener {
             log.error("Error processing manager.update", ex);
             sendFailed(message, ex);
         }
+    }
+
+    // Normaliza chaves vindas em português para as propriedades esperadas por ManagerDTO
+    @SuppressWarnings("unchecked")
+    private void normalizeManagerMap(Map<String, Object> m) {
+        if (m == null) return;
+        // nome -> name
+        if (m.containsKey("nome") && !m.containsKey("name")) {
+            m.put("name", m.get("nome"));
+        }
+        // senha -> password
+        if (m.containsKey("senha") && !m.containsKey("password")) {
+            m.put("password", m.get("senha"));
+        }
+        // telefone -> telephone
+        if (m.containsKey("telefone") && !m.containsKey("telephone")) {
+            m.put("telephone", m.get("telefone"));
+        }
+        // cpf, email already match
     }
 
     private boolean looksLikeBase64(String s) {
@@ -137,6 +158,15 @@ public class ManagerListener {
         Map<String, Object> err = new HashMap<>();
         err.put("reason", ex.getMessage());
         err.put("exception", ex.getClass().getSimpleName());
+        int status = 500;
+        if (ex instanceof java.util.concurrent.ExecutionException) {
+            status = 500;
+        } else if (ex instanceof IllegalArgumentException) {
+            status = 400;
+        } else if (ex instanceof org.springframework.dao.DuplicateKeyException) {
+            status = 409;
+        }
+        err.put("status", status);
         StringWriter sw = new StringWriter();
         ex.printStackTrace(new PrintWriter(sw));
         err.put("stacktrace", sw.toString());
@@ -150,4 +180,3 @@ public class ManagerListener {
         });
     }
 }
-// ...existing code...
