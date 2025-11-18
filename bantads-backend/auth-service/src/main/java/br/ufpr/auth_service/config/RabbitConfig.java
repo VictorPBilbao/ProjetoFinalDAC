@@ -13,6 +13,8 @@ public class RabbitConfig {
     @Value("${rabbit.auth.exchange:auth.exchange}") private String authExchange;
     @Value("${rabbit.auth.create-key:auth.create-user}") private String createKey;
     @Value("${rabbit.auth.create-queue:auth.create.queue}") private String createQueue;
+    @Value("${rabbit.auth.update-key:auth.update-user}") private String updateKey;
+    @Value("${rabbit.auth.update-queue:auth.update.queue}") private String updateQueue;
 
     @Bean
     public TopicExchange authExchange() {
@@ -25,8 +27,18 @@ public class RabbitConfig {
     }
 
     @Bean
+    public Queue authUpdateQueue() {
+        return QueueBuilder.durable(updateQueue).build();
+    }
+
+    @Bean
     public Binding bindAuthCreate(Queue authCreateQueue, TopicExchange authExchange) {
         return BindingBuilder.bind(authCreateQueue).to(authExchange).with(createKey);
+    }
+
+    @Bean
+    public Binding bindAuthUpdate(Queue authUpdateQueue, TopicExchange authExchange) {
+        return BindingBuilder.bind(authUpdateQueue).to(authExchange).with(updateKey);
     }
 
     @Bean

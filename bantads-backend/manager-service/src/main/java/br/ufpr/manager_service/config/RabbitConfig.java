@@ -35,6 +35,12 @@ public class RabbitConfig {
     @Value("${rabbit.managers.failed-key:manager.failed}")
     private String failedKey;
 
+    @Value("${rabbit.managers.delete-queue:manager.delete.queue}")
+    private String deleteQueue;
+
+    @Value("${rabbit.managers.delete-key:manager.delete}")
+    private String deleteKey;
+
     @Bean
     public TopicExchange managersExchange() {
         return new TopicExchange(managersExchange, true, false);
@@ -45,10 +51,14 @@ public class RabbitConfig {
         return QueueBuilder.durable(createQueue).build();
     }
 
-    // novo bean de queue para update (necessário para "#{managersUpdateQueue.name}")
     @Bean
     public Queue managersUpdateQueue() {
         return QueueBuilder.durable(updateQueue).build();
+    }
+
+    @Bean
+    public Queue managersDeleteQueue() {
+        return QueueBuilder.durable(deleteQueue).build();
     }
 
     @Bean
@@ -56,10 +66,14 @@ public class RabbitConfig {
         return BindingBuilder.bind(managersCreateQueue).to(managersExchange).with(createKey);
     }
 
-    // binding para update
     @Bean
     public Binding bindUpdate(Queue managersUpdateQueue, TopicExchange managersExchange) {
         return BindingBuilder.bind(managersUpdateQueue).to(managersExchange).with(updateKey);
+    }
+
+    @Bean
+    public Binding bindDelete(Queue managersDeleteQueue, TopicExchange managersExchange) {
+        return BindingBuilder.bind(managersDeleteQueue).to(managersExchange).with(deleteKey);
     }
 
     @Bean

@@ -62,11 +62,28 @@ public class SagaController {
     }
 
     @PutMapping("/gerentes/{cpf}")
-    public ResponseEntity<SagaResult> atualizarGerenteSaga(
+    public ResponseEntity<?> atualizarGerenteSaga(
             @PathVariable @NotBlank String cpf,
             @RequestBody Map<String, Object> managerDto,
             @RequestHeader(name = "Authorization", required = false) String authorization) {
+        
         SagaResult result = sagaService.updateManagerSaga(cpf, managerDto, authorization);
-        return ResponseEntity.ok(result);
+
+        if (!result.isSuccess()) {
+            return ResponseEntity.status(result.getStatusCode()).body(Map.of("erro", result.getMessage()));
+        }
+
+        int code = result.getStatusCode();
+        if (code == 202) {
+            Object detail = result.getDetail();
+            String cid = null;
+            if (detail instanceof Map) {
+                Object c = ((Map<?, ?>) detail).get("correlationId");
+                if (c != null) cid = String.valueOf(c);
+            }
+            return ResponseEntity.status(202).body(Map.of("correlationId", cid, "status", "pending"));
+        }
+
+        return ResponseEntity.status(code).body(result.getDetail());
     }
 }
