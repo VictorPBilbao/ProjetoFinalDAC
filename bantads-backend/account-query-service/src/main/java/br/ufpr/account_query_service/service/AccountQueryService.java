@@ -1,25 +1,27 @@
 package br.ufpr.account_query_service.service;
 
-import br.ufpr.account_query_service.model.AccountView;
-import br.ufpr.account_query_service.model.TransactionView;
-import br.ufpr.account_query_service.repository.AccountViewRepository;
-import br.ufpr.account_query_service.repository.TransactionViewRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import br.ufpr.account_query_service.model.AccountView;
+import br.ufpr.account_query_service.model.TransactionView;
+import br.ufpr.account_query_service.repository.AccountViewRepository;
+import br.ufpr.account_query_service.repository.TransactionViewRepository;
+
 @Service
 public class AccountQueryService {
 
     @Autowired
     private AccountViewRepository accountViewRepository;
+
     @Autowired
     private TransactionViewRepository transactionViewRepository;
 
@@ -37,5 +39,9 @@ public class AccountQueryService {
 
         return transactionViewRepository.findByAccountIdAndTimestampBetweenOrderByTimestampAsc(
                 account.getId(), startDate, endDate);
+    }
+
+    public List<Object[]> getSummaryByManager() {
+        return accountViewRepository.summaryByManager();
     }
 }
