@@ -86,7 +86,7 @@ app.get(
     const clientServiceUrl =
       process.env.CLIENT_SERVICE_URL || "http://localhost:8081"; // Note: Client Service
     const accountServiceUrl =
-      process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"; // Note: Account Query Service
+      process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"; //porta do account-service
 
     try {
       const config = {
@@ -152,7 +152,7 @@ app.get(
   }
 );
 
-// R15: Admin Manager Dashboard (Agregação) - usa /query/summary-by-gerente no Account Query Service
+// R15: Admin Manager Dashboard (Agregação) - usa /query/summary-by-manager no Account Query Service
 app.get(
   "/admin/dashboard/managers",
   authenticateToken,
@@ -165,8 +165,8 @@ app.get(
       process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
     const clientServiceUrl =
       process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
-    const accountServiceUrl =
-      process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"; // porta do account-query-service
+    const accountQueryServiceUrl =
+      process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086"; // porta do account-query-service
 
     try {
       const [managersResp, clientsResp] = await Promise.all([
@@ -185,7 +185,7 @@ app.get(
       let accountsSummary = null;
       try {
         const summaryResp = await axiosInstance.get(
-          `${accountServiceUrl}/query/summary-by-gerente`,
+          `${accountQueryServiceUrl}/query/summary-by-manager`,
           config
         );
         accountsSummary = Array.isArray(summaryResp.data)
