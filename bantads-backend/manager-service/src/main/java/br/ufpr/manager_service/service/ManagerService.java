@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.dao.DuplicateKeyException;
 
 @Service
 public class ManagerService {
@@ -32,7 +33,7 @@ public class ManagerService {
         }
 
         if (managerRepository.existsByCpf(dto.getCpf()) || managerRepository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("CPF ou E-mail já cadastrado.");
+            throw new DuplicateKeyException("CPF ou E-mail já cadastrado.");
         }
 
         Manager manager = new Manager();
@@ -93,6 +94,14 @@ public class ManagerService {
         managerRepository.delete(managerToDelete);
     }
 
+    @Transactional
+    public void deleteManagerForRollback(String id) {
+        Optional<Manager> manager = managerRepository.findById(id);
+        if (manager.isPresent()) {
+            managerRepository.delete(manager.get());
+        }
+    }
+
     private Manager findRecipientManager(String excludeManagerId) {
         Map<String, Long> clientCounts = getManagerClientCountsFromClientService();
         return managerRepository.findAll().stream()
@@ -112,12 +121,21 @@ public class ManagerService {
         if (StringUtils.hasText(details.getName())) {
             manager.setName(details.getName());
         }
+
         if (StringUtils.hasText(details.getEmail())) {
             if (!manager.getEmail().equals(details.getEmail()) && managerRepository.existsByEmail(details.getEmail())) {
                 throw new IllegalArgumentException("O novo e-mail já está em uso.");
             }
             manager.setEmail(details.getEmail());
         }
+        
+        if (StringUtils.hasText(details.getCpf()) && !manager.getCpf().equals(details.getCpf())) {
+            if (managerRepository.existsByCpf(details.getCpf())) {
+                throw new IllegalArgumentException("O novo CPF já está em uso.");
+            }
+            manager.setCpf(details.getCpf());
+        }
+
         if (StringUtils.hasText(details.getPassword())) {
             manager.setPassword(details.getPassword());
         }

@@ -30,11 +30,12 @@ public class SagaListener {
         String correlationId = message.getMessageProperties().getCorrelationId();
         try {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
-            log.info("SagaListener received manager.created correlationId={} payload={}", correlationId, payload);
+            log.info("Manager criado correlationId={}", correlationId);
+            log.info("Payload: {}", payload);
             saga.handleManagerCreated(correlationId, payload);
         } catch (Exception ex) {
-            log.error("Error reading manager.created message", ex);
-            saga.notifyGatewayFailure(correlationId, "Error reading manager.created payload: " + ex.getMessage(), 500);
+            log.error("Erro ao processar manager.created: {}", ex.getMessage());
+            saga.notifyGatewayFailure(correlationId, "Erro ao processar criação do manager: " + ex.getMessage(), 500);
         }
     }
 
@@ -43,19 +44,26 @@ public class SagaListener {
         String correlationId = message.getMessageProperties().getCorrelationId();
         try {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
-            String error = payload.containsKey("reason") ? String.valueOf(payload.get("reason"))
-                    : (payload.containsKey("error") ? String.valueOf(payload.get("error")) : "manager.failed");
-            int status = 400;
-            if (payload.containsKey("status")) {
-                try { status = Integer.parseInt(String.valueOf(payload.get("status"))); } catch (Exception ignore) {}
-            } else if (payload.containsKey("statusCode")) {
-                try { status = Integer.parseInt(String.valueOf(payload.get("statusCode"))); } catch (Exception ignore) {}
-            }
-            log.warn("SagaListener manager.failed correlationId={} error={} status={}", correlationId, error, status);
+            String error = getErrorMessage(payload);
+            int status = getStatusCode(payload);
+            
+            log.warn("Manager falhou correlationId={} erro={} status={}", correlationId, error, status);
             saga.notifyGatewayFailure(correlationId, error, status);
         } catch (Exception ex) {
-            log.error("Error reading manager.failed message", ex);
-            saga.notifyGatewayFailure(correlationId, "Error reading manager.failed payload: " + ex.getMessage(), 500);
+            log.error("Erro ao processar manager.failed: {}", ex.getMessage());
+            saga.notifyGatewayFailure(correlationId, "Erro ao processar falha do manager: " + ex.getMessage(), 500);
+        }
+    }
+
+    @RabbitListener(queues = "#{managerUpdatedQueue.name}")
+    public void onManagerUpdated(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            log.info("Manager atualizado correlationId={}", correlationId);
+            saga.handleManagerUpdated(correlationId, payload);
+        } catch (Exception ex) {
+            log.error("Erro ao processar manager.updated: {}", ex.getMessage());
         }
     }
 
@@ -64,13 +72,14 @@ public class SagaListener {
         String correlationId = message.getMessageProperties().getCorrelationId();
         try {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
-            String cpf = payload.containsKey("cpf") ? String.valueOf(payload.get("cpf")) : null;
-            String nome = payload.containsKey("email") ? String.valueOf(payload.get("email")) : null;
-            log.info("SagaListener auth.created correlationId={} cpf={} nome={}", correlationId, cpf, nome);
+            String cpf = getString(payload, "cpf");
+            String nome = getString(payload, "nome");
+            
+            log.info("Auth criado correlationId={}", correlationId);
             saga.notifyGatewaySuccess(correlationId, cpf, nome);
         } catch (Exception ex) {
-            log.error("Error reading auth.created message", ex);
-            saga.notifyGatewayFailure(correlationId, "Error reading auth.created payload: " + ex.getMessage(), 500);
+            log.error("Erro ao processar auth.created: {}", ex.getMessage());
+            saga.notifyGatewayFailure(correlationId, "Erro ao processar autenticação: " + ex.getMessage(), 500);
         }
     }
 
@@ -79,20 +88,67 @@ public class SagaListener {
         String correlationId = message.getMessageProperties().getCorrelationId();
         try {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
-            String error = payload.containsKey("reason") ? String.valueOf(payload.get("reason"))
-                    : (payload.containsKey("error") ? String.valueOf(payload.get("error")) : "auth.failed");
-            int status = 400;
-            if (payload.containsKey("status")) {
-                try { status = Integer.parseInt(String.valueOf(payload.get("status"))); } catch (Exception ignore) {}
-            } else if (payload.containsKey("statusCode")) {
-                try { status = Integer.parseInt(String.valueOf(payload.get("statusCode"))); } catch (Exception ignore) {}
-            }
-            log.warn("SagaListener auth.failed correlationId={} error={} status={}", correlationId, error, status);
-            // ensure rollback
+            String error = getErrorMessage(payload);
+            int status = getStatusCode(payload);
+            
+            log.warn("Auth falhou correlationId={} erro={} status={}", correlationId, error, status);
             saga.handleAuthFailure(correlationId, error, status);
         } catch (Exception ex) {
-            log.error("Error reading auth.failed message", ex);
-            saga.handleAuthFailure(correlationId, "Error reading auth.failed payload: " + ex.getMessage(), 500);
+            log.error("Erro ao processar auth.failed: {}", ex.getMessage());
+            saga.handleAuthFailure(correlationId, "Erro ao processar falha da autenticação: " + ex.getMessage(), 500);
         }
+    }
+
+    @RabbitListener(queues = "#{authUpdatedQueue.name}")
+    public void onAuthUpdated(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            
+            log.info("Auth atualizado correlationId={}", correlationId);
+            saga.notifyUpdateSuccess(correlationId);
+        } catch (Exception ex) {
+            log.error("Erro ao processar auth.updated: {}", ex.getMessage());
+        }
+    }
+
+    @RabbitListener(queues = "#{authUpdateFailedQueue.name}")
+    public void onAuthUpdateFailed(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            String error = getErrorMessage(payload);
+            int status = getStatusCode(payload);
+            
+            log.warn("Auth update falhou correlationId={} erro={} status={}", correlationId, error, status);
+            saga.notifyUpdateFailure(correlationId, error, status);
+        } catch (Exception ex) {
+            log.error("Erro ao processar auth.update-failed: {}", ex.getMessage());
+            saga.notifyUpdateFailure(correlationId, "Erro ao processar falha da atualização: " + ex.getMessage(), 500);
+        }
+    }
+
+    private String getString(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value != null ? String.valueOf(value) : null;
+    }
+
+    private String getErrorMessage(Map<String, Object> payload) {
+        if (payload.containsKey("reason")) return String.valueOf(payload.get("reason"));
+        if (payload.containsKey("error")) return String.valueOf(payload.get("error"));
+        if (payload.containsKey("message")) return String.valueOf(payload.get("message"));
+        return "Erro desconhecido";
+    }
+
+    private int getStatusCode(Map<String, Object> payload) {
+        try {
+            if (payload.containsKey("statusCode")) {
+                return Integer.parseInt(String.valueOf(payload.get("statusCode")));
+            }
+            if (payload.containsKey("status")) {
+                return Integer.parseInt(String.valueOf(payload.get("status")));
+            }
+        } catch (Exception ignore) {}
+        return 400;
     }
 }
