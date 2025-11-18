@@ -587,6 +587,9 @@ app.listen(PORT, () => {
   console.log(
     `   • Manager Service: ${process.env.MANAGER_SERVICE_URL || "http://localhost:8083"}`
   );
+  console.log(
+    `   • Saga Service:    ${process.env.SAGA_SERVICE_URL || "http://localhost:8085"}`
+  );
   console.log(`   • Auth Service:    ${process.env.AUTH_SERVICE_URL || "http://localhost:8084"}`);
   console.log("   =============================================\n");
 });
