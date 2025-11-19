@@ -3,18 +3,15 @@ package br.ufpr.client_service.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.ufpr.client_service.model.AutocadastroRequestDTO;
 import br.ufpr.client_service.model.Client;
 import br.ufpr.client_service.model.ClientDTO;
 import br.ufpr.client_service.repository.ClientRepository;
-import jakarta.transaction.Transactional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
 
 @Service
 public class ClientService {
@@ -22,9 +19,11 @@ public class ClientService {
     private static final Logger logger = LoggerFactory.getLogger(ClientService.class);
 
     private final ClientRepository clientRepository;
+    private final EmailService emailService;
 
-    ClientService(ClientRepository clientRepository) {
+    public ClientService(ClientRepository clientRepository, EmailService emailService) {
         this.clientRepository = clientRepository;
+        this.emailService = emailService;
     }
 
     // ? Autocadastro - R1
@@ -104,7 +103,7 @@ public class ClientService {
         return clientRepository.findByAprovadoFalse().stream().map(this::convertToDTO).toList();
     }
 
-    //get approve client
+    // get approve client
     @Transactional
     public void approveClient(String cpf) {
         logger.info("[Gerente] Iniciando aprovação para CPF: {}", cpf);
@@ -112,33 +111,31 @@ public class ClientService {
         Client client = clientRepository.findById(cpf)
                 .orElseThrow(() -> new RuntimeException("Cliente não encontrado com CPF: " + cpf));
 
-        if (client.getAprovado()) {
+        if (Boolean.TRUE.equals(client.getAprovado())) {
             logger.warn("[Gerente] Cliente {} já está aprovado. Nenhuma ação tomada.", cpf);
             return;
         }
         client.setAprovado(true);
         clientRepository.save(client);
-        
+
         logger.info("[Gerente] Cliente {} APROVADO com sucesso no client-service.", cpf);
 
     }
 
-    //get reject client
+    // get reject client
     @Transactional
     public void rejectClient(String cpf, String motivo) {
-        logger.info("[Gerente] Iniciando rejeição para CPF: {}. Motivo: {}", cpf, motivo);
-        
         Client client = clientRepository.findById(cpf)
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com CPF: " + cpf));
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
 
-        if (client.getAprovado()) {
-            logger.error("[Gerente] Tentativa de rejeitar cliente {} que JÁ ESTÁ APROVADO.", cpf);
-            throw new IllegalStateException("Não é possível rejeitar um cliente que já foi aprovado.");
+        if (Boolean.TRUE.equals(client.getAprovado())) {
+            throw new IllegalStateException("Cliente já aprovado não pode ser rejeitado");
         }
 
         clientRepository.delete(client);
-        
-        logger.info("[Gerente] Cliente {} REJEITADO e removido com sucesso do client-service.", cpf);
+        emailService.sendRejectionEmail(client.getEmail(), client.getNome(), motivo);
+
+        logger.info("Cliente {} rejeitado e email enviado", cpf);
     }
 
     private ClientDTO convertToDTO(Client client) {

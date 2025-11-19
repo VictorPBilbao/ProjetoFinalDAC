@@ -21,8 +21,8 @@ import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping; 
-import org.springframework.web.bind.annotation.PutMapping; 
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -44,9 +44,8 @@ public class ClientController {
         try {
             ClientDTO createdClient = clientService.autocadastro(request);
             Map<String, Object> responseBody = Map.of(
-                "cpf", createdClient.getCpf(),
-                "email", createdClient.getEmail()
-            );
+                    "cpf", createdClient.getCpf(),
+                    "email", createdClient.getEmail());
             return ResponseEntity.status(HttpStatus.CREATED).body(responseBody);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
@@ -59,8 +58,7 @@ public class ClientController {
     // Retorno sem wrapper (lista "crua")
     @GetMapping("")
     public ResponseEntity<List<ClientDTO>> getClientes(
-        @RequestParam(name = "filtro", required = false) String filtro
-    ) {
+            @RequestParam(name = "filtro", required = false) String filtro) {
         try {
             if ("para_aprovar".equalsIgnoreCase(filtro)) {
                 // pendentes de aprovação
@@ -71,23 +69,24 @@ public class ClientController {
                 // top 3 por saldo (ordem decrescente de saldo)
                 List<ClientDTO> aprovados = clientService.getAllApprovedClients();
                 List<ClientDTO> top3 = aprovados.stream()
-                    //.sorted(Comparator.comparing(ClientDTO::getSaldo, Comparator.nullsFirst(Double::compare)).reversed())
-                    .limit(3)
-                    .collect(Collectors.toList());
+                        // .sorted(Comparator.comparing(ClientDTO::getSaldo,
+                        // Comparator.nullsFirst(Double::compare)).reversed())
+                        .limit(3)
+                        .collect(Collectors.toList());
                 return ResponseEntity.ok(top3);
             }
             if ("adm_relatorio_clientes".equalsIgnoreCase(filtro)) {
                 // relatório do admin: todos aprovados ordenados por nome
                 List<ClientDTO> aprovados = clientService.getAllApprovedClients().stream()
-                    .sorted(Comparator.comparing(ClientDTO::getNome, Comparator.nullsFirst(String::compareTo)))
-                    .collect(Collectors.toList());
+                        .sorted(Comparator.comparing(ClientDTO::getNome, Comparator.nullsFirst(String::compareTo)))
+                        .collect(Collectors.toList());
                 return ResponseEntity.ok(aprovados);
             }
 
             // padrão: todos aprovados ordenados por nome (usado em R12)
             List<ClientDTO> aprovados = clientService.getAllApprovedClients().stream()
-                .sorted(Comparator.comparing(ClientDTO::getNome, Comparator.nullsFirst(String::compareTo)))
-                .collect(Collectors.toList());
+                    .sorted(Comparator.comparing(ClientDTO::getNome, Comparator.nullsFirst(String::compareTo)))
+                    .collect(Collectors.toList());
             return ResponseEntity.ok(aprovados);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -132,25 +131,27 @@ public class ClientController {
         return ResponseEntity.ok(ApiResponse.success(clients));
     }
 
-    // GET /clientes/{cpf} (R13) - retorna objeto cru; 404 se não encontrado/rejeitado
+    // GET /clientes/{cpf} (R13) - retorna objeto cru; 404 se não
+    // encontrado/rejeitado
     @GetMapping("/{cpf}")
     public ResponseEntity<ClientDTO> getByCpf(@PathVariable String cpf) {
         ClientDTO cli = clientService.getClientByCpf(cpf);
-        if (cli == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        if (cli == null)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         return ResponseEntity.ok(cli);
     }
 
     // PUT /clientes/{cpf} (R04) - atualização de perfil; objeto cru
     @PutMapping("/{cpf}")
     public ResponseEntity<ClientDTO> updateCliente(
-        @PathVariable String cpf,
-        @Valid @RequestBody ClientDTO body
-    ) {
+            @PathVariable String cpf,
+            @Valid @RequestBody ClientDTO body) {
         try {
             // garantia: CPF do path prevalece
             body.setCpf(cpf);
             ClientDTO updated = clientService.updateClient(cpf, body);
-            if (updated == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            if (updated == null)
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -161,7 +162,8 @@ public class ClientController {
 
     // POST /clientes/{cpf}/aprovar (R10) - ignora corpo, retorna 200
     @PostMapping("/{cpf}/aprovar")
-    public ResponseEntity<Void> aprovar(@PathVariable String cpf, @RequestBody(required = false) Map<String, Object> ignore) {
+    public ResponseEntity<Void> aprovar(@PathVariable String cpf,
+            @RequestBody(required = false) Map<String, Object> ignore) {
         try {
             clientService.approveClient(cpf);
             return ResponseEntity.ok().build();
@@ -170,14 +172,13 @@ public class ClientController {
         }
     }
 
-    // POST /clientes/{cpf}/rejeitar (R11) - corpo com { "usuario": {...}, "motivo": "..." }
     @PostMapping("/{cpf}/rejeitar")
-    public ResponseEntity<Void> rejeitar(@PathVariable String cpf, @RequestBody Map<String, Object> payload) {
+    public ResponseEntity<Void> rejeitar(@PathVariable String cpf, @Valid @RequestBody RejectReasonDTO request) {
         try {
-            Object motivoObj = payload != null ? payload.get("motivo") : null;
-            String motivo = motivoObj != null ? String.valueOf(motivoObj) : null;
-            clientService.rejectClient(cpf, motivo);
+            clientService.rejectClient(cpf, request.getMotivo());
             return ResponseEntity.ok().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
