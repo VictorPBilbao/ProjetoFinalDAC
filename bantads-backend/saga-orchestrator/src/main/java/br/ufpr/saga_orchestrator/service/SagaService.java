@@ -47,6 +47,9 @@ public class SagaService {
     
     @Value("${rabbit.auth.update-key:auth.update-user}")
     private String authUpdateKey;
+    
+    @Value("${rabbit.auth.delete-key:auth.delete-user}")
+    private String authDeleteKey;
 
     public SagaService(RabbitTemplate rabbit) {
         this.rabbit = rabbit;
@@ -97,6 +100,28 @@ public class SagaService {
         } catch (Exception ex) {
             log.error("Erro ao atualizar manager: {}", ex.getMessage(), ex);
             return new SagaResult(false, "update-manager", "Erro ao publicar evento: " + ex.getMessage(), null, 500);
+        }
+    }
+
+    public SagaResult deleteManagerSaga(String cpf) {
+        String correlationId = UUID.randomUUID().toString();
+
+        try {
+            Map<String, Object> deleteCmd = Map.of("cpf", cpf);
+            sendEvent(managersExchange, managersDeleteKey, deleteCmd, correlationId);
+
+            Map<String, Object> result = Map.of(
+                "correlationId", correlationId,
+                "status", "pending"
+            );
+
+            SagaResult pending = new SagaResult(true, "delete-manager", "Aguardando deleção", result, 202);
+            sagaResults.put(correlationId, pending);
+
+            return waitForResult(correlationId, pending);
+        } catch (Exception ex) {
+            log.error("Erro ao deletar manager: {}", ex.getMessage(), ex);
+            return new SagaResult(false, "delete-manager", "Erro ao publicar evento: " + ex.getMessage(), null, 500);
         }
     }
 
@@ -225,6 +250,35 @@ public class SagaService {
     public void notifyUpdateFailure(String correlationId, String errorMessage, int statusCode) {
         int code = statusCode > 0 ? statusCode : 400;
         sagaResults.put(correlationId, new SagaResult(false, "update-manager", errorMessage,
+            Map.of("erro", errorMessage, "statusCode", code), code));
+    }
+
+    public void handleManagerDeleted(String correlationId, Map<String, Object> payload) {
+        if (correlationId == null) return;
+
+        String cpf = getString(payload, "cpf");
+        
+        log.info("[SAGA] Manager deletado, publicando auth.delete correlationId={}", correlationId);
+        
+        try {
+            Map<String, Object> authPayload = Map.of("cpf", cpf);
+            sendEvent(authExchange, authDeleteKey, authPayload, correlationId);
+            sagaResults.put(correlationId, new SagaResult(true, "delete-manager", "Aguardando auth", 
+                Map.of("correlationId", correlationId, "status", "pending-auth"), 202));
+        } catch (Exception ex) {
+            log.error("Erro ao publicar auth.delete-user: {}", ex.getMessage(), ex);
+            notifyDeleteFailure(correlationId, "Erro ao deletar autenticação: " + ex.getMessage(), 500);
+        }
+    }
+
+    public void notifyDeleteSuccess(String correlationId) {
+        sagaResults.put(correlationId, new SagaResult(true, "delete-manager", "Manager deletado com sucesso",
+            Map.of("correlationId", correlationId), 200));
+    }
+
+    public void notifyDeleteFailure(String correlationId, String errorMessage, int statusCode) {
+        int code = statusCode > 0 ? statusCode : 400;
+        sagaResults.put(correlationId, new SagaResult(false, "delete-manager", errorMessage,
             Map.of("erro", errorMessage, "statusCode", code), code));
     }
 }

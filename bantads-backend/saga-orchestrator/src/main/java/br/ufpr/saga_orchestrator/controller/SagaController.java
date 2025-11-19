@@ -86,4 +86,27 @@ public class SagaController {
 
         return ResponseEntity.status(code).body(result.getDetail());
     }
+
+    @DeleteMapping("/gerentes/{cpf}")
+    public ResponseEntity<?> deletarGerenteSaga(@PathVariable @NotBlank String cpf) {
+        
+        SagaResult result = sagaService.deleteManagerSaga(cpf);
+
+        if (!result.isSuccess()) {
+            return ResponseEntity.status(result.getStatusCode()).body(Map.of("erro", result.getMessage()));
+        }
+
+        int code = result.getStatusCode();
+        if (code == 202) {
+            Object detail = result.getDetail();
+            String cid = null;
+            if (detail instanceof Map) {
+                Object c = ((Map<?, ?>) detail).get("correlationId");
+                if (c != null) cid = String.valueOf(c);
+            }
+            return ResponseEntity.status(202).body(Map.of("correlationId", cid, "status", "pending"));
+        }
+
+        return ResponseEntity.status(code).body(result.getDetail());
+    }
 }

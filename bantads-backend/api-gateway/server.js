@@ -396,7 +396,7 @@ app.delete(
   "/gerentes/:cpf",
   authenticateToken,
   requireRole("ADMINISTRADOR"),
-  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
+  proxy(process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085", {
     proxyReqPathResolver: (req) => req.originalUrl,
   })
 );

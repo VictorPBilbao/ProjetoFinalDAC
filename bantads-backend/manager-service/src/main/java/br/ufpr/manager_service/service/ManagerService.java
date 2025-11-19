@@ -102,6 +102,23 @@ public class ManagerService {
         }
     }
 
+    @Transactional
+    public Manager deleteManagerByCpf(String cpf) {
+        Manager manager = managerRepository.findByCpf(cpf);
+        if (manager == null) {
+            throw new IllegalArgumentException("Gerente não encontrado.");
+        }
+        
+        if (managerRepository.count() <= 1) {
+            throw new IllegalStateException("Não é possível remover o último gerente do banco.");
+        }
+
+        Manager recipientManager = findRecipientManager(manager.getId());
+        managerRepository.delete(manager);
+        
+        return manager;
+    }
+
     private Manager findRecipientManager(String excludeManagerId) {
         Map<String, Long> clientCounts = getManagerClientCountsFromClientService();
         return managerRepository.findAll().stream()
@@ -134,6 +151,10 @@ public class ManagerService {
                 throw new IllegalArgumentException("O novo CPF já está em uso.");
             }
             manager.setCpf(details.getCpf());
+        }
+
+        if (StringUtils.hasText(details.getTelephone())) {
+            manager.setTelephone(details.getTelephone());
         }
 
         if (StringUtils.hasText(details.getPassword())) {

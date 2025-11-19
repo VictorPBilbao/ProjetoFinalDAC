@@ -39,6 +39,11 @@ public class RabbitConfig {
     }
 
     @Bean
+    public Queue managerDeletedQueue() {
+        return new Queue("manager.deleted.queue", true);
+    }
+
+    @Bean
     public Binding bindManagerCreated(Queue managerCreatedQueue, TopicExchange managersExchange,
             @Value("${rabbit.managers.created-key:manager.created}") String key) {
         return BindingBuilder.bind(managerCreatedQueue).to(managersExchange).with(key);
@@ -54,6 +59,12 @@ public class RabbitConfig {
     public Binding bindManagerUpdated(Queue managerUpdatedQueue, TopicExchange managersExchange,
             @Value("${rabbit.managers.updated-key:manager.updated}") String key) {
         return BindingBuilder.bind(managerUpdatedQueue).to(managersExchange).with(key);
+    }
+
+    @Bean
+    public Binding bindManagerDeleted(Queue managerDeletedQueue, TopicExchange managersExchange,
+            @Value("${rabbit.managers.deleted-key:manager.deleted}") String key) {
+        return BindingBuilder.bind(managerDeletedQueue).to(managersExchange).with(key);
     }
 
     // Auth Exchange e Queues
@@ -83,6 +94,16 @@ public class RabbitConfig {
     }
 
     @Bean
+    public Queue authDeletedQueue() {
+        return new Queue("auth.deleted.queue", true);
+    }
+
+    @Bean
+    public Queue authDeleteFailedQueue() {
+        return new Queue("auth.delete-failed.queue", true);
+    }
+
+    @Bean
     public Binding bindAuthCreated(Queue authCreatedQueue, TopicExchange authExchange,
             @Value("${rabbit.auth.created-key:auth.created-user}") String key) {
         return BindingBuilder.bind(authCreatedQueue).to(authExchange).with(key);
@@ -104,5 +125,17 @@ public class RabbitConfig {
     public Binding bindAuthUpdateFailed(Queue authUpdateFailedQueue, TopicExchange authExchange,
             @Value("${rabbit.auth.update-failed-key:auth.update-failed}") String key) {
         return BindingBuilder.bind(authUpdateFailedQueue).to(authExchange).with(key);
+    }
+
+    @Bean
+    public Binding bindAuthDeleted(Queue authDeletedQueue, TopicExchange authExchange,
+            @Value("${rabbit.auth.deleted-key:auth.deleted-user}") String key) {
+        return BindingBuilder.bind(authDeletedQueue).to(authExchange).with(key);
+    }
+
+    @Bean
+    public Binding bindAuthDeleteFailed(Queue authDeleteFailedQueue, TopicExchange authExchange,
+            @Value("${rabbit.auth.delete-failed-key:auth.delete-failed}") String key) {
+        return BindingBuilder.bind(authDeleteFailedQueue).to(authExchange).with(key);
     }
 }
