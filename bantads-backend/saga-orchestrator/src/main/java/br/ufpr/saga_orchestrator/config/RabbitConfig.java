@@ -138,4 +138,81 @@ public class RabbitConfig {
             @Value("${rabbit.auth.delete-failed-key:auth.delete-failed}") String key) {
         return BindingBuilder.bind(authDeleteFailedQueue).to(authExchange).with(key);
     }
+
+    @Bean
+    public TopicExchange clientsExchange(@Value("${rabbit.clients.exchange:clients.exchange}") String name) {
+        return new TopicExchange(name, true, false);
+    }
+
+    @Bean
+    public Queue clientApprovedQueue() {
+        return new Queue("client.approved.queue", true);
+    }
+
+    @Bean
+    public Queue clientApproveFailedQueue() {
+        return new Queue("client.approve-failed.queue", true);
+    }
+
+    @Bean
+    public Binding bindClientApproved(Queue clientApprovedQueue, TopicExchange clientsExchange,
+            @Value("${rabbit.clients.approved-key:client.approved}") String key) {
+        return BindingBuilder.bind(clientApprovedQueue).to(clientsExchange).with(key);
+    }
+
+    @Bean
+    public Binding bindClientApproveFailed(Queue clientApproveFailedQueue, TopicExchange clientsExchange,
+            @Value("${rabbit.clients.approve-failed-key:client.approve-failed}") String key) {
+        return BindingBuilder.bind(clientApproveFailedQueue).to(clientsExchange).with(key);
+    }
+
+    @Bean
+    public Queue managerAssignedQueue() {
+        return new Queue("manager.assigned.queue", true);
+    }
+
+    @Bean
+    public Queue managerAssignFailedQueue() {
+        return new Queue("manager.assign-failed.queue", true);
+    }
+
+    @Bean
+    public Binding bindManagerAssigned(Queue managerAssignedQueue, TopicExchange managersExchange,
+            @Value("${rabbit.managers.assigned-key:manager.assigned}") String key) {
+        return BindingBuilder.bind(managerAssignedQueue).to(managersExchange).with(key);
+    }
+
+    @Bean
+    public Binding bindManagerAssignFailed(Queue managerAssignFailedQueue, TopicExchange managersExchange,
+            @Value("${rabbit.managers.assign-failed-key:manager.assign-failed}") String key) {
+        return BindingBuilder.bind(managerAssignFailedQueue).to(managersExchange).with(key);
+    }
+
+    @Bean
+    public TopicExchange sagaExchange(@Value("${rabbit.saga.exchange:saga.exchange}") String name) {
+        return new TopicExchange(name, true, false);
+    }
+
+    @Bean
+    public Queue accountCreatedForApprovalQueue() {
+        return new Queue("saga.account.created.queue", true);
+    }
+
+    @Bean
+    public Queue accountCreateFailedForApprovalQueue() {
+        return new Queue("saga.account.create-failed.queue", true);
+    }
+
+    @Bean
+    public Binding bindAccountCreatedForApproval(Queue accountCreatedForApprovalQueue, TopicExchange sagaExchange,
+            @Value("${rabbit.account.created-key:saga.account.created}") String key) {
+        return BindingBuilder.bind(accountCreatedForApprovalQueue).to(sagaExchange).with(key);
+    }
+
+    @Bean
+    public Binding bindAccountCreateFailedForApproval(Queue accountCreateFailedForApprovalQueue,
+            TopicExchange sagaExchange,
+            @Value("${rabbit.account.create-failed-key:saga.account.create-failed}") String key) {
+        return BindingBuilder.bind(accountCreateFailedForApprovalQueue).to(sagaExchange).with(key);
+    }
 }

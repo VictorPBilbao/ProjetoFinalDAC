@@ -23,13 +23,20 @@ public class AuthListener {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    @Value("${rabbit.auth.exchange:auth.exchange}") private String authExchange;
-    @Value("${rabbit.auth.created-key:auth.created-user}") private String createdKey;
-    @Value("${rabbit.auth.failed-key:auth.create-failed}") private String failedKey;
-    @Value("${rabbit.auth.updated-key:auth.updated-user}") private String updatedKey;
-    @Value("${rabbit.auth.update-failed-key:auth.update-failed}") private String updateFailedKey;
-    @Value("${rabbit.auth.deleted-key:auth.deleted-user}") private String deletedKey;
-    @Value("${rabbit.auth.delete-failed-key:auth.delete-failed}") private String deleteFailedKey;
+    @Value("${rabbit.auth.exchange:auth.exchange}")
+    private String authExchange;
+    @Value("${rabbit.auth.created-key:auth.created-user}")
+    private String createdKey;
+    @Value("${rabbit.auth.failed-key:auth.create-failed}")
+    private String failedKey;
+    @Value("${rabbit.auth.updated-key:auth.updated-user}")
+    private String updatedKey;
+    @Value("${rabbit.auth.update-failed-key:auth.update-failed}")
+    private String updateFailedKey;
+    @Value("${rabbit.auth.deleted-key:auth.deleted-user}")
+    private String deletedKey;
+    @Value("${rabbit.auth.delete-failed-key:auth.delete-failed}")
+    private String deleteFailedKey;
 
     public AuthListener(ObjectMapper mapper, RabbitTemplate rabbit, UserRepository userRepository) {
         this.mapper = mapper;
@@ -45,10 +52,16 @@ public class AuthListener {
         try {
             String cpf = normalize(payload.get("cpf"));
             String senha = normalize(payload.get("senha"));
-            if (cpf == null) throw new IllegalArgumentException("cpf é obrigatório");
+            if (cpf == null)
+                throw new IllegalArgumentException("cpf é obrigatório");
 
             if (userRepository.findByCpf(cpf).isPresent()) {
                 throw new DuplicateKeyException("cpf duplicado");
+            }
+
+            boolean generatePassword = Boolean.TRUE.equals(payload.get("generatePassword"));
+            if (generatePassword) {
+                senha = generateRandomPassword();
             }
 
             if (senha == null) {
@@ -66,8 +79,16 @@ public class AuthListener {
             userRepository.insert(user);
 
             Map<String, Object> event = mapper.convertValue(user, Map.class);
+            if (generatePassword) {
+                event.put("passwordGenerated", senha);
+            }
+            // Pass through accountNumber if it exists
+            if (payload.containsKey("accountNumber")) {
+                event.put("accountNumber", payload.get("accountNumber"));
+            }
             rabbit.convertAndSend(authExchange, createdKey, event, m -> {
-                if (correlationId != null) m.getMessageProperties().setCorrelationId(correlationId);
+                if (correlationId != null)
+                    m.getMessageProperties().setCorrelationId(correlationId);
                 return m;
             });
         } catch (Exception ex) {
@@ -81,7 +102,8 @@ public class AuthListener {
             }
             err.put("status", status);
             rabbit.convertAndSend(authExchange, failedKey, err, m -> {
-                if (correlationId != null) m.getMessageProperties().setCorrelationId(correlationId);
+                if (correlationId != null)
+                    m.getMessageProperties().setCorrelationId(correlationId);
                 m.getMessageProperties().setContentType("application/json");
                 m.getMessageProperties().setContentEncoding("UTF-8");
                 return m;
@@ -96,24 +118,29 @@ public class AuthListener {
         System.out.println("Received auth.update correlationId=" + correlationId + " payload=" + payload);
         try {
             String cpf = normalize(payload.get("cpf"));
-            if (cpf == null) throw new IllegalArgumentException("cpf é obrigatório para atualização");
+            if (cpf == null)
+                throw new IllegalArgumentException("cpf é obrigatório para atualização");
 
             User user = userRepository.findByCpf(cpf)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                    .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
             String nome = normalize(payload.get("nome"));
             String email = normalize(payload.get("email"));
             String senha = normalize(payload.get("senha"));
 
-            if (nome != null) user.setNome(nome);
-            if (email != null) user.setEmail(email);
-            if (senha != null) user.setSenha(passwordEncoder.encode(senha));
+            if (nome != null)
+                user.setNome(nome);
+            if (email != null)
+                user.setEmail(email);
+            if (senha != null)
+                user.setSenha(passwordEncoder.encode(senha));
 
             userRepository.save(user);
-            
+
             Map<String, Object> event = mapper.convertValue(user, Map.class);
             rabbit.convertAndSend(authExchange, updatedKey, event, m -> {
-                if (correlationId != null) m.getMessageProperties().setCorrelationId(correlationId);
+                if (correlationId != null)
+                    m.getMessageProperties().setCorrelationId(correlationId);
                 return m;
             });
             System.out.println("Usuário atualizado com sucesso: " + cpf);
@@ -128,7 +155,8 @@ public class AuthListener {
             }
             err.put("status", status);
             rabbit.convertAndSend(authExchange, updateFailedKey, err, m -> {
-                if (correlationId != null) m.getMessageProperties().setCorrelationId(correlationId);
+                if (correlationId != null)
+                    m.getMessageProperties().setCorrelationId(correlationId);
                 m.getMessageProperties().setContentType("application/json");
                 m.getMessageProperties().setContentEncoding("UTF-8");
                 return m;
@@ -144,16 +172,18 @@ public class AuthListener {
         System.out.println("Received auth.delete correlationId=" + correlationId + " payload=" + payload);
         try {
             String cpf = normalize(payload.get("cpf"));
-            if (cpf == null) throw new IllegalArgumentException("cpf é obrigatório para deleção");
+            if (cpf == null)
+                throw new IllegalArgumentException("cpf é obrigatório para deleção");
 
             User user = userRepository.findByCpf(cpf)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                    .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
             userRepository.delete(user);
-            
+
             Map<String, Object> event = mapper.convertValue(user, Map.class);
             rabbit.convertAndSend(authExchange, deletedKey, event, m -> {
-                if (correlationId != null) m.getMessageProperties().setCorrelationId(correlationId);
+                if (correlationId != null)
+                    m.getMessageProperties().setCorrelationId(correlationId);
                 return m;
             });
             System.out.println("Usuário deletado com sucesso: " + cpf);
@@ -166,7 +196,8 @@ public class AuthListener {
             }
             err.put("status", status);
             rabbit.convertAndSend(authExchange, deleteFailedKey, err, m -> {
-                if (correlationId != null) m.getMessageProperties().setCorrelationId(correlationId);
+                if (correlationId != null)
+                    m.getMessageProperties().setCorrelationId(correlationId);
                 m.getMessageProperties().setContentType("application/json");
                 m.getMessageProperties().setContentEncoding("UTF-8");
                 return m;
@@ -176,8 +207,19 @@ public class AuthListener {
     }
 
     private String normalize(Object o) {
-        if (o == null) return null;
+        if (o == null)
+            return null;
         String s = String.valueOf(o).trim();
         return s.isBlank() || "null".equalsIgnoreCase(s) ? null : s;
+    }
+
+    private String generateRandomPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder password = new StringBuilder();
+        java.util.Random random = new java.util.Random();
+        for (int i = 0; i < 8; i++) {
+            password.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return password.toString();
     }
 }

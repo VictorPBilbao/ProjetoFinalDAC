@@ -24,8 +24,8 @@ public class SagaController {
     // Criar gerente (e fluxos correlatos)
     @PostMapping("/gerentes")
     public ResponseEntity<?> criarGerenteSaga(
-        @RequestBody Map<String, Object> managerDto,
-        @RequestHeader(name = "Authorization", required = false) String authorization) {
+            @RequestBody Map<String, Object> managerDto,
+            @RequestHeader(name = "Authorization", required = false) String authorization) {
 
         SagaResult result = sagaService.createManagerSaga(managerDto);
 
@@ -34,7 +34,8 @@ public class SagaController {
             return ResponseEntity.status(result.getStatusCode()).body(Map.of("erro", result.getMessage()));
         }
 
-        // Success can be immediate (201) or async/pending (202). Return the statusCode and useful body.
+        // Success can be immediate (201) or async/pending (202). Return the statusCode
+        // and useful body.
         int code = result.getStatusCode();
         if (code == 202) {
             // pending: return correlationId so caller can poll for final result
@@ -42,7 +43,8 @@ public class SagaController {
             String cid = null;
             if (detail instanceof Map) {
                 Object c = ((Map<?, ?>) detail).get("correlationId");
-                if (c != null) cid = String.valueOf(c);
+                if (c != null)
+                    cid = String.valueOf(c);
             }
             return ResponseEntity.status(202).body(Map.of("correlationId", cid, "status", "pending"));
         }
@@ -54,9 +56,11 @@ public class SagaController {
     @GetMapping("/saga/result/{correlationId}")
     public ResponseEntity<?> getSagaResult(@PathVariable String correlationId) {
         SagaResult r = sagaService.getSagaResult(correlationId);
-        if (r == null) return ResponseEntity.notFound().build();
+        if (r == null)
+            return ResponseEntity.notFound().build();
         if (!r.isSuccess()) {
-            return ResponseEntity.status(r.getStatusCode()).body(Map.of("erro", r.getMessage(), "detail", r.getDetail()));
+            return ResponseEntity.status(r.getStatusCode())
+                    .body(Map.of("erro", r.getMessage(), "detail", r.getDetail()));
         }
         return ResponseEntity.status(r.getStatusCode()).body(r.getDetail());
     }
@@ -66,7 +70,7 @@ public class SagaController {
             @PathVariable @NotBlank String cpf,
             @RequestBody Map<String, Object> managerDto,
             @RequestHeader(name = "Authorization", required = false) String authorization) {
-        
+
         SagaResult result = sagaService.updateManagerSaga(cpf, managerDto, authorization);
 
         if (!result.isSuccess()) {
@@ -79,7 +83,8 @@ public class SagaController {
             String cid = null;
             if (detail instanceof Map) {
                 Object c = ((Map<?, ?>) detail).get("correlationId");
-                if (c != null) cid = String.valueOf(c);
+                if (c != null)
+                    cid = String.valueOf(c);
             }
             return ResponseEntity.status(202).body(Map.of("correlationId", cid, "status", "pending"));
         }
@@ -89,7 +94,7 @@ public class SagaController {
 
     @DeleteMapping("/gerentes/{cpf}")
     public ResponseEntity<?> deletarGerenteSaga(@PathVariable @NotBlank String cpf) {
-        
+
         SagaResult result = sagaService.deleteManagerSaga(cpf);
 
         if (!result.isSuccess()) {
@@ -102,7 +107,32 @@ public class SagaController {
             String cid = null;
             if (detail instanceof Map) {
                 Object c = ((Map<?, ?>) detail).get("correlationId");
-                if (c != null) cid = String.valueOf(c);
+                if (c != null)
+                    cid = String.valueOf(c);
+            }
+            return ResponseEntity.status(202).body(Map.of("correlationId", cid, "status", "pending"));
+        }
+
+        return ResponseEntity.status(code).body(result.getDetail());
+    }
+
+    @PostMapping("/clientes/{cpf}/aprovar")
+    public ResponseEntity<?> aprovarClienteSaga(@PathVariable @NotBlank String cpf) {
+
+        SagaResult result = sagaService.approveClientSaga(cpf);
+
+        if (!result.isSuccess()) {
+            return ResponseEntity.status(result.getStatusCode()).body(Map.of("erro", result.getMessage()));
+        }
+
+        int code = result.getStatusCode();
+        if (code == 202) {
+            Object detail = result.getDetail();
+            String cid = null;
+            if (detail instanceof Map) {
+                Object c = ((Map<?, ?>) detail).get("correlationId");
+                if (c != null)
+                    cid = String.valueOf(c);
             }
             return ResponseEntity.status(202).body(Map.of("correlationId", cid, "status", "pending"));
         }

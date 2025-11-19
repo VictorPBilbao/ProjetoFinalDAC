@@ -30,6 +30,8 @@ public class AccountSagaListener {
     private AccountService accountService;
     @Autowired
     private ObjectMapper mapper;
+    @Autowired
+    private RabbitConfig rabbitConfig;
 
     @Value("${rabbit.saga.exchange:saga.exchange}")
     private String sagaExchange;
@@ -65,7 +67,15 @@ public class AccountSagaListener {
 
             Account savedAccount = accountRepository.save(account);
 
-            rabbitTemplate.convertAndSend(sagaExchange, RabbitConfig.ACCOUNT_CREATED_KEY, savedAccount, m -> {
+            Map<String, Object> accountData = Map.of(
+                    "accountNumber", savedAccount.getAccountNumber(),
+                    "clientId", savedAccount.getClientId(),
+                    "managerId", savedAccount.getManager(),
+                    "balance", savedAccount.getBalance(),
+                    "limit", savedAccount.getAccountLimit(),
+                    "creationDate", savedAccount.getCreationDate().toString());
+
+            rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountCreatedKey(), accountData, m -> {
                 m.getMessageProperties().setCorrelationId(correlationId);
                 return m;
             });
@@ -73,11 +83,11 @@ public class AccountSagaListener {
             accountService.publishCqrsEvent("account.created", savedAccount);
 
         } catch (Exception ex) {
-            rabbitTemplate.convertAndSend(sagaExchange, RabbitConfig.ACCOUNT_CREATE_FAILED_KEY,
+            rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountCreateFailedKey(),
                     Map.of("reason", ex.getMessage(), "payload", payload), m -> {
-                m.getMessageProperties().setCorrelationId(correlationId);
-                return m;
-            });
+                        m.getMessageProperties().setCorrelationId(correlationId);
+                        return m;
+                    });
         }
     }
 
@@ -92,18 +102,18 @@ public class AccountSagaListener {
 
             Account updatedAccount = accountService.updateLimitByClientId(clientId, newSalary);
 
-            rabbitTemplate.convertAndSend(sagaExchange, RabbitConfig.ACCOUNT_LIMIT_UPDATED_KEY, updatedAccount, m -> {
+            rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountLimitUpdatedKey(), updatedAccount, m -> {
                 m.getMessageProperties().setCorrelationId(correlationId);
                 return m;
             });
 
         } catch (Exception ex) {
 
-            rabbitTemplate.convertAndSend(sagaExchange, RabbitConfig.ACCOUNT_LIMIT_UPDATE_FAILED_KEY,
+            rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountLimitUpdateFailedKey(),
                     Map.of("reason", ex.getMessage(), "payload", payload), m -> {
-                m.getMessageProperties().setCorrelationId(correlationId);
-                return m;
-            });
+                        m.getMessageProperties().setCorrelationId(correlationId);
+                        return m;
+                    });
         }
     }
 }

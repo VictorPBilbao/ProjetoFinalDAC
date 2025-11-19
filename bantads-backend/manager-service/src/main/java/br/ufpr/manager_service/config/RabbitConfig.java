@@ -41,6 +41,12 @@ public class RabbitConfig {
     @Value("${rabbit.managers.delete-key:manager.delete}")
     private String deleteKey;
 
+    @Value("${rabbit.managers.assign-queue:manager.assign.queue}")
+    private String assignQueue;
+
+    @Value("${rabbit.managers.assign-key:manager.assign}")
+    private String assignKey;
+
     @Bean
     public TopicExchange managersExchange() {
         return new TopicExchange(managersExchange, true, false);
@@ -74,6 +80,16 @@ public class RabbitConfig {
     @Bean
     public Binding bindDelete(Queue managersDeleteQueue, TopicExchange managersExchange) {
         return BindingBuilder.bind(managersDeleteQueue).to(managersExchange).with(deleteKey);
+    }
+
+    @Bean
+    public Queue managersAssignQueue() {
+        return QueueBuilder.durable(assignQueue).build();
+    }
+
+    @Bean
+    public Binding bindAssign(Queue managersAssignQueue, TopicExchange managersExchange) {
+        return BindingBuilder.bind(managersAssignQueue).to(managersExchange).with(assignKey);
     }
 
     @Bean

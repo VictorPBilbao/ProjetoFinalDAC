@@ -26,14 +26,14 @@ public class RabbitConfig {
     private String updateLimitKey;
 
     @Value("${rabbit.account.created.key:saga.account.created}")
-    public static String ACCOUNT_CREATED_KEY;
+    private String accountCreatedKey;
     @Value("${rabbit.account.create-failed.key:saga.account.create-failed}")
-    public static String ACCOUNT_CREATE_FAILED_KEY;
+    private String accountCreateFailedKey;
 
     @Value("${rabbit.account.limit-updated.key:saga.account.limit-updated}")
-    public static String ACCOUNT_LIMIT_UPDATED_KEY;
+    private String accountLimitUpdatedKey;
     @Value("${rabbit.account.limit-update-failed.key:saga.account.limit-update-failed}")
-    public static String ACCOUNT_LIMIT_UPDATE_FAILED_KEY;
+    private String accountLimitUpdateFailedKey;
 
     @Bean
     public TopicExchange sagaExchange() {
@@ -69,5 +69,22 @@ public class RabbitConfig {
     @Bean
     public Jackson2JsonMessageConverter jsonConverter(ObjectMapper mapper) {
         return new Jackson2JsonMessageConverter(mapper);
+    }
+
+    // Getters for routing keys
+    public String getAccountCreatedKey() {
+        return accountCreatedKey;
+    }
+
+    public String getAccountCreateFailedKey() {
+        return accountCreateFailedKey;
+    }
+
+    public String getAccountLimitUpdatedKey() {
+        return accountLimitUpdatedKey;
+    }
+
+    public String getAccountLimitUpdateFailedKey() {
+        return accountLimitUpdateFailedKey;
     }
 }

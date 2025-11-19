@@ -46,6 +46,9 @@ public class ManagerListener {
     @Value("${rabbit.managers.failed-key:manager.failed}")
     private String failedKey;
 
+    @Value("${rabbit.managers.assigned-key:manager.assigned}")
+    private String assignedKey;
+
     public ManagerListener(ObjectMapper mapper, RabbitTemplate rabbit, ManagerService managerService) {
         this.mapper = mapper;
         this.rabbit = rabbit;
@@ -58,7 +61,8 @@ public class ManagerListener {
         String raw = new String(message.getBody(), StandardCharsets.UTF_8);
         log.info("Received manager.create correlationId={} body={}", correlationId, raw);
         try {
-            // convert incoming payload (supports both JSON and already-mapped string payload)
+            // convert incoming payload (supports both JSON and already-mapped string
+            // payload)
             Map<String, Object> payload = toMapFromBody(message.getBody(), raw);
             normalizeManagerMap(payload);
             ManagerDTO dto = mapper.convertValue(payload, ManagerDTO.class);
@@ -66,7 +70,8 @@ public class ManagerListener {
 
             Map<String, Object> event = mapper.convertValue(created, Map.class);
             rabbit.convertAndSend(managersExchange, createdKey, event, m -> {
-                if (correlationId != null) m.getMessageProperties().setCorrelationId(correlationId);
+                if (correlationId != null)
+                    m.getMessageProperties().setCorrelationId(correlationId);
                 return m;
             });
             log.info("Published manager.created correlationId={} id={}", correlationId, created.getId());
@@ -86,17 +91,18 @@ public class ManagerListener {
             String cpf = payload.containsKey("cpf") ? String.valueOf(payload.get("cpf")) : null;
             String id = payload.containsKey("id") ? String.valueOf(payload.get("id"))
                     : (payload.containsKey("managerId") ? String.valueOf(payload.get("managerId")) : null);
-            
+
             // Se CPF for fornecido, é uma deleção normal (não rollback)
             if (cpf != null && !cpf.isBlank()) {
                 Manager manager = managerService.deleteManagerByCpf(cpf);
-                
+
                 Map<String, Object> event = new HashMap<>();
                 event.put("cpf", manager.getCpf());
                 event.put("id", manager.getId());
-                
+
                 rabbit.convertAndSend(managersExchange, deletedKey, event, m -> {
-                    if (correlationId != null) m.getMessageProperties().setCorrelationId(correlationId);
+                    if (correlationId != null)
+                        m.getMessageProperties().setCorrelationId(correlationId);
                     return m;
                 });
                 log.info("Published manager.deleted correlationId={} cpf={}", correlationId, cpf);
@@ -137,8 +143,8 @@ public class ManagerListener {
 
             // se payload estiver aninhado em "payload"
             Map<String, Object> dtoMap = payload.containsKey("payload")
-                ? (Map<String, Object>) payload.get("payload")
-                : payload;
+                    ? (Map<String, Object>) payload.get("payload")
+                    : payload;
 
             normalizeManagerMap(dtoMap);
 
@@ -147,7 +153,8 @@ public class ManagerListener {
 
             Map<String, Object> event = mapper.convertValue(updated, Map.class);
             rabbit.convertAndSend(managersExchange, updatedKey, event, m -> {
-                if (correlationId != null) m.getMessageProperties().setCorrelationId(correlationId);
+                if (correlationId != null)
+                    m.getMessageProperties().setCorrelationId(correlationId);
                 return m;
             });
             log.info("Published manager.updated correlationId={} id={}", correlationId, updated.getId());
@@ -157,10 +164,45 @@ public class ManagerListener {
         }
     }
 
-    // Normaliza chaves vindas em português para as propriedades esperadas por ManagerDTO
+    @RabbitListener(queues = "#{managersAssignQueue.name}")
+    public void onAssignManager(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        String raw = new String(message.getBody(), StandardCharsets.UTF_8);
+        log.info("Received manager.assign correlationId={} body={}", correlationId, raw);
+        try {
+            Map<String, Object> payload = toMapFromBody(message.getBody(), raw);
+
+            String cpf = payload.containsKey("cpf") ? String.valueOf(payload.get("cpf")) : null;
+            Object salario = payload.get("salario");
+
+            Manager assignedManager = managerService.findManagerWithLeastClients();
+
+            Map<String, Object> event = new HashMap<>();
+            event.put("cpf", cpf);
+            event.put("managerId", assignedManager.getId());
+            event.put("salario", salario);
+            event.put("nome", payload.get("nome"));
+            event.put("email", payload.get("email"));
+
+            rabbit.convertAndSend(managersExchange, assignedKey, event, m -> {
+                if (correlationId != null)
+                    m.getMessageProperties().setCorrelationId(correlationId);
+                return m;
+            });
+            log.info("Published manager.assigned correlationId={} managerId={}", correlationId,
+                    assignedManager.getId());
+        } catch (Exception ex) {
+            log.error("Error processing manager.assign", ex);
+            sendFailed(message, ex);
+        }
+    }
+
+    // Normaliza chaves vindas em português para as propriedades esperadas por
+    // ManagerDTO
     @SuppressWarnings("unchecked")
     private void normalizeManagerMap(Map<String, Object> m) {
-        if (m == null) return;
+        if (m == null)
+            return;
         // nome -> name
         if (m.containsKey("nome") && !m.containsKey("name")) {
             m.put("name", m.get("nome"));
@@ -188,11 +230,15 @@ public class ManagerListener {
         try {
             return mapper.readValue(raw, Map.class);
         } catch (Exception ignored) {
-            // tentar desserializar caso o broker/convertor tenha colocado um objeto já convertido
+            // tentar desserializar caso o broker/convertor tenha colocado um objeto já
+            // convertido
         }
-        // fallback: tentar desserializar o byte[] como Java-serialized -> não suportado aqui, tratar como erro
-        // última tentativa: se mensagem foi entregue pelo MessagingMessageListenerAdapter como Map payload,
-        // o message.getBody() pode já ter sido convertido por outro layer; mas aqui, se tudo falhar, lançar.
+        // fallback: tentar desserializar o byte[] como Java-serialized -> não suportado
+        // aqui, tratar como erro
+        // última tentativa: se mensagem foi entregue pelo
+        // MessagingMessageListenerAdapter como Map payload,
+        // o message.getBody() pode já ter sido convertido por outro layer; mas aqui, se
+        // tudo falhar, lançar.
         throw new IllegalArgumentException("Cannot parse incoming message body to Map");
     }
 
@@ -216,7 +262,8 @@ public class ManagerListener {
 
         rabbit.convertAndSend(managersExchange, failedKey, err, m -> {
             String cid = message.getMessageProperties().getCorrelationId();
-            if (cid != null) m.getMessageProperties().setCorrelationId(cid);
+            if (cid != null)
+                m.getMessageProperties().setCorrelationId(cid);
             m.getMessageProperties().setContentType("application/json");
             m.getMessageProperties().setContentEncoding("UTF-8");
             return m;

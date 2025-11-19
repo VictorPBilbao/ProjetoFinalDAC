@@ -35,6 +35,21 @@ public class EmailService {
         }
     }
 
+    public void sendApprovalEmail(String to, String clientName, String accountNumber, String password) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject("BANTADS - Cadastro Aprovado - Sua Senha de Acesso");
+            message.setText(buildApprovalMessage(clientName, accountNumber, password));
+
+            mailSender.send(message);
+            logger.info("Email de aprovação enviado para: {}", to);
+        } catch (MailException e) {
+            logger.error("Erro ao enviar email de aprovação para: {}", to, e);
+            throw new EmailSendException("Falha ao enviar email de aprovação", e);
+        }
+    }
+
     private String buildRejectionMessage(String clientName, String reason) {
         return String.format("""
                 Prezado(a) %s,
@@ -48,5 +63,24 @@ public class EmailService {
                 Atenciosamente,
                 Equipe BANTADS
                 """, clientName, reason != null ? reason : "Não especificado");
+    }
+
+    private String buildApprovalMessage(String clientName, String accountNumber, String password) {
+        return String.format("""
+                Prezado(a) %s,
+
+                Parabéns! Sua solicitação de cadastro no BANTADS foi aprovada com sucesso!
+
+                Seus dados de acesso:
+                Número da Conta: %s
+                Senha: %s
+
+                IMPORTANTE: Por segurança, recomendamos que você altere sua senha no primeiro acesso.
+
+                Para acessar sua conta, visite nosso site e faça login usando seu CPF e a senha fornecida acima.
+
+                Atenciosamente,
+                Equipe BANTADS
+                """, clientName, accountNumber, password);
     }
 }

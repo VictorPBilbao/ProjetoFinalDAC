@@ -46,7 +46,7 @@ public class SagaListener {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
             String error = getErrorMessage(payload);
             int status = getStatusCode(payload);
-            
+
             log.warn("Manager falhou correlationId={} erro={} status={}", correlationId, error, status);
             saga.notifyGatewayFailure(correlationId, error, status);
         } catch (Exception ex) {
@@ -74,7 +74,7 @@ public class SagaListener {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
             String cpf = getString(payload, "cpf");
             String nome = getString(payload, "nome");
-            
+
             log.info("Auth criado correlationId={}", correlationId);
             saga.notifyGatewaySuccess(correlationId, cpf, nome);
         } catch (Exception ex) {
@@ -90,7 +90,7 @@ public class SagaListener {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
             String error = getErrorMessage(payload);
             int status = getStatusCode(payload);
-            
+
             log.warn("Auth falhou correlationId={} erro={} status={}", correlationId, error, status);
             saga.handleAuthFailure(correlationId, error, status);
         } catch (Exception ex) {
@@ -104,7 +104,7 @@ public class SagaListener {
         String correlationId = message.getMessageProperties().getCorrelationId();
         try {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
-            
+
             log.info("Auth atualizado correlationId={}", correlationId);
             saga.notifyUpdateSuccess(correlationId);
         } catch (Exception ex) {
@@ -119,7 +119,7 @@ public class SagaListener {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
             String error = getErrorMessage(payload);
             int status = getStatusCode(payload);
-            
+
             log.warn("Auth update falhou correlationId={} erro={} status={}", correlationId, error, status);
             saga.notifyUpdateFailure(correlationId, error, status);
         } catch (Exception ex) {
@@ -145,7 +145,7 @@ public class SagaListener {
         String correlationId = message.getMessageProperties().getCorrelationId();
         try {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
-            
+
             log.info("Auth deletado correlationId={}", correlationId);
             saga.notifyDeleteSuccess(correlationId);
         } catch (Exception ex) {
@@ -160,12 +160,105 @@ public class SagaListener {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
             String error = getErrorMessage(payload);
             int status = getStatusCode(payload);
-            
+
             log.warn("Auth delete falhou correlationId={} erro={} status={}", correlationId, error, status);
             saga.notifyDeleteFailure(correlationId, error, status);
         } catch (Exception ex) {
             log.error("Erro ao processar auth.delete-failed: {}", ex.getMessage());
             saga.notifyDeleteFailure(correlationId, "Erro ao processar falha da deleção: " + ex.getMessage(), 500);
+        }
+    }
+
+    @RabbitListener(queues = "#{clientApprovedQueue.name}")
+    public void onClientApproved(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            log.info("Cliente aprovado correlationId={}", correlationId);
+            saga.handleClientApproved(correlationId, payload);
+        } catch (Exception ex) {
+            log.error("Erro ao processar client.approved: {}", ex.getMessage());
+            saga.notifyApproveClientFailure(correlationId, "Erro ao processar aprovação: " + ex.getMessage(), 500);
+        }
+    }
+
+    @RabbitListener(queues = "#{clientApproveFailedQueue.name}")
+    public void onClientApproveFailed(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            String error = getErrorMessage(payload);
+            int status = getStatusCode(payload);
+
+            log.warn("Client approve falhou correlationId={} erro={} status={}", correlationId, error, status);
+            saga.notifyApproveClientFailure(correlationId, error, status);
+        } catch (Exception ex) {
+            log.error("Erro ao processar client.approve-failed: {}", ex.getMessage());
+            saga.notifyApproveClientFailure(correlationId, "Erro ao processar falha: " + ex.getMessage(), 500);
+        }
+    }
+
+    @RabbitListener(queues = "#{managerAssignedQueue.name}")
+    public void onManagerAssigned(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            log.info("Gerente atribuído correlationId={}", correlationId);
+            saga.handleManagerAssigned(correlationId, payload);
+        } catch (Exception ex) {
+            log.error("Erro ao processar manager.assigned: {}", ex.getMessage());
+            saga.notifyApproveClientFailure(correlationId, "Erro ao atribuir gerente: " + ex.getMessage(), 500);
+        }
+    }
+
+    @RabbitListener(queues = "#{managerAssignFailedQueue.name}")
+    public void onManagerAssignFailed(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            String error = getErrorMessage(payload);
+            int status = getStatusCode(payload);
+
+            log.warn("Manager assign falhou correlationId={} erro={} status={}", correlationId, error, status);
+            saga.notifyApproveClientFailure(correlationId, error, status);
+        } catch (Exception ex) {
+            log.error("Erro ao processar manager.assign-failed: {}", ex.getMessage());
+            saga.notifyApproveClientFailure(correlationId, "Erro ao processar falha: " + ex.getMessage(), 500);
+        }
+    }
+
+    @RabbitListener(queues = "#{accountCreatedForApprovalQueue.name}")
+    public void onAccountCreatedForApproval(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            log.info("Conta criada correlationId={}", correlationId);
+
+            String accountNumber = getString(payload, "accountNumber");
+            if (accountNumber != null) {
+                saga.handleAccountCreated(correlationId, payload);
+            } else {
+                saga.notifyApproveClientSuccess(correlationId, payload);
+            }
+        } catch (Exception ex) {
+            log.error("Erro ao processar saga.account.created: {}", ex.getMessage());
+            saga.notifyApproveClientFailure(correlationId, "Erro ao processar conta criada: " + ex.getMessage(), 500);
+        }
+    }
+
+    @RabbitListener(queues = "#{accountCreateFailedForApprovalQueue.name}")
+    public void onAccountCreateFailedForApproval(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            String error = getErrorMessage(payload);
+            int status = getStatusCode(payload);
+
+            log.warn("Account create falhou correlationId={} erro={} status={}", correlationId, error, status);
+            saga.notifyApproveClientFailure(correlationId, error, status);
+        } catch (Exception ex) {
+            log.error("Erro ao processar saga.account.create-failed: {}", ex.getMessage());
+            saga.notifyApproveClientFailure(correlationId, "Erro ao processar falha: " + ex.getMessage(), 500);
         }
     }
 
@@ -175,9 +268,12 @@ public class SagaListener {
     }
 
     private String getErrorMessage(Map<String, Object> payload) {
-        if (payload.containsKey("reason")) return String.valueOf(payload.get("reason"));
-        if (payload.containsKey("error")) return String.valueOf(payload.get("error"));
-        if (payload.containsKey("message")) return String.valueOf(payload.get("message"));
+        if (payload.containsKey("reason"))
+            return String.valueOf(payload.get("reason"));
+        if (payload.containsKey("error"))
+            return String.valueOf(payload.get("error"));
+        if (payload.containsKey("message"))
+            return String.valueOf(payload.get("message"));
         return "Erro desconhecido";
     }
 
@@ -189,7 +285,8 @@ public class SagaListener {
             if (payload.containsKey("status")) {
                 return Integer.parseInt(String.valueOf(payload.get("status")));
             }
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
         return 400;
     }
 }

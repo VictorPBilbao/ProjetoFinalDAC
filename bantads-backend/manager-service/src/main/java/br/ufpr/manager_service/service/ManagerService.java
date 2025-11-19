@@ -108,14 +108,14 @@ public class ManagerService {
         if (manager == null) {
             throw new IllegalArgumentException("Gerente não encontrado.");
         }
-        
+
         if (managerRepository.count() <= 1) {
             throw new IllegalStateException("Não é possível remover o último gerente do banco.");
         }
 
         Manager recipientManager = findRecipientManager(manager.getId());
         managerRepository.delete(manager);
-        
+
         return manager;
     }
 
@@ -145,7 +145,7 @@ public class ManagerService {
             }
             manager.setEmail(details.getEmail());
         }
-        
+
         if (StringUtils.hasText(details.getCpf()) && !manager.getCpf().equals(details.getCpf())) {
             if (managerRepository.existsByCpf(details.getCpf())) {
                 throw new IllegalArgumentException("O novo CPF já está em uso.");
@@ -163,7 +163,13 @@ public class ManagerService {
 
         return managerRepository.save(manager);
     }
-    //
+
+    public Manager findManagerWithLeastClients() {
+        Map<String, Long> clientCounts = getManagerClientCountsFromClientService();
+        return managerRepository.findAll().stream()
+                .min(Comparator.comparingLong(m -> clientCounts.getOrDefault(m.getId(), 0L)))
+                .orElseThrow(() -> new IllegalStateException("Nenhum gerente disponível"));
+    }
 
     private Map<String, Long> getManagerClientCountsFromClientService() {
         return Map.of();
