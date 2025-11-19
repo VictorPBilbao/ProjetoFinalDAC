@@ -1,5 +1,6 @@
 package br.ufpr.account_service.controller;
 
+import br.ufpr.account_service.dto.BalanceDTO;
 import br.ufpr.account_service.dto.TransactionRequestDTO;
 import br.ufpr.account_service.dto.TransferRequestDTO;
 import br.ufpr.account_service.model.Account;
@@ -10,11 +11,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/accounts")
+@RequestMapping("/contas")
 public class AccountController {
 
     @Autowired
     private AccountService accountService;
+
+    @GetMapping("/{id}/saldo")
+    public ResponseEntity<BalanceDTO> getBalance(@PathVariable("id") String accountNumber) {
+        BalanceDTO balanceDTO = accountService.getBalance(accountNumber);
+        return ResponseEntity.ok(balanceDTO);
+    }
 
     @PostMapping("/deposit")
     public ResponseEntity<Account> deposit(
