@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 
 import br.ufpr.manager_service.service.ManagerService;
 import br.ufpr.manager_service.model.Manager;
@@ -38,6 +39,9 @@ public class ManagerListener {
 
     @Value("${rabbit.managers.updated-key:manager.updated}")
     private String updatedKey;
+
+    @Value("${rabbit.managers.deleted-key:manager.deleted}")
+    private String deletedKey;
 
     @Value("${rabbit.managers.failed-key:manager.failed}")
     private String failedKey;
@@ -72,6 +76,44 @@ public class ManagerListener {
         }
     }
 
+    @RabbitListener(queues = "#{managersDeleteQueue.name}")
+    public void onDelete(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        String raw = new String(message.getBody(), StandardCharsets.UTF_8);
+        log.info("Received manager.delete correlationId={} body={}", correlationId, raw);
+        try {
+            Map<String, Object> payload = toMapFromBody(message.getBody(), raw);
+            String cpf = payload.containsKey("cpf") ? String.valueOf(payload.get("cpf")) : null;
+            String id = payload.containsKey("id") ? String.valueOf(payload.get("id"))
+                    : (payload.containsKey("managerId") ? String.valueOf(payload.get("managerId")) : null);
+            
+            // Se CPF for fornecido, é uma deleção normal (não rollback)
+            if (cpf != null && !cpf.isBlank()) {
+                Manager manager = managerService.deleteManagerByCpf(cpf);
+                
+                Map<String, Object> event = new HashMap<>();
+                event.put("cpf", manager.getCpf());
+                event.put("id", manager.getId());
+                
+                rabbit.convertAndSend(managersExchange, deletedKey, event, m -> {
+                    if (correlationId != null) m.getMessageProperties().setCorrelationId(correlationId);
+                    return m;
+                });
+                log.info("Published manager.deleted correlationId={} cpf={}", correlationId, cpf);
+            }
+            // Se apenas ID for fornecido, é rollback (não publica evento)
+            else if (id != null && !id.isBlank()) {
+                managerService.deleteManagerForRollback(id);
+                log.info("Manager deletado (rollback) id={} correlationId={}", id, correlationId);
+            } else {
+                throw new IllegalArgumentException("CPF ou ID do manager não fornecido para deleção");
+            }
+        } catch (Exception ex) {
+            log.error("Erro ao deletar manager: {}", ex.getMessage(), ex);
+            sendFailed(message, ex);
+        }
+    }
+
     @RabbitListener(queues = "#{managersUpdateQueue.name}")
     public void onUpdate(Message message) {
         String correlationId = message.getMessageProperties().getCorrelationId();
@@ -88,17 +130,17 @@ public class ManagerListener {
                 json = mapper.readValue(json, String.class);
             }
 
-                Map<String, Object> payload = toMapFromBody(message.getBody(), json);
+            Map<String, Object> payload = toMapFromBody(message.getBody(), json);
             // extrai id
             String id = payload.containsKey("id") ? String.valueOf(payload.get("id"))
                     : (payload.get("cpf") != null ? String.valueOf(payload.get("cpf")) : null);
 
             // se payload estiver aninhado em "payload"
-                Map<String, Object> dtoMap = payload.containsKey("payload")
-                    ? (Map<String, Object>) payload.get("payload")
-                    : payload;
+            Map<String, Object> dtoMap = payload.containsKey("payload")
+                ? (Map<String, Object>) payload.get("payload")
+                : payload;
 
-                normalizeManagerMap(dtoMap);
+            normalizeManagerMap(dtoMap);
 
             ManagerDTO dto = mapper.convertValue(dtoMap, ManagerDTO.class);
             Manager updated = managerService.updateManager(id, dto);
@@ -163,9 +205,10 @@ public class ManagerListener {
             status = 500;
         } else if (ex instanceof IllegalArgumentException) {
             status = 400;
-        } else if (ex instanceof org.springframework.dao.DuplicateKeyException) {
+        } else if (ex instanceof DuplicateKeyException) {
             status = 409;
         }
+
         err.put("status", status);
         StringWriter sw = new StringWriter();
         ex.printStackTrace(new PrintWriter(sw));

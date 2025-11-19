@@ -13,6 +13,10 @@ public class RabbitConfig {
     @Value("${rabbit.auth.exchange:auth.exchange}") private String authExchange;
     @Value("${rabbit.auth.create-key:auth.create-user}") private String createKey;
     @Value("${rabbit.auth.create-queue:auth.create.queue}") private String createQueue;
+    @Value("${rabbit.auth.update-key:auth.update-user}") private String updateKey;
+    @Value("${rabbit.auth.update-queue:auth.update.queue}") private String updateQueue;
+    @Value("${rabbit.auth.delete-key:auth.delete-user}") private String deleteKey;
+    @Value("${rabbit.auth.delete-queue:auth.delete.queue}") private String deleteQueue;
 
     @Bean
     public TopicExchange authExchange() {
@@ -25,8 +29,28 @@ public class RabbitConfig {
     }
 
     @Bean
+    public Queue authUpdateQueue() {
+        return QueueBuilder.durable(updateQueue).build();
+    }
+
+    @Bean
+    public Queue authDeleteQueue() {
+        return QueueBuilder.durable(deleteQueue).build();
+    }
+
+    @Bean
     public Binding bindAuthCreate(Queue authCreateQueue, TopicExchange authExchange) {
         return BindingBuilder.bind(authCreateQueue).to(authExchange).with(createKey);
+    }
+
+    @Bean
+    public Binding bindAuthUpdate(Queue authUpdateQueue, TopicExchange authExchange) {
+        return BindingBuilder.bind(authUpdateQueue).to(authExchange).with(updateKey);
+    }
+
+    @Bean
+    public Binding bindAuthDelete(Queue authDeleteQueue, TopicExchange authExchange) {
+        return BindingBuilder.bind(authDeleteQueue).to(authExchange).with(deleteKey);
     }
 
     @Bean

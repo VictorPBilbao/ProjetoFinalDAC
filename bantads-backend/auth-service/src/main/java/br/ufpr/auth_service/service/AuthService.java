@@ -26,17 +26,17 @@ public class AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     public LoginResponse login(LoginRequest request) {
-        System.out.println("Tentativa de login para o usuário: " + request.getEmail());
-        User user = userRepository.findByEmail(request.getEmail())
+        System.out.println("Tentativa de login para o usuário: " + request.getUsuario());
+        User user = userRepository.findByEmail(request.getUsuario())
                 .or(() -> {
-                    System.out.println("Procurando usuário pelo email: " + request.getEmail());
-                    return userRepository.findByCpf(request.getEmail());
+                    System.out.println("Procurando usuário pelo email: " + request.getUsuario());
+                    return userRepository.findByCpf(request.getUsuario());
                 })
                 .orElseThrow(() -> new RuntimeException("Usuário/Senha incorretos"));
 
 
         if (!passwordEncoder.matches(request.getSenha(), user.getSenha())) {
-            System.out.println("Senha inválida para o usuário: " + request.getEmail());
+            System.out.println("Senha inválida para o usuário: " + request.getUsuario());
             throw new RuntimeException("Usuário/Senha incorretos");
         }
 
@@ -115,6 +115,27 @@ public class AuthService {
         if (s == null) return null;
         s = s.trim();
         return s.isEmpty() || "null".equalsIgnoreCase(s) ? null : s;
+    }
+    
+    public void updateUser(String cpf, Map<String, String> updates) {
+        User user = userRepository.findByCpf(cpf)
+            .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
+        String nome = norm(updates.get("nome"));
+        String email = norm(updates.get("email"));
+        String senha = norm(updates.getOrDefault("senha", updates.get("password")));
+
+        if (nome != null) user.setNome(nome);
+        if (email != null) {
+            if (userRepository.findByEmail(email).isPresent() && !email.equals(user.getEmail())) {
+                throw new DuplicateKeyException("Email já está em uso");
+            }
+            user.setEmail(email);
+        }
+        if (senha != null) user.setSenha(passwordEncoder.encode(senha));
+
+        userRepository.save(user);
+        log.info("Usuário atualizado: CPF={}", cpf);
     }
     
     // Get All Users

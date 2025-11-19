@@ -548,8 +548,12 @@ app.post(
   "/gerentes",
   authenticateToken,
   requireRole("ADMINISTRADOR"),
-  proxy(process.env.SAGA_SERVICE_URL || "http://localhost:8085", {
+  proxy(process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085", {
     proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+      console.error("❌ Saga Orchestrator error:", err.message);
+      res.status(503).json({ error: "Saga Orchestrator unavailable", message: err.message });
+    },
   })
 );
 
@@ -557,8 +561,12 @@ app.put(
   "/gerentes/:cpf",
   authenticateToken,
   requireRole("ADMINISTRADOR"),
-  proxy(process.env.SAGA_SERVICE_URL || "http://localhost:8085", {
+  proxy(process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085", {
     proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+      console.error("❌ Saga Orchestrator error:", err.message);
+      res.status(503).json({ error: "Saga Orchestrator unavailable", message: err.message });
+    },
   })
 );
 
@@ -566,7 +574,7 @@ app.delete(
   "/gerentes/:cpf",
   authenticateToken,
   requireRole("ADMINISTRADOR"),
-  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
+  proxy(process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085", {
     proxyReqPathResolver: (req) => req.originalUrl,
   })
 );
@@ -713,5 +721,7 @@ app.listen(PORT, () => {
       process.env.AUTH_SERVICE_URL || "http://localhost:8084"
     }`
   );
-  console.log("   =============================================\n");
-});
+  console.log(
+    `   • Saga Service:    ${process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085"}`
+  );
+  console.log(`   • Auth Service:    ${process.env.AUTH_SERVICE_URL || "http://localhost:8084"}`);
