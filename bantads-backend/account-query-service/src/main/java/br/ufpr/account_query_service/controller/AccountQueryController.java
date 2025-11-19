@@ -1,21 +1,16 @@
 package br.ufpr.account_query_service.controller;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
 import br.ufpr.account_query_service.dto.DailyBalanceDTO;
 import br.ufpr.account_query_service.dto.ManagerSummaryDTO;
 import br.ufpr.account_query_service.model.AccountView;
-import br.ufpr.account_query_service.model.TransactionView;
 import br.ufpr.account_query_service.service.AccountQueryService;
+import br.ufpr.account_query_service.repository.AccountViewRepository;
+
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/query")
@@ -23,23 +18,22 @@ public class AccountQueryController {
 
     @Autowired
     private AccountQueryService accountQueryService;
+    @Autowired
+    private AccountViewRepository accountViewRepository;
 
-    @GetMapping("/my-account")
-    public ResponseEntity<AccountView> getMyAccount(
-            @RequestHeader("X-User-CPF") String authenticatedCpf) {
-
-        AccountView account = accountQueryService.getAccountByCpf(authenticatedCpf);
-        return ResponseEntity.ok(account);
-    }
-
-    @GetMapping("/statement")
-    public ResponseEntity<List<DailyBalanceDTO>> getStatement(
-            @RequestHeader("X-User-CPF") String authenticatedCpf,
+    @GetMapping("/contas/{numero}/extrato")
+    public ResponseEntity<List<DailyBalanceDTO>> getExtrato(
+            @PathVariable String numero,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
 
-        List<DailyBalanceDTO> statement = accountQueryService.getStatement(authenticatedCpf, startDate, endDate);
+        List<DailyBalanceDTO> statement = accountQueryService.getStatement(numero, startDate, endDate);
         return ResponseEntity.ok(statement);
+    }
+
+    @GetMapping("/my-account")
+    public ResponseEntity<AccountView> getMyAccount(@RequestHeader("X-User-CPF") String authenticatedCpf) {
+        return ResponseEntity.ok(accountQueryService.getAccountByCpf(authenticatedCpf));
     }
 
     @GetMapping("/summary-by-manager")
@@ -65,9 +59,11 @@ public class AccountQueryController {
         if (effectiveManagerCpf == null || effectiveManagerCpf.isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-
-        List<AccountView> accounts = accountQueryService.getTopAccountsByManager(effectiveManagerCpf, limit);
-        return ResponseEntity.ok(accounts);
+        return ResponseEntity.ok(accountQueryService.getTopAccountsByManager(effectiveManagerCpf, limit));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<AccountView>> getAllAccounts() {
+        return ResponseEntity.ok(accountViewRepository.findAll());
+    }
 }

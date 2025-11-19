@@ -838,11 +838,16 @@ app.post(
     })
 );
 
+// R8: Extrato 
 app.get(
-    "/contas/:conta/extrato",
+    "/contas/:numero/extrato", 
     authenticateToken,
-    proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082", {
+    proxy(ACCOUNT_QUERY_URL, {
         proxyReqPathResolver: (req) => req.originalUrl,
+        proxyErrorHandler: (err, res, next) => {
+            console.error("[Gateway] Erro ao buscar extrato:", err.message);
+            res.status(503).json({ error: "Serviço de consulta de conta indisponível." });
+        }
     })
 );
 
