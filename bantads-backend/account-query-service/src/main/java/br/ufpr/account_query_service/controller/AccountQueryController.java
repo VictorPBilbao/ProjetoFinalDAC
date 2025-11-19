@@ -11,11 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.ufpr.account_query_service.dto.DailyBalanceDTO;
 import br.ufpr.account_query_service.dto.ManagerSummaryDTO;
 import br.ufpr.account_query_service.model.AccountView;
 import br.ufpr.account_query_service.model.TransactionView;
 import br.ufpr.account_query_service.service.AccountQueryService;
-import br.ufpr.account_query_service.repository.AccountViewRepository;
 
 @RestController
 @RequestMapping("/query")
@@ -23,9 +23,6 @@ public class AccountQueryController {
 
     @Autowired
     private AccountQueryService accountQueryService;
-
-    @Autowired
-    private AccountViewRepository accountViewRepository;
 
     @GetMapping("/my-account")
     public ResponseEntity<AccountView> getMyAccount(
@@ -36,12 +33,12 @@ public class AccountQueryController {
     }
 
     @GetMapping("/statement")
-    public ResponseEntity<List<TransactionView>> getStatement(
+    public ResponseEntity<List<DailyBalanceDTO>> getStatement(
             @RequestHeader("X-User-CPF") String authenticatedCpf,
-            @RequestParam String startDate,
-            @RequestParam String endDate) {
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
 
-        List<TransactionView> statement = accountQueryService.getStatement(authenticatedCpf, startDate, endDate);
+        List<DailyBalanceDTO> statement = accountQueryService.getStatement(authenticatedCpf, startDate, endDate);
         return ResponseEntity.ok(statement);
     }
 
@@ -71,11 +68,6 @@ public class AccountQueryController {
 
         List<AccountView> accounts = accountQueryService.getTopAccountsByManager(effectiveManagerCpf, limit);
         return ResponseEntity.ok(accounts);
-    }
-
-    @GetMapping("/all")
-    public ResponseEntity<List<AccountView>> getAllAccounts() {
-        return ResponseEntity.ok(accountViewRepository.findAll());
     }
 
 }
