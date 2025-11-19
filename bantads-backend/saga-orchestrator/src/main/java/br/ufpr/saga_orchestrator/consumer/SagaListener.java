@@ -128,6 +128,47 @@ public class SagaListener {
         }
     }
 
+    @RabbitListener(queues = "#{managerDeletedQueue.name}")
+    public void onManagerDeleted(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            log.info("Manager deletado correlationId={}", correlationId);
+            saga.handleManagerDeleted(correlationId, payload);
+        } catch (Exception ex) {
+            log.error("Erro ao processar manager.deleted: {}", ex.getMessage());
+        }
+    }
+
+    @RabbitListener(queues = "#{authDeletedQueue.name}")
+    public void onAuthDeleted(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            
+            log.info("Auth deletado correlationId={}", correlationId);
+            saga.notifyDeleteSuccess(correlationId);
+        } catch (Exception ex) {
+            log.error("Erro ao processar auth.deleted: {}", ex.getMessage());
+        }
+    }
+
+    @RabbitListener(queues = "#{authDeleteFailedQueue.name}")
+    public void onAuthDeleteFailed(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            String error = getErrorMessage(payload);
+            int status = getStatusCode(payload);
+            
+            log.warn("Auth delete falhou correlationId={} erro={} status={}", correlationId, error, status);
+            saga.notifyDeleteFailure(correlationId, error, status);
+        } catch (Exception ex) {
+            log.error("Erro ao processar auth.delete-failed: {}", ex.getMessage());
+            saga.notifyDeleteFailure(correlationId, "Erro ao processar falha da deleção: " + ex.getMessage(), 500);
+        }
+    }
+
     private String getString(Map<String, Object> map, String key) {
         Object value = map.get(key);
         return value != null ? String.valueOf(value) : null;

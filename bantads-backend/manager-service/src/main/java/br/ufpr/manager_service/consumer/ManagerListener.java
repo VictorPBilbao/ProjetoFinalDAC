@@ -40,6 +40,9 @@ public class ManagerListener {
     @Value("${rabbit.managers.updated-key:manager.updated}")
     private String updatedKey;
 
+    @Value("${rabbit.managers.deleted-key:manager.deleted}")
+    private String deletedKey;
+
     @Value("${rabbit.managers.failed-key:manager.failed}")
     private String failedKey;
 
@@ -80,18 +83,34 @@ public class ManagerListener {
         log.info("Received manager.delete correlationId={} body={}", correlationId, raw);
         try {
             Map<String, Object> payload = toMapFromBody(message.getBody(), raw);
+            String cpf = payload.containsKey("cpf") ? String.valueOf(payload.get("cpf")) : null;
             String id = payload.containsKey("id") ? String.valueOf(payload.get("id"))
                     : (payload.containsKey("managerId") ? String.valueOf(payload.get("managerId")) : null);
             
-            if (id == null || id.isBlank()) {
-                throw new IllegalArgumentException("ID do manager não fornecido para deleção");
+            // Se CPF for fornecido, é uma deleção normal (não rollback)
+            if (cpf != null && !cpf.isBlank()) {
+                Manager manager = managerService.deleteManagerByCpf(cpf);
+                
+                Map<String, Object> event = new HashMap<>();
+                event.put("cpf", manager.getCpf());
+                event.put("id", manager.getId());
+                
+                rabbit.convertAndSend(managersExchange, deletedKey, event, m -> {
+                    if (correlationId != null) m.getMessageProperties().setCorrelationId(correlationId);
+                    return m;
+                });
+                log.info("Published manager.deleted correlationId={} cpf={}", correlationId, cpf);
             }
-
-            managerService.deleteManagerForRollback(id);
-            log.info("Manager deletado (rollback) id={} correlationId={}", id, correlationId);
+            // Se apenas ID for fornecido, é rollback (não publica evento)
+            else if (id != null && !id.isBlank()) {
+                managerService.deleteManagerForRollback(id);
+                log.info("Manager deletado (rollback) id={} correlationId={}", id, correlationId);
+            } else {
+                throw new IllegalArgumentException("CPF ou ID do manager não fornecido para deleção");
+            }
         } catch (Exception ex) {
-            log.error("Erro ao deletar manager (rollback): {}", ex.getMessage(), ex);
-            // Não envia failed pois é rollback, apenas loga
+            log.error("Erro ao deletar manager: {}", ex.getMessage(), ex);
+            sendFailed(message, ex);
         }
     }
 
