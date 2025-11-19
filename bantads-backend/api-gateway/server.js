@@ -483,36 +483,49 @@ app.get(
 
 
 // GET /clientes (R09, R12, R14, R16)
+// Esse cara ta puxando os dados agregados para relatorio de clientes, dai depende se é admin ou gerente
 app.get(
     "/clientes",
     authenticateToken,
-    authorizeClientesList,
+    authorizeClientesList, 
     async (req, res, next) => {
-
-        const filtro = req.query.filtro ? req.query.filtro.trim() : "";
         
-        if (filtro === "adm_relatorio_clientes") {
-            console.log(">>> Rota GET /clientes acessada");
-        console.log(">>> Query Params recebidos:", req.query);
-        console.log(">>> Filtro específico:", req.query.filtro);
-            const CLIENT_URL = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
-            const MANAGER_URL = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
-            const ACCOUNT_QUERY_URL = process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+        const userRole = req.user?.tipo;
+        const userCpf = req.user?.cpf;
+        const filtro = req.query.filtro;
+        const busca = req.query.busca || ""; 
+        
+        if (filtro === "adm_relatorio_clientes" || userRole === "GERENTE") {
+            
+            const authHeader = req.headers.authorization;
+            const config = { headers: { Authorization: authHeader } };
+
+            const clientUrl = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+            const managerUrl = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
+            const accountQueryUrl = process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
 
             try {
-                const config = { headers: { Authorization: req.headers.authorization } };
+                console.log(`[Gateway] Agregando dados para ${userRole}...`);
+
+                let urlClientes = `${clientUrl}/clientes`;
+                if (userRole === "GERENTE") {
+                    urlClientes += `?gerente=${userCpf}`;
+                    if (busca) urlClientes += `&busca=${encodeURIComponent(busca)}`;
+                }
+
                 const [clientsResp, managersResp, accountsResp] = await Promise.all([
-                    axiosInstance.get(`${CLIENT_URL}/clientes`, config),
-                    axiosInstance.get(`${MANAGER_URL}/gerentes`, config),
-                    axiosInstance.get(`${ACCOUNT_QUERY_URL}/query/all`, config) 
+                    axiosInstance.get(urlClientes, config),
+                    axiosInstance.get(`${managerUrl}/gerentes`, config),
+                    axiosInstance.get(`${accountQueryUrl}/query/all`, config)
                 ]);
 
                 const clients = Array.isArray(clientsResp.data) ? clientsResp.data : [];
                 const managers = Array.isArray(managersResp.data) ? managersResp.data : [];
                 const accounts = Array.isArray(accountsResp.data) ? accountsResp.data : [];
+
                 const accountMap = new Map();
                 accounts.forEach(acc => {
-                    const cpf = acc.clientId || acc.clientCpf || acc.cpf;
+                    const cpf = acc.clientId || acc.clientCpf; 
                     if (cpf) accountMap.set(cpf, acc);
                 });
 
@@ -521,11 +534,10 @@ app.get(
                     if (mgr.cpf) managerMap.set(mgr.cpf, mgr);
                     if (mgr.id) managerMap.set(String(mgr.id), mgr);
                 });
-
                 const relatorio = clients.map(client => {
                     const conta = accountMap.get(client.cpf);
+                    
                     let gerente = null;
-
                     if (conta && conta.managerId) {
                         gerente = managerMap.get(String(conta.managerId));
                     } else if (client.gerente) {
@@ -539,33 +551,30 @@ app.get(
                         salario: client.salario,
                         cidade: client.cidade,
                         estado: client.estado,
+                        
                         numeroConta: conta ? conta.accountNumber : null,
                         saldo: conta ? conta.balance : 0,
                         limite: conta ? conta.limit : 0,
+                        
                         cpfGerente: gerente ? gerente.cpf : null,
                         nomeGerente: gerente ? gerente.nome : "Não Atribuído"
                     };
                 });
+
                 relatorio.sort((a, b) => a.nome.localeCompare(b.nome));
 
-                return res.json(relatorio); 
+                return res.json(relatorio);
 
             } catch (error) {
-                console.error("[R16 Error]", error.message);
-                return res.status(503).json({ error: "Erro ao gerar relatório consolidado" });
+                console.error("[Gateway Agregação Error]", error.message);
+                return res.status(503).json({ error: "Erro ao agregar dados de clientes." });
             }
         }
 
         next();
     },
     proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
-        proxyReqPathResolver: (req) => req.originalUrl,
-        proxyErrorHandler: (err, res, next) => {
-            res.status(503).json({
-                error: "Client Service unavailable",
-                message: err.message,
-            });
-        },
+        proxyReqPathResolver: (req) => req.originalUrl
     })
 );
 
