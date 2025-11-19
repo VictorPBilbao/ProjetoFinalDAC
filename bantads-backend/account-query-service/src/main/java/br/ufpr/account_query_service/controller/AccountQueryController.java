@@ -54,4 +54,19 @@ public class AccountQueryController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/top-accounts")
+    public ResponseEntity<List<AccountView>> getTopAccounts(
+            @RequestParam(required = false) String managerCpf,
+            @RequestParam(defaultValue = "3") int limit,
+            @RequestHeader(value = "X-User-CPF", required = false) String xUserCpf) {
+
+        String effectiveManagerCpf = (managerCpf != null && !managerCpf.isBlank()) ? managerCpf : xUserCpf;
+        if (effectiveManagerCpf == null || effectiveManagerCpf.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<AccountView> accounts = accountQueryService.getTopAccountsByManager(effectiveManagerCpf, limit);
+        return ResponseEntity.ok(accounts);
+    }
+
 }
