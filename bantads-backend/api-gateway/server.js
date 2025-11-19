@@ -77,6 +77,7 @@ app.use(morgan("dev"));
  * R13: Consultar Cliente Detalhado (Agregação)
  * Combina dados do Client-Service e do Account-Query-Service
  */
+
 app.get(
   "/relatorio/cliente-detalhado/:cpf",
   authenticateToken,
@@ -86,9 +87,9 @@ app.get(
     const authHeader = req.headers.authorization;
 
     const clientServiceUrl =
-      process.env.CLIENT_SERVICE_URL || "http://localhost:8081"; // Note: Client Service
+      process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
     const accountQueryServiceUrl =
-      process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086"; // porta do account-query-service
+      process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
 
     try {
       const config = {
@@ -98,41 +99,88 @@ app.get(
         },
       };
 
-      // Chamada 1: Client Service (GET /clientes/:cpf)
-      const clientPromise = axios.get(
-        `${clientServiceUrl}/clientes/${cpf}`,
-        config
-      );
+      // Chamada 1: Client Service
+      let clientData;
+      try {
+        const clientResponse = await axiosInstance.get(
+          `${clientServiceUrl}/clientes/${cpf}`,
+          config
+        );
+        clientData = clientResponse.data;
+      } catch (clientError) {
+        console.error(
+          `Client Service error for CPF ${cpf}:`,
+          clientError.message
+        );
 
-      // Chamada 2: Account Query Service (GET /query/my-account)
-      const accountPromise = axios.get(
-        `${accountQueryServiceUrl}/query/my-account`,
-        config
-      );
+        if (clientError.response) {
+          return res.status(clientError.response.status).json({
+            erro:
+              clientError.response.data.message ||
+              clientError.response.data.erro ||
+              "Cliente não encontrado",
+            status: clientError.response.status,
+          });
+        }
 
-      const [clientResponse, accountResponse] = await Promise.all([
-        clientPromise,
-        accountPromise,
-      ]);
+        return res.status(503).json({
+          erro: "Serviço de clientes indisponível",
+          status: 503,
+        });
+      }
 
-      const clientData = clientResponse.data;
-      const accountData = accountResponse.data;
+      // Chamada 2: Account Query Service
+      let accountData = null;
+      try {
+        const accountResponse = await axiosInstance.get(
+          `${accountQueryServiceUrl}/query/my-account`,
+          config
+        );
+        accountData = accountResponse.data;
+      } catch (accountError) {
+        console.warn(
+          `Account Query Service error for CPF ${cpf}:`,
+          accountError.message
+        );
 
+        if (accountError.response?.status === 404) {
+          console.warn(`Conta não encontrada para CPF ${cpf}`);
+          accountData = null;
+        } else if (accountError.response) {
+          return res.status(accountError.response.status).json({
+            erro:
+              accountError.response.data.message ||
+              accountError.response.data.erro ||
+              "Erro ao buscar conta",
+            status: accountError.response.status,
+          });
+        } else {
+          return res.status(503).json({
+            erro: "Serviço de contas indisponível",
+            status: 503,
+          });
+        }
+      }
+
+      // Composição da resposta agregada
       const composedResponse = {
         cpf: clientData.cpf,
         nome: clientData.nome,
         email: clientData.email,
         endereco: clientData.endereco,
         salario: clientData.salario,
+        status: clientData.status,
 
-        conta: {
-          id: accountData.id,
-          numero: accountData.numero,
-          saldo: accountData.saldo,
-          limite: accountData.limite,
-          dataCriacao: accountData.dataCriacao,
-          gerente: accountData.gerente,
-        },
+        conta: accountData
+          ? {
+              id: accountData.id,
+              numero: accountData.numero,
+              saldo: accountData.saldo,
+              limite: accountData.limite,
+              dataCriacao: accountData.dataCriacao,
+              gerente: accountData.gerente,
+            }
+          : null,
       };
 
       res.status(200).json(composedResponse);
@@ -142,13 +190,10 @@ app.get(
         error.message
       );
 
-      if (error.response) {
-        return res.status(error.response.status).json(error.response.data);
-      }
-
-      res.status(503).json({
-        error: "Serviço indisponível",
-        message: "Falha ao se comunicar com um ou mais microsserviços.",
+      res.status(500).json({
+        erro: "Erro interno ao processar requisição",
+        message: error.message,
+        status: 500,
       });
     }
   }
