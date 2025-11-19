@@ -721,7 +721,10 @@ app.listen(PORT, () => {
       process.env.AUTH_SERVICE_URL || "http://localhost:8084"
     }`
   );
-  console.log(
-    `   • Saga Service:    ${process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085"}`
-  );
-  console.log(`   • Auth Service:    ${process.env.AUTH_SERVICE_URL || "http://localhost:8084"}`);
+    console.log(
+      `   • Saga Service:    ${process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085"}`
+    );
+    console.log(
+      `   • Auth Service:    ${process.env.AUTH_SERVICE_URL || "http://localhost:8084"}`
+    );
+  });
