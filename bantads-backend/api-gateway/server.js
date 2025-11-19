@@ -67,6 +67,9 @@ app.use(morgan("dev"));
 
 /**
  * R13: Consultar Cliente Detalhado (Agregação)
+ * Em uma tela em branco, o gerente deve informar em um campo
+  de texto o CPF, o sistema deve mostrar todos os dados do cliente, incluindo os dados de sua
+  conta (saldo e limite);
  * Combina dados do Client-Service e do Account-Query-Service
  */
 
@@ -181,7 +184,130 @@ app.get(
     }
 );
 
-// R15: Admin Manager Dashboard (Agregação) - usa /query/summary-by-manager no Account Query Service
+/**
+ * R14: Consultar Melhores Clientes (Agregação)
+ * Consultar 3 melhores clientes - Deve ser apresentada uma tela contendo somente
+  os seus clientes que possuem os 3 maiores saldos em conta, mostrando CPF, Nome, Cidade,
+  Estado, Saldo da conta, ordenado de forma decrescente por saldo;
+ * Combina dados do Client-Service e do Account-Query-Service
+ */
+// R14: Consultar Melhores Clientes (Top 3 do Gerente)
+app.get(
+  "/relatorio/melhores-clientes",
+  authenticateToken,
+  requireRole("GERENTE"),
+  async (req, res) => {
+    const managerCpf = req.user?.cpf;
+    const authHeader = req.headers.authorization;
+    const limit = Number(req.query.limit ?? 3);
+
+    const clientServiceUrl =
+      process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+    const accountQueryServiceUrl =
+      process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+
+    const config = { headers: { Authorization: authHeader } };
+
+    try {
+      console.log(
+        `[R14] requesting top ${limit} accounts for manager ${managerCpf}`
+      );
+
+      let accounts = [];
+      try {
+        const resp = await axiosInstance.get(
+          `${accountQueryServiceUrl}/query/top-accounts?managerCpf=${encodeURIComponent(
+            managerCpf
+          )}&limit=${limit}`,
+          config
+        );
+        accounts = Array.isArray(resp.data) ? resp.data : [];
+      } catch (acctErr) {
+        console.warn(`[R14] account-query error:`, acctErr.message);
+        if (acctErr.response?.status === 404) {
+          accounts = [];
+        } else if (acctErr.response) {
+          return res.status(acctErr.response.status).json({
+            erro:
+              acctErr.response.data?.message ||
+              acctErr.response.data ||
+              "Erro no account-query",
+            status: acctErr.response.status,
+          });
+        } else {
+          return res.status(503).json({
+            erro: "Serviço de contas indisponível",
+            status: 503,
+          });
+        }
+      }
+
+      const clientPromises = accounts.map((acc) =>
+        axiosInstance
+          .get(
+            `${clientServiceUrl}/clientes/${encodeURIComponent(
+              acc.clientId || acc.clientCpf || acc.client_id
+            )}`,
+            config
+          )
+          .then((r) => ({ client: r.data, account: acc }))
+          .catch((err) => {
+            console.warn(
+              `[R14] client-service missing for ${
+                acc.clientId || acc.clientCpf || acc.client_id
+              }: ${err.message}`
+            );
+            return { client: null, account: acc };
+          })
+      );
+
+      const results = await Promise.all(clientPromises);
+
+      const composed = results
+        .map(({ client, account }) => {
+          const cpf =
+            account.clientId ?? account.clientCpf ?? account.client_id ?? null;
+          const saldoRaw =
+            account.balance ?? account.saldo ?? account.Balance ?? 0;
+          const saldo = Number(saldoRaw ?? 0);
+          return {
+            cpf,
+            nome: client?.nome ?? "(Desconhecido)",
+            cidade: client?.cidade ?? client?.addressCity ?? null,
+            estado: client?.estado ?? client?.state ?? null,
+            saldo: Number(saldo).toFixed(2),
+          };
+        })
+
+        .sort((a, b) => Number(b.saldo) - Number(a.saldo));
+
+      return res.status(200).json(composed);
+    } catch (error) {
+      console.error("[API COMPOSITION ERROR] R14:", {
+        message: error.message,
+        status: error.response?.status,
+        downstream: error.response?.data,
+      });
+      if (error.response) {
+        return res.status(error.response.status).json(error.response.data);
+      }
+      return res.status(503).json({
+        error: "Serviço indisponível",
+        message: "Falha ao compor dados para R14",
+      });
+    }
+  }
+);
+
+/**
+ * R15: Admin Manager Dashboard (Agregação)
+ * Apresenta uma tela (pode ser em estilo dashboard)
+  mostrando todos os gerentes do banco, para cada gerente apresenta: quantos clientes
+  possui, a totalização (soma) de saldos positivo (0.0 conta como positivo) e a totalização
+  (soma) de saldos negativos. Deve ser mostrado os gerentes com maiores saldos positivos
+  primeiro;
+ */
+
 app.get(
     "/admin/dashboard/managers",
     authenticateToken,

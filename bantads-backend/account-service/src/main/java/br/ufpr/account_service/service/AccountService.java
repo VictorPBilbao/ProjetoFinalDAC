@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import br.ufpr.account_service.dto.BalanceDTO;
 import br.ufpr.account_service.model.Account;
 import br.ufpr.account_service.model.Transaction;
 import br.ufpr.account_service.repository.AccountRepository;
@@ -146,5 +147,17 @@ public class AccountService {
 
     public void publishCqrsEvent(String routingKey, Object event) {
         rabbitTemplate.convertAndSend(accountEventsExchange, routingKey, event);
+    }
+
+    public BalanceDTO getBalance(String accountNumber) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                "Conta não encontrada: " + accountNumber));
+
+        return new BalanceDTO(
+                account.getClientId(),
+                account.getAccountNumber(),
+                account.getBalance()
+        );
     }
 }

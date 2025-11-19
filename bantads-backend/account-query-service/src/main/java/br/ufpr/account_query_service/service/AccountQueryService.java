@@ -47,4 +47,12 @@ public class AccountQueryService {
     public List<Object[]> getSummaryByManager() {
         return accountViewRepository.summaryByManager();
     }
+
+    public List<AccountView> getTopAccountsByManager(String managerCpf, int limit) {
+        if (managerCpf == null || managerCpf.isBlank() || limit <= 0) {
+            return List.of();
+        }
+        return accountViewRepository.findTopAccountsByManager(managerCpf, limit);
+    }
+
 }
