@@ -3,8 +3,15 @@ const express = require("express");
 const proxy = require("express-http-proxy");
 const cors = require("cors");
 const morgan = require("morgan");
-const { authenticateToken, requireRole, requireOwnerOrAdmin } = require("./middleware/auth");
+const {
+  authenticateToken,
+  requireRole,
+  requireOwnerOrAdmin,
+} = require("./middleware/auth");
 const axios = require("axios");
+const axiosInstance = axios.create({
+  timeout: Number(process.env.GATEWAY_AXIOS_TIMEOUT_MS || 4000),
+});
 
 require("dotenv").config();
 
@@ -14,11 +21,13 @@ const PORT = process.env.PORT || 3000;
 // ============================================
 // Helpers de autorização
 // ============================================
-const requireOneOfRoles = (...roles) => (req, res, next) => {
-  const tipo = req.user?.tipo;
-  if (roles.includes(tipo)) return next();
-  return res.status(403).json({ error: "Forbidden" });
-};
+const requireOneOfRoles =
+  (...roles) =>
+  (req, res, next) => {
+    const tipo = req.user?.tipo;
+    if (roles.includes(tipo)) return next();
+    return res.status(403).json({ error: "Forbidden" });
+  };
 
 // GET /clientes: regra por filtro
 const authorizeClientesList = (req, res, next) => {
@@ -27,7 +36,8 @@ const authorizeClientesList = (req, res, next) => {
 
   // Relatório do ADM só para ADMINISTRADOR
   if (filtro === "adm_relatorio_clientes") {
-    if (tipo !== "ADMINISTRADOR") return res.status(403).json({ error: "Forbidden" });
+    if (tipo !== "ADMINISTRADOR")
+      return res.status(403).json({ error: "Forbidden" });
     return next();
   }
 
@@ -37,15 +47,18 @@ const authorizeClientesList = (req, res, next) => {
 };
 
 // GET /clientes/:cpf: ADMIN, GERENTE, ou o próprio CLIENTE
-const authorizeClienteByCpf = (paramName = "cpf") => (req, res, next) => {
-  const tipo = req.user?.tipo;
-  const userCpf = req.user?.cpf;
-  const targetCpf = req.params?.[paramName];
+const authorizeClienteByCpf =
+  (paramName = "cpf") =>
+  (req, res, next) => {
+    const tipo = req.user?.tipo;
+    const userCpf = req.user?.cpf;
+    const targetCpf = req.params?.[paramName];
 
-  if (tipo === "ADMINISTRADOR" || tipo === "GERENTE") return next();
-  if (tipo === "CLIENTE" && userCpf && targetCpf && userCpf === targetCpf) return next();
-  return res.status(403).json({ error: "Forbidden" });
-};
+    if (tipo === "ADMINISTRADOR" || tipo === "GERENTE") return next();
+    if (tipo === "CLIENTE" && userCpf && targetCpf && userCpf === targetCpf)
+      return next();
+    return res.status(403).json({ error: "Forbidden" });
+  };
 
 // ============================================
 // MIDDLEWARE CONFIGURATION
@@ -65,34 +78,35 @@ app.use(morgan("dev"));
 app.get(
   "/relatorio/cliente-detalhado/:cpf",
   authenticateToken,
-  authorizeClienteByCpf("cpf"), 
+  authorizeClienteByCpf("cpf"),
   async (req, res) => {
-
     const { cpf } = req.params;
-    const authHeader = req.headers.authorization; 
+    const authHeader = req.headers.authorization;
 
-    const clientServiceUrl = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
-    const accountServiceUrl = process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082";
+    const clientServiceUrl =
+      process.env.CLIENT_SERVICE_URL || "http://localhost:8081"; // Note: Client Service
+    const accountServiceUrl =
+      process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"; //porta do account-service
 
     try {
       const config = {
-        headers: { 
-          'Authorization': authHeader,
-          'X-User-CPF': cpf 
+        headers: {
+          Authorization: authHeader,
+          "X-User-CPF": cpf,
         },
       };
 
       // Chamada 1: Client Service (GET /clientes/:cpf)
       const clientPromise = axios.get(
-        `${clientServiceUrl}/clientes/${cpf}`, 
-        config 
+        `${clientServiceUrl}/clientes/${cpf}`,
+        config
       );
 
       // Chamada 2: Account Query Service (GET /query/my-account)
       const accountPromise = axios.get(
-        `${accountServiceUrl}/query/my-account`, 
-        config 
-      ); 
+        `${accountServiceUrl}/query/my-account`,
+        config
+      );
 
       const [clientResponse, accountResponse] = await Promise.all([
         clientPromise,
@@ -106,23 +120,25 @@ app.get(
         cpf: clientData.cpf,
         nome: clientData.nome,
         email: clientData.email,
-        endereco: clientData.endereco, 
+        endereco: clientData.endereco,
         salario: clientData.salario,
 
         conta: {
           id: accountData.id,
-          numero: accountData.numero, 
+          numero: accountData.numero,
           saldo: accountData.saldo,
           limite: accountData.limite,
           dataCriacao: accountData.dataCriacao,
-          gerente: accountData.gerente, 
+          gerente: accountData.gerente,
         },
       };
 
       res.status(200).json(composedResponse);
-
     } catch (error) {
-      console.error(`[API COMPOSITION ERROR] R13 para CPF ${cpf}:`, error.message);
+      console.error(
+        `[API COMPOSITION ERROR] R13 para CPF ${cpf}:`,
+        error.message
+      );
 
       if (error.response) {
         return res.status(error.response.status).json(error.response.data);
@@ -131,6 +147,145 @@ app.get(
       res.status(503).json({
         error: "Serviço indisponível",
         message: "Falha ao se comunicar com um ou mais microsserviços.",
+      });
+    }
+  }
+);
+
+// R15: Admin Manager Dashboard (Agregação) - usa /query/summary-by-manager no Account Query Service
+app.get(
+  "/admin/dashboard/managers",
+  authenticateToken,
+  requireRole("ADMINISTRADOR"),
+  async (req, res) => {
+    const authHeader = req.headers.authorization;
+    const config = authHeader ? { headers: { Authorization: authHeader } } : {};
+
+    const managerServiceUrl =
+      process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
+    const clientServiceUrl =
+      process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+    const accountQueryServiceUrl =
+      process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086"; // porta do account-query-service
+
+    try {
+      const [managersResp, clientsResp] = await Promise.all([
+        axiosInstance.get(`${managerServiceUrl}/gerentes`, config),
+        axiosInstance.get(
+          `${clientServiceUrl}/clientes?filtro=adm_relatorio_clientes`,
+          config
+        ),
+      ]);
+
+      const managers = Array.isArray(managersResp.data)
+        ? managersResp.data
+        : [];
+      const clients = Array.isArray(clientsResp.data) ? clientsResp.data : [];
+
+      let accountsSummary = null;
+      try {
+        const summaryResp = await axiosInstance.get(
+          `${accountQueryServiceUrl}/query/summary-by-manager`,
+          config
+        );
+        accountsSummary = Array.isArray(summaryResp.data)
+          ? summaryResp.data
+          : [];
+      } catch (err) {
+        accountsSummary = null;
+        console.warn(
+          "[Gateway] Account summary endpoint indisponível; usando fallback a partir dos clients (pode faltar saldos)."
+        );
+      }
+      const managerStats = new Map();
+      for (const m of managers) {
+        managerStats.set(m.cpf, {
+          cpf: m.cpf,
+          nome: m.nome,
+          email: m.email,
+          telefone: m.telefone,
+          clientCount: 0,
+          totalPositivo: 0.0,
+          totalNegativo: 0.0,
+        });
+      }
+
+      if (accountsSummary) {
+        for (const s of accountsSummary) {
+          const gerenteCpf = s.gerenteCpf || s.managerId || s.gerenteCpf;
+          const qtd = s.qtdClientes ?? s.qtd ?? 0;
+          const pos = Number(s.totalPositivo ?? s.totalPositive ?? 0);
+          const neg = Number(s.totalNegativo ?? s.totalNegative ?? 0);
+
+          const stat = managerStats.get(gerenteCpf) || {
+            cpf: gerenteCpf,
+            nome: "(Desconhecido)",
+            email: null,
+            telefone: null,
+            clientCount: qtd,
+            totalPositivo: 0.0,
+            totalNegativo: 0.0,
+          };
+          stat.clientCount = qtd;
+          stat.totalPositivo = Number(pos).toFixed(2);
+          stat.totalNegativo = Number(neg).toFixed(2);
+          managerStats.set(gerenteCpf, stat);
+        }
+      } else {
+        for (const c of clients) {
+          const managerCpf = c?.gerente_cpf ?? c?.gerenteCpf ?? c?.gerente;
+          if (!managerCpf) continue;
+          if (!managerStats.has(managerCpf)) {
+            managerStats.set(managerCpf, {
+              cpf: managerCpf,
+              nome: "(Desconhecido)",
+              email: null,
+              telefone: null,
+              clientCount: 0,
+              totalPositivo: 0.0,
+              totalNegativo: 0.0,
+            });
+          }
+          const s = managerStats.get(managerCpf);
+          s.clientCount = (s.clientCount || 0) + 1;
+          const saldo = (() => {
+            if (typeof c.saldo !== "undefined") return Number(c.saldo);
+            if (c.conta && typeof c.conta.saldo !== "undefined")
+              return Number(c.conta.saldo);
+            return 0;
+          })();
+          if (saldo >= 0) s.totalPositivo += saldo;
+          else s.totalNegativo += saldo;
+        }
+
+        for (const [k, v] of managerStats.entries()) {
+          v.totalPositivo = Number(v.totalPositivo).toFixed(2);
+          v.totalNegativo = Number(v.totalNegativo).toFixed(2);
+          managerStats.set(k, v);
+        }
+      }
+
+      const result = Array.from(managerStats.values()).sort(
+        (a, b) => Number(b.totalPositivo) - Number(a.totalPositivo)
+      );
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error(
+        "[API COMPOSITION ERROR] R15 Admin Dashboard:",
+        error.message || error
+      );
+      if (error.code === "ECONNABORTED") {
+        return res.status(504).json({
+          error: "Timeout",
+          message: "Uma ou mais chamadas demoraram demais.",
+        });
+      }
+      if (error.response) {
+        return res.status(error.response.status).json(error.response.data);
+      }
+      return res.status(503).json({
+        error: "Serviço indisponível",
+        message: "Falha ao compor dados para o dashboard do administrador.",
       });
     }
   }
@@ -155,10 +310,22 @@ app.get("/health", (req, res) => {
 // ============================================
 // SERVICE HEALTH CHECKS (Individual)
 // ============================================
-app.get("/health/auth", proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084"));
-app.get("/health/client", proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081"));
-app.get("/health/account", proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"));
-app.get("/health/manager", proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083"));
+app.get(
+  "/health/auth",
+  proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084")
+);
+app.get(
+  "/health/client",
+  proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081")
+);
+app.get(
+  "/health/account",
+  proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082")
+);
+app.get(
+  "/health/manager",
+  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083")
+);
 
 // ============================================
 // REBOOT ENDPOINT (R00 - Initialize Database)
@@ -239,7 +406,8 @@ app.post(
     proxyReqBodyDecorator: (bodyContent) => {
       const sanitized = { ...bodyContent };
       // normaliza CPF
-      if (sanitized.cpf) sanitized.cpf = String(sanitized.cpf).replace(/[^\d]/g, "");
+      if (sanitized.cpf)
+        sanitized.cpf = String(sanitized.cpf).replace(/[^\d]/g, "");
       // aceita CEP (maiúsculo) e cep (minúsculo)
       const cepRaw = sanitized.cep ?? sanitized.CEP;
       if (cepRaw !== undefined) {
@@ -247,8 +415,10 @@ app.post(
         delete sanitized.CEP;
       }
       // normaliza email e UF
-      if (sanitized.email) sanitized.email = String(sanitized.email).trim().toLowerCase();
-      if (sanitized.estado) sanitized.estado = String(sanitized.estado).toUpperCase();
+      if (sanitized.email)
+        sanitized.email = String(sanitized.email).trim().toLowerCase();
+      if (sanitized.estado)
+        sanitized.estado = String(sanitized.estado).toUpperCase();
       return sanitized;
     },
     userResDecorator: (proxyRes, proxyResData) => proxyResData,
@@ -286,7 +456,9 @@ app.post(
   proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
     proxyReqPathResolver: (req) => req.originalUrl,
     proxyErrorHandler: (err, res, next) => {
-      res.status(503).json({ error: "Client Service unavailable", message: err.message });
+      res
+        .status(503)
+        .json({ error: "Client Service unavailable", message: err.message });
     },
   })
 );
@@ -299,7 +471,9 @@ app.post(
   proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
     proxyReqPathResolver: (req) => req.originalUrl,
     proxyErrorHandler: (err, res, next) => {
-      res.status(503).json({ error: "Client Service unavailable", message: err.message });
+      res
+        .status(503)
+        .json({ error: "Client Service unavailable", message: err.message });
     },
   })
 );
@@ -328,7 +502,9 @@ app.get(
   proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
     proxyReqPathResolver: (req) => req.originalUrl,
     proxyErrorHandler: (err, res, next) => {
-      res.status(503).json({ error: "Client Service unavailable", message: err.message });
+      res
+        .status(503)
+        .json({ error: "Client Service unavailable", message: err.message });
     },
   })
 );
@@ -343,7 +519,9 @@ app.get(
   proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083", {
     proxyReqPathResolver: (req) => req.originalUrl,
     proxyErrorHandler: (err, res, next) => {
-      res.status(503).json({ error: "Manager Service unavailable", message: err.message });
+      res
+        .status(503)
+        .json({ error: "Manager Service unavailable", message: err.message });
     },
   })
 );
@@ -410,7 +588,9 @@ app.get(
   proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082", {
     proxyReqPathResolver: (req) => req.originalUrl,
     proxyErrorHandler: (err, res, next) => {
-      res.status(503).json({ error: "Account Service unavailable", message: err.message });
+      res
+        .status(503)
+        .json({ error: "Account Service unavailable", message: err.message });
     },
   })
 );
@@ -499,71 +679,6 @@ app.use(
 );
 
 // ============================================
-// API COMPOSITION ROUTES
-// ============================================
-
-// R13: Consultar Cliente Detalhado (Agregação)
-// (rota original mantida caso exista em outro arquivo)
-
-// R15: Admin Manager Dashboard (Agregação)
-app.get(
-    "/admin/dashboard/managers",
-    authenticateToken,
-    requireRole("ADMINISTRADOR"),
-    async (req, res) => {
-        const authHeader = req.headers.authorization;
-        const config = authHeader
-            ? { headers: { Authorization: authHeader } }
-            : {};
-
-        const managerServiceUrl = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
-        const clientServiceUrl = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
-
-        try {
-            const [managersResponse, clientsResponse] = await Promise.all([
-                axios.get(`${managerServiceUrl}/gerentes`, config),
-                axios.get(`${clientServiceUrl}/clientes?filtro=adm_relatorio_clientes`, config),
-            ]);
-
-            const managers = Array.isArray(managersResponse.data) ? managersResponse.data : [];
-            const clients = Array.isArray(clientsResponse.data) ? clientsResponse.data : [];
-
-            const managerStats = new Map();
-
-            for (const manager of managers) {
-                managerStats.set(manager.cpf, {
-                    ...manager,
-                    clientCount: 0,
-                    totalSalary: 0,
-                });
-            }
-
-            for (const client of clients) {
-                const managerCpf = client?.gerente_cpf;
-                if (!managerCpf || !managerStats.has(managerCpf)) continue;
-
-                const stats = managerStats.get(managerCpf);
-                stats.clientCount += 1;
-                stats.totalSalary += Number(client.salario) || 0;
-            }
-
-            res.status(200).json(Array.from(managerStats.values()));
-        } catch (error) {
-            console.error("[API COMPOSITION ERROR] R15 Admin Dashboard:", error.message);
-
-            if (error.response) {
-                return res.status(error.response.status).json(error.response.data);
-            }
-
-            res.status(503).json({
-                error: "Serviço indisponível",
-                message: "Falha ao compor dados para o dashboard do administrador.",
-            });
-        }
-    }
-);
-
-// ============================================
 // 404 HANDLER - Route Not Found
 // ============================================
 app.use((req, res) => {
@@ -587,17 +702,26 @@ app.listen(PORT, () => {
   console.log("   =============================================");
   console.log("\n📡 Microservices Configuration:");
   console.log(
-    `   • Client Service:  ${process.env.CLIENT_SERVICE_URL || "http://localhost:8081"}`
+    `   • Client Service:  ${
+      process.env.CLIENT_SERVICE_URL || "http://localhost:8081"
+    }`
   );
   console.log(
-    `   • Account Service: ${process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"}`
+    `   • Account Service: ${
+      process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"
+    }`
   );
   console.log(
-    `   • Manager Service: ${process.env.MANAGER_SERVICE_URL || "http://localhost:8083"}`
+    `   • Manager Service: ${
+      process.env.MANAGER_SERVICE_URL || "http://localhost:8083"
+    }`
+  );
+  console.log(
+    `   • Auth Service:    ${
+      process.env.AUTH_SERVICE_URL || "http://localhost:8084"
+    }`
   );
   console.log(
     `   • Saga Service:    ${process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085"}`
   );
   console.log(`   • Auth Service:    ${process.env.AUTH_SERVICE_URL || "http://localhost:8084"}`);
-  console.log("   =============================================\n");
-});
