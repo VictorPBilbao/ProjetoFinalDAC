@@ -27,7 +27,10 @@ public class AccountQueryService {
 
     public AccountView getAccountByCpf(String authenticatedCpf) {
         return accountViewRepository.findByClientId(authenticatedCpf)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta não encontrada."));
+                .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Conta não encontrada para o CPF " + authenticatedCpf + ". Cliente pode não estar aprovado ou conta ainda não foi sincronizada."
+        ));
     }
 
     public List<TransactionView> getStatement(String authenticatedCpf, String startDateStr, String endDateStr) {
