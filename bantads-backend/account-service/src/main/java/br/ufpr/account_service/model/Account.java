@@ -31,7 +31,7 @@ public class Account {
     @Column(name = "balance", nullable = false)
     private BigDecimal balance;
 
-    @Column(name = "limit", nullable = false)
+    @Column(name = "account_limit", nullable = false)
     private BigDecimal limit;
 
     @Column(name = "manager", nullable = false, length = 100)
