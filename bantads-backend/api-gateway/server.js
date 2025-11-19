@@ -481,11 +481,83 @@ app.get(
 // CLIENT SERVICE ROUTES
 // ============================================
 
-// GET /clientes (R09, R12, R14, R16) com autorização por filtro
+
+// GET /clientes (R09, R12, R14, R16)
 app.get(
     "/clientes",
     authenticateToken,
     authorizeClientesList,
+    async (req, res, next) => {
+
+        const filtro = req.query.filtro ? req.query.filtro.trim() : "";
+        
+        if (filtro === "adm_relatorio_clientes") {
+            console.log(">>> Rota GET /clientes acessada");
+        console.log(">>> Query Params recebidos:", req.query);
+        console.log(">>> Filtro específico:", req.query.filtro);
+            const CLIENT_URL = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+            const MANAGER_URL = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
+            const ACCOUNT_QUERY_URL = process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+
+            try {
+                const config = { headers: { Authorization: req.headers.authorization } };
+                const [clientsResp, managersResp, accountsResp] = await Promise.all([
+                    axiosInstance.get(`${CLIENT_URL}/clientes`, config),
+                    axiosInstance.get(`${MANAGER_URL}/gerentes`, config),
+                    axiosInstance.get(`${ACCOUNT_QUERY_URL}/query/all`, config) 
+                ]);
+
+                const clients = Array.isArray(clientsResp.data) ? clientsResp.data : [];
+                const managers = Array.isArray(managersResp.data) ? managersResp.data : [];
+                const accounts = Array.isArray(accountsResp.data) ? accountsResp.data : [];
+                const accountMap = new Map();
+                accounts.forEach(acc => {
+                    const cpf = acc.clientId || acc.clientCpf || acc.cpf;
+                    if (cpf) accountMap.set(cpf, acc);
+                });
+
+                const managerMap = new Map();
+                managers.forEach(mgr => {
+                    if (mgr.cpf) managerMap.set(mgr.cpf, mgr);
+                    if (mgr.id) managerMap.set(String(mgr.id), mgr);
+                });
+
+                const relatorio = clients.map(client => {
+                    const conta = accountMap.get(client.cpf);
+                    let gerente = null;
+
+                    if (conta && conta.managerId) {
+                        gerente = managerMap.get(String(conta.managerId));
+                    } else if (client.gerente) {
+                        gerente = managerMap.get(client.gerente);
+                    }
+
+                    return {
+                        cpf: client.cpf,
+                        nome: client.nome,
+                        email: client.email,
+                        salario: client.salario,
+                        cidade: client.cidade,
+                        estado: client.estado,
+                        numeroConta: conta ? conta.accountNumber : null,
+                        saldo: conta ? conta.balance : 0,
+                        limite: conta ? conta.limit : 0,
+                        cpfGerente: gerente ? gerente.cpf : null,
+                        nomeGerente: gerente ? gerente.nome : "Não Atribuído"
+                    };
+                });
+                relatorio.sort((a, b) => a.nome.localeCompare(b.nome));
+
+                return res.json(relatorio); 
+
+            } catch (error) {
+                console.error("[R16 Error]", error.message);
+                return res.status(503).json({ error: "Erro ao gerar relatório consolidado" });
+            }
+        }
+
+        next();
+    },
     proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
         proxyReqPathResolver: (req) => req.originalUrl,
         proxyErrorHandler: (err, res, next) => {
@@ -496,6 +568,22 @@ app.get(
         },
     })
 );
+
+// GET /clientes (R09, R12, R14, R16) com autorização por filtro
+//app.get(
+//    "/clientes",
+//    authenticateToken,
+//    authorizeClientesList,
+//    proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+//        proxyReqPathResolver: (req) => req.originalUrl,
+//        proxyErrorHandler: (err, res, next) => {
+//           res.status(503).json({
+//                error: "Client Service unavailable",
+//                message: err.message,
+//            });
+//        },
+//    })
+//);
 
 // POST /clientes/validate -> validado no service (pass-through)
 app.post(
@@ -620,6 +708,7 @@ app.get(
         },
     })
 );
+
 
 // (Opcional) Rota de pendentes - não usada nos testes, mantida
 app.get(
