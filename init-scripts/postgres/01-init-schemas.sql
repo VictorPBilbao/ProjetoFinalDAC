@@ -1,31 +1,36 @@
 -- ============================================================================
--- BANTADS Database Initialization Script - CLIENT SERVICE ONLY
+-- BANTADS Database Initialization Script
 -- ============================================================================
 -- ============================================================================
--- 1. CREATE CLIENT SCHEMA
+-- 1. CREATE SCHEMAS
 -- ============================================================================
 CREATE SCHEMA IF NOT EXISTS client_schema;
 
+CREATE SCHEMA IF NOT EXISTS account_schema;
+
 -- Grant privileges
 GRANT ALL PRIVILEGES ON SCHEMA client_schema TO postgres;
+
+GRANT ALL PRIVILEGES ON SCHEMA account_schema TO postgres;
 
 -- ============================================================================
 -- 2. CLIENT SCHEMA - Tables for Client Service
 -- ============================================================================
 -- Clients table - EXPLICITLY use schema name
-CREATE TABLE IF NOT EXISTS client_schema.clients (
-    cpf VARCHAR(11) PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    telefone VARCHAR(20),
-    salario NUMERIC(10, 2) NOT NULL,
-    endereco TEXT,
-    cep VARCHAR(9),
-    cidade VARCHAR(100),
-    estado VARCHAR(2),
-    aprovado BOOLEAN DEFAULT FALSE,
-    data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+CREATE TABLE
+    IF NOT EXISTS client_schema.clients (
+        cpf VARCHAR(11) PRIMARY KEY,
+        nome VARCHAR(100) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        telefone VARCHAR(20),
+        salario NUMERIC(10, 2) NOT NULL,
+        endereco TEXT,
+        cep VARCHAR(9),
+        cidade VARCHAR(100),
+        estado VARCHAR(2),
+        aprovado BOOLEAN DEFAULT FALSE,
+        data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
 
 -- ============================================================================
 -- 3. INSERT PRE-REGISTERED CLIENTS (as per specification)
