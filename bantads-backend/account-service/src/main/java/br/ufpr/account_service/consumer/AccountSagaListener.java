@@ -1,10 +1,10 @@
 package br.ufpr.account_service.consumer;
 
-import br.ufpr.account_service.config.RabbitConfig;
-import br.ufpr.account_service.model.Account;
-import br.ufpr.account_service.repository.AccountRepository;
-import br.ufpr.account_service.service.AccountService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Random;
+
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -12,10 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Random;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import br.ufpr.account_service.config.RabbitConfig;
+import br.ufpr.account_service.model.Account;
+import br.ufpr.account_service.repository.AccountRepository;
+import br.ufpr.account_service.service.AccountService;
 
 @Component
 public class AccountSagaListener {
@@ -58,7 +60,7 @@ public class AccountSagaListener {
             account.setAccountNumber(accountNumber);
             account.setCreationDate(LocalDateTime.now());
             account.setBalance(BigDecimal.ZERO);
-            account.setLimit(limit);
+            account.setAccountLimit(limit);
             account.setManager(managerId);
 
             Account savedAccount = accountRepository.save(account);
@@ -73,9 +75,9 @@ public class AccountSagaListener {
         } catch (Exception ex) {
             rabbitTemplate.convertAndSend(sagaExchange, RabbitConfig.ACCOUNT_CREATE_FAILED_KEY,
                     Map.of("reason", ex.getMessage(), "payload", payload), m -> {
-                        m.getMessageProperties().setCorrelationId(correlationId);
-                        return m;
-                    });
+                m.getMessageProperties().setCorrelationId(correlationId);
+                return m;
+            });
         }
     }
 
@@ -99,9 +101,9 @@ public class AccountSagaListener {
 
             rabbitTemplate.convertAndSend(sagaExchange, RabbitConfig.ACCOUNT_LIMIT_UPDATE_FAILED_KEY,
                     Map.of("reason", ex.getMessage(), "payload", payload), m -> {
-                        m.getMessageProperties().setCorrelationId(correlationId);
-                        return m;
-                    });
+                m.getMessageProperties().setCorrelationId(correlationId);
+                return m;
+            });
         }
     }
 }

@@ -1,9 +1,8 @@
 package br.ufpr.account_service.service;
 
-import br.ufpr.account_service.model.Account;
-import br.ufpr.account_service.model.Transaction;
-import br.ufpr.account_service.repository.AccountRepository;
-import br.ufpr.account_service.repository.TransactionRepository;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,9 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Map;
+import br.ufpr.account_service.model.Account;
+import br.ufpr.account_service.model.Transaction;
+import br.ufpr.account_service.repository.AccountRepository;
+import br.ufpr.account_service.repository.TransactionRepository;
 
 @Service
 public class AccountService {
@@ -32,7 +32,7 @@ public class AccountService {
     private Account findAccountByClientCpf(String clientCpf) {
         return accountRepository.findByClientId(clientCpf)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Conta não encontrada para o cliente CPF: " + clientCpf));
+                "Conta não encontrada para o cliente CPF: " + clientCpf));
     }
 
     @Transactional
@@ -58,7 +58,7 @@ public class AccountService {
     public Account withdraw(String clientCpf, BigDecimal amount) {
         Account account = findAccountByClientCpf(clientCpf);
 
-        BigDecimal availableBalance = account.getBalance().add(account.getLimit());
+        BigDecimal availableBalance = account.getBalance().add(account.getAccountLimit());
         if (availableBalance.compareTo(amount) < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Saldo insuficiente para saque.");
         }
@@ -84,7 +84,7 @@ public class AccountService {
 
         Account originAccount = findAccountByClientCpf(clientCpf);
 
-        BigDecimal availableBalance = originAccount.getBalance().add(originAccount.getLimit());
+        BigDecimal availableBalance = originAccount.getBalance().add(originAccount.getAccountLimit());
         if (availableBalance.compareTo(amount) < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Saldo insuficiente para transferência.");
         }
@@ -137,7 +137,7 @@ public class AccountService {
             newLimit = currentBalance.abs();
         }
 
-        account.setLimit(newLimit);
+        account.setAccountLimit(newLimit);
         Account savedAccount = accountRepository.save(account);
 
         publishCqrsEvent("account.updated", savedAccount);
