@@ -41,40 +41,65 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
             .getManagersWithTotals()
             .subscribe({
                 next: (processedManagers) => {
-                    this.managers = processedManagers.sort(
-                        (a, b) =>
-                            (b.positiveTotal ?? 0) - (a.positiveTotal ?? 0)
-                    );
+                    console.log('Dados recebidos:', processedManagers);
 
-                    this.chartData = this.managers.map((m) => ({
-                        name: m.name,
-                        series: [
-                            {
-                                name: 'Saldo Positivo',
-                                value: m.positiveTotal ?? 0,
-                            },
-                            {
-                                name: 'Saldo Negativo',
-                                value: Math.abs(m.negativeTotal ?? 0),
-                            },
-                        ],
-                    }));
+                    // ✅ Validação e sanitização dos dados com tipo explícito
+                    this.managers = (processedManagers || [])
+                        .filter((m): m is Manager => m !== null && m !== undefined && !!m.name)
+                        .map(m => ({
+                            ...m,
+                            name: m.name || 'Desconhecido',
+                            positiveTotal: this.safeNumber(m.positiveTotal),
+                            negativeTotal: this.safeNumber(m.negativeTotal),
+                            clientCount: this.safeNumber(m.clientCount)
+                        } as Manager))
+                        .sort((a, b) => {
+                            const aTotal = this.safeNumber(a.positiveTotal);
+                            const bTotal = this.safeNumber(b.positiveTotal);
+                            return bTotal - aTotal;
+                        });
 
+                    // ✅ Prepara dados do gráfico com validação extra
+                    this.chartData = this.managers
+                        .filter(m => m.name && m.name.trim() !== '')
+                        .map((m) => {
+                            const positiveValue = this.safeNumber(m.positiveTotal);
+                            const negativeValue = this.safeNumber(m.negativeTotal);
+                            
+                            return {
+                                name: m.name,
+                                series: [
+                                    {
+                                        name: 'Saldo Positivo',
+                                        value: Math.max(0, positiveValue),
+                                    },
+                                    {
+                                        name: 'Saldo Negativo',
+                                        value: Math.abs(negativeValue),
+                                    },
+                                ],
+                            };
+                        });
+
+                    console.log('Chart data preparado:', this.chartData);
                     this.isLoading = false;
                 },
                 error: (err) => {
                     console.error('Erro ao carregar dados do dashboard:', err);
+                    this.managers = [];
+                    this.chartData = [];
                     this.isLoading = false;
                 },
             });
     }
 
-    ngOnDestroy(): void {
-        this.dataSubscription?.unsubscribe();
-    }
-
     private safeNumber(value: any): number {
+        if (value === null || value === undefined) return 0;
         const n = Number(value);
         return Number.isFinite(n) ? n : 0;
+    }
+
+    ngOnDestroy(): void {
+        this.dataSubscription?.unsubscribe();
     }
 }

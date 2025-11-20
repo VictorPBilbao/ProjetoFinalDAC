@@ -230,18 +230,9 @@ export class ManagerService {
     getManagers(): Observable<Manager[]> {
         this.loadingService.show();
         const token = this.authService.getToken();
-        return this.http.get<any[]>(`${this.apiUrl}/gerentes`, {
+        return this.http.get<Manager[]>(`${this.apiUrl}/gerentes`, {
             headers: token ? { Authorization: token } : {}
         }).pipe(
-            map((response) => {
-                return response.map(item => ({
-                    id: item.id || item.cpf,
-                    cpf: item.cpf,
-                    name: item.nome,
-                    email: item.email,
-                    telephone: item.telefone
-                } as Manager));
-            }),
             catchError(err => {
                 console.error('Erro ao buscar gerentes:', err);
                 return of([]);
@@ -253,19 +244,9 @@ export class ManagerService {
     getManagerById(managercpf: string): Observable<Manager | undefined> {
         this.loadingService.show();
         const token = this.authService.getToken();
-        return this.http.get<any>(`${this.apiUrl}/gerentes/${managercpf}`, {
+        return this.http.get<Manager>(`${this.apiUrl}/gerentes/${managercpf}`, {
             headers: token ? { Authorization: token } : {}
         }).pipe(
-            map((item) => {
-                if (!item) return undefined;
-                return {
-                    id: item.id || item.cpf,
-                    cpf: item.cpf,
-                    name: item.nome,
-                    email: item.email,
-                    telephone: item.telefone
-                } as Manager;
-            }),
             catchError(err => {
                 console.error('Erro ao buscar gerente por ID:', err);
                 return of(undefined);

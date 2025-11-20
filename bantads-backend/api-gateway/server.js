@@ -307,7 +307,6 @@ app.get(
   (soma) de saldos negativos. Deve ser mostrado os gerentes com maiores saldos positivos
   primeiro;
  */
-
 app.get(
     "/admin/dashboard/managers",
     authenticateToken,
@@ -317,35 +316,17 @@ app.get(
         const config = authHeader ? { headers: { Authorization: authHeader } } : {};
 
         const managerServiceUrl = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
-        const clientServiceUrl = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
-        const accountQueryServiceUrl =
-            process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086"; // porta do account-query-service
+        const accountQueryServiceUrl = process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
 
         try {
-            const [managersResp, clientsResp] = await Promise.all([
-                axiosInstance.get(`${managerServiceUrl}/gerentes`, config),
-                axiosInstance.get(
-                    `${clientServiceUrl}/clientes?filtro=adm_relatorio_clientes`,
-                    config
-                ),
-            ]);
+            console.log("[R15] Iniciando dashboard de gerentes...");
 
+            // 1. Busca gerentes
+            const managersResp = await axiosInstance.get(`${managerServiceUrl}/gerentes`, config);
             const managers = Array.isArray(managersResp.data) ? managersResp.data : [];
-            const clients = Array.isArray(clientsResp.data) ? clientsResp.data : [];
+            console.log(`[R15] Gerentes: ${managers.length}`);
 
-            let accountsSummary = null;
-            try {
-                const summaryResp = await axiosInstance.get(
-                    `${accountQueryServiceUrl}/query/summary-by-manager`,
-                    config
-                );
-                accountsSummary = Array.isArray(summaryResp.data) ? summaryResp.data : [];
-            } catch (err) {
-                accountsSummary = null;
-                console.warn(
-                    "[Gateway] Account summary endpoint indisponível; usando fallback a partir dos clients (pode faltar saldos)."
-                );
-            }
+            // 2. Inicializa estatísticas
             const managerStats = new Map();
             for (const m of managers) {
                 managerStats.set(m.cpf, {
@@ -354,84 +335,73 @@ app.get(
                     email: m.email,
                     telefone: m.telefone,
                     clientCount: 0,
-                    totalPositivo: 0.0,
-                    totalNegativo: 0.0,
+                    totalPositivo: "0.00",
+                    totalNegativo: "0.00",
                 });
             }
 
-            if (accountsSummary) {
-                for (const s of accountsSummary) {
-                    const gerenteCpf = s.gerenteCpf || s.managerId || s.gerenteCpf;
-                    const qtd = s.qtdClientes ?? s.qtd ?? 0;
-                    const pos = Number(s.totalPositivo ?? s.totalPositive ?? 0);
-                    const neg = Number(s.totalNegativo ?? s.totalNegative ?? 0);
+            // 3. Busca summary do account-query-service
+            try {
+                const summaryResp = await axiosInstance.get(
+                    `${accountQueryServiceUrl}/query/summary-by-manager`,
+                    config
+                );
+                const accountsSummary = Array.isArray(summaryResp.data) ? summaryResp.data : [];
+                console.log(`[R15] Summary: ${accountsSummary.length} registros`);
 
-                    const stat = managerStats.get(gerenteCpf) || {
-                        cpf: gerenteCpf,
-                        nome: "(Desconhecido)",
-                        email: null,
-                        telefone: null,
-                        clientCount: qtd,
-                        totalPositivo: 0.0,
-                        totalNegativo: 0.0,
-                    };
-                    stat.clientCount = qtd;
-                    stat.totalPositivo = Number(pos).toFixed(2);
-                    stat.totalNegativo = Number(neg).toFixed(2);
-                    managerStats.set(gerenteCpf, stat);
-                }
-            } else {
-                for (const c of clients) {
-                    const managerCpf = c?.gerente_cpf ?? c?.gerenteCpf ?? c?.gerente;
-                    if (!managerCpf) continue;
-                    if (!managerStats.has(managerCpf)) {
-                        managerStats.set(managerCpf, {
-                            cpf: managerCpf,
+                for (const s of accountsSummary) {
+                    const gerenteCpf = s.managerCpf || s.managerId || s.gerenteCpf;
+                    if (!gerenteCpf) continue;
+
+                    const qtd = Number(s.clientCount ?? s.qtdClientes ?? 0);
+                    const pos = Number(s.totalPositive ?? s.totalPositivo ?? 0);
+                    const neg = Number(s.totalNegative ?? s.totalNegativo ?? 0);
+
+                    let stat = managerStats.get(gerenteCpf);
+                    if (!stat) {
+                        stat = {
+                            cpf: gerenteCpf,
                             nome: "(Desconhecido)",
                             email: null,
                             telefone: null,
                             clientCount: 0,
-                            totalPositivo: 0.0,
-                            totalNegativo: 0.0,
-                        });
+                            totalPositivo: "0.00",
+                            totalNegativo: "0.00",
+                        };
+                        managerStats.set(gerenteCpf, stat);
                     }
-                    const s = managerStats.get(managerCpf);
-                    s.clientCount = (s.clientCount || 0) + 1;
-                    const saldo = (() => {
-                        if (typeof c.saldo !== "undefined") return Number(c.saldo);
-                        if (c.conta && typeof c.conta.saldo !== "undefined")
-                            return Number(c.conta.saldo);
-                        return 0;
-                    })();
-                    if (saldo >= 0) s.totalPositivo += saldo;
-                    else s.totalNegativo += saldo;
+
+                    stat.clientCount = qtd;
+                    stat.totalPositivo = pos.toFixed(2);
+                    stat.totalNegativo = neg.toFixed(2);
                 }
 
-                for (const [k, v] of managerStats.entries()) {
-                    v.totalPositivo = Number(v.totalPositivo).toFixed(2);
-                    v.totalNegativo = Number(v.totalNegativo).toFixed(2);
-                    managerStats.set(k, v);
-                }
+            } catch (summaryErr) {
+                console.warn(`[R15] Account Query indisponível: ${summaryErr.message}`);
+                // Mantém gerentes com valores zerados
             }
 
+            // 4. Ordena por total positivo
             const result = Array.from(managerStats.values()).sort(
                 (a, b) => Number(b.totalPositivo) - Number(a.totalPositivo)
             );
+
+            console.log(`[R15] Dashboard: ${result.length} gerentes`);
             return res.status(200).json(result);
+
         } catch (error) {
-            console.error("[API COMPOSITION ERROR] R15 Admin Dashboard:", error.message || error);
-            if (error.code === "ECONNABORTED") {
-                return res.status(504).json({
-                    error: "Timeout",
-                    message: "Uma ou mais chamadas demoraram demais.",
+            console.error("[R15 ERROR]", error.message);
+
+            if (error.code === "ECONNREFUSED") {
+                return res.status(503).json({
+                    error: "Serviço indisponível",
+                    message: "Manager Service não acessível"
                 });
             }
-            if (error.response) {
-                return res.status(error.response.status).json(error.response.data);
-            }
-            return res.status(503).json({
-                error: "Serviço indisponível",
-                message: "Falha ao compor dados para o dashboard do administrador.",
+
+            return res.status(500).json({
+                error: "Erro interno",
+                message: "Falha ao gerar dashboard"
             });
         }
     }
@@ -484,6 +454,7 @@ app.get(
 
 // GET /clientes (R09, R12, R14, R16)
 // Esse cara ta puxando os dados agregados para relatorio de clientes, dai depende se é admin ou gerente
+// GET /clientes (R09, R12, R14, R16)
 app.get(
     "/clientes",
     authenticateToken,
@@ -507,10 +478,11 @@ app.get(
             try {
                 console.log(`[Gateway] Agregando dados para ${userRole}...`);
 
-                let urlClientes = `${clientUrl}/clientes`;
-                if (userRole === "GERENTE") {
-                    urlClientes += `?gerente=${userCpf}`;
-                    if (busca) urlClientes += `&busca=${encodeURIComponent(busca)}`;
+                // ✅ REMOVIDO: ?gerente=${userCpf}
+                // Client-service retorna TODOS os clientes
+                let urlClientes = `${clientUrl}/clientes/listar`;
+                if (busca) {
+                    urlClientes += `?busca=${encodeURIComponent(busca)}`;
                 }
 
                 const [clientsResp, managersResp, accountsResp] = await Promise.all([
@@ -519,9 +491,23 @@ app.get(
                     axiosInstance.get(`${accountQueryUrl}/query/all`, config)
                 ]);
 
-                const clients = Array.isArray(clientsResp.data) ? clientsResp.data : [];
+                let clients = Array.isArray(clientsResp.data) ? clientsResp.data : [];
                 const managers = Array.isArray(managersResp.data) ? managersResp.data : [];
                 const accounts = Array.isArray(accountsResp.data) ? accountsResp.data : [];
+
+                // ✅ Se for GERENTE, filtra no Gateway baseado nas contas
+                if (userRole === "GERENTE" || userRole === "MANAGER") {
+                    const myCpfsSet = new Set();
+                    accounts.forEach(acc => {
+                        const managerId = String(acc.managerId || acc.managerCpf || '');
+                        if (managerId === userCpf) {
+                            const clientCpf = acc.clientId || acc.clientCpf;
+                            if (clientCpf) myCpfsSet.add(clientCpf);
+                        }
+                    });
+                    clients = clients.filter(c => myCpfsSet.has(c.cpf));
+                    console.log(`[Gateway] Gerente ${userCpf} tem ${clients.length} clientes`);
+                }
 
                 const accountMap = new Map();
                 accounts.forEach(acc => {
@@ -534,14 +520,13 @@ app.get(
                     if (mgr.cpf) managerMap.set(mgr.cpf, mgr);
                     if (mgr.id) managerMap.set(String(mgr.id), mgr);
                 });
+
                 const relatorio = clients.map(client => {
                     const conta = accountMap.get(client.cpf);
                     
                     let gerente = null;
                     if (conta && conta.managerId) {
                         gerente = managerMap.get(String(conta.managerId));
-                    } else if (client.gerente) {
-                        gerente = managerMap.get(client.gerente);
                     }
 
                     return {
@@ -577,22 +562,6 @@ app.get(
         proxyReqPathResolver: (req) => req.originalUrl
     })
 );
-
-// GET /clientes (R09, R12, R14, R16) com autorização por filtro
-//app.get(
-//    "/clientes",
-//    authenticateToken,
-//    authorizeClientesList,
-//    proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
-//        proxyReqPathResolver: (req) => req.originalUrl,
-//        proxyErrorHandler: (err, res, next) => {
-//           res.status(503).json({
-//                error: "Client Service unavailable",
-//                message: err.message,
-//            });
-//        },
-//    })
-//);
 
 // POST /clientes/validate -> validado no service (pass-through)
 app.post(
