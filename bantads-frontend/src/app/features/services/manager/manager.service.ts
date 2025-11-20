@@ -8,8 +8,9 @@ import {
 import { AuthService } from '../auth/auth.service';
 import { LoadingService } from '../utils/loading-service.service';
 import { Observable, of } from 'rxjs';
-import { catchError, delay, finalize } from 'rxjs/operators';
+import { catchError, delay, finalize, map } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
+
 
 @Injectable({ providedIn: 'root' })
 export class ManagerService {
@@ -24,27 +25,34 @@ export class ManagerService {
 
     getManagersWithTotals(): Observable<Manager[]> {
         this.loadingService.show();
-        const managers = this.storage.getManagers();
-        const clientes = this.storage.getClientes();
+        const token = this.authService.getToken();
 
-        managers.forEach((manager) => {
-            const assignedClients = clientes.filter(
-                (c) => (c.manager as any)?.id === manager.id
-            );
+        return this.http.get<any[]>(`${this.apiUrl}/admin/dashboard/managers`, {
+            headers: token ? { Authorization: token } : {}
+        }).pipe(
+            map((response) => {
 
-            manager.clientCount = assignedClients.length;
+                return response.map(item => ({
 
-            manager.positiveTotal = assignedClients.reduce((acc, cli) => {
-                return acc + (cli.saldo >= 0 ? cli.saldo : 0);
-            }, 0);
+                    id: item.id || item.cpf,
+                    cpf: item.cpf,
+                    name: item.nome,
+                    email: item.email,
+                    telephone: item.telefone,
 
-            manager.negativeTotal = assignedClients.reduce((acc, cli) => {
-                return acc + (cli.saldo < 0 ? cli.saldo : 0);
-            }, 0);
-        });
+                    clientCount: item.clientCount,
+                    positiveTotal: Number(item.totalPositivo),
+                    negativeTotal: Number(item.totalNegativo),
 
-        this.loadingService.hide();
-        return of(managers).pipe(delay(500));
+                    clients: []
+                } as Manager));
+            }),
+            catchError((err) => {
+                console.error('Erro ao carregar dashboard de gerentes:', err);
+                return of([]);
+            }),
+            finalize(() => this.loadingService.hide())
+        );
     }
 
     getPending(): Cliente[] {
@@ -222,9 +230,18 @@ export class ManagerService {
     getManagers(): Observable<Manager[]> {
         this.loadingService.show();
         const token = this.authService.getToken();
-        return this.http.get<Manager[]>(`${this.apiUrl}/gerentes`, {
+        return this.http.get<any[]>(`${this.apiUrl}/gerentes`, {
             headers: token ? { Authorization: token } : {}
         }).pipe(
+            map((response) => {
+                return response.map(item => ({
+                    id: item.id || item.cpf,
+                    cpf: item.cpf,
+                    name: item.nome,
+                    email: item.email,
+                    telephone: item.telefone
+                } as Manager));
+            }),
             catchError(err => {
                 console.error('Erro ao buscar gerentes:', err);
                 return of([]);
@@ -236,9 +253,19 @@ export class ManagerService {
     getManagerById(managercpf: string): Observable<Manager | undefined> {
         this.loadingService.show();
         const token = this.authService.getToken();
-        return this.http.get<Manager>(`${this.apiUrl}/gerentes/${managercpf}`, {
+        return this.http.get<any>(`${this.apiUrl}/gerentes/${managercpf}`, {
             headers: token ? { Authorization: token } : {}
         }).pipe(
+            map((item) => {
+                if (!item) return undefined;
+                return {
+                    id: item.id || item.cpf,
+                    cpf: item.cpf,
+                    name: item.nome,
+                    email: item.email,
+                    telephone: item.telefone
+                } as Manager;
+            }),
             catchError(err => {
                 console.error('Erro ao buscar gerente por ID:', err);
                 return of(undefined);
