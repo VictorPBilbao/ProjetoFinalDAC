@@ -16,6 +16,24 @@ export class ServiceContaService {
     return this.http.get(`${API_URL}/query/my-account`);
   }
 
+  // Implementação do Depósito
+  depositar(numeroConta: string, valor: number): Observable<any> {
+    return this.http.post(`${API_URL}/contas/${numeroConta}/depositar`, { amount: valor });
+  }
+
+  // Implementação do Saque
+  sacar(numeroConta: string, valor: number): Observable<any> {
+    return this.http.post(`${API_URL}/contas/${numeroConta}/sacar`, { amount: valor });
+  }
+
+  // Implementação da Transferência
+  transferir(numeroContaOrigem: string, numeroContaDestino: string, valor: number): Observable<any> {
+    return this.http.post(`${API_URL}/contas/${numeroContaOrigem}/transferir`, {
+      destinationAccountNumber: numeroContaDestino,
+      amount: valor
+    });
+  }
+
   getStatement(numeroConta: string, inicio?: string, fim?: string): Observable<ContaRecord[]> {
     let params = new HttpParams();
     if (inicio) params = params.set('startDate', inicio);

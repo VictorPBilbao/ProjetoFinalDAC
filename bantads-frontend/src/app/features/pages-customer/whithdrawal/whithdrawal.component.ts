@@ -7,6 +7,7 @@ import { Observable, Subscription } from 'rxjs';
 import { ClientService } from '../../services/client/client.service';
 import { TransactionService } from '../../services/transaction/transaction.service';
 import { Transaction } from '../../models/transaction.model';
+import { ServiceContaService } from '../../services/conta/service-conta.service';
 
 @Component({
     selector: 'app-whithdrawal',
@@ -26,7 +27,7 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
 
     constructor(
         private clientService: ClientService,
-        private transactionService: TransactionService
+        private contaService: ServiceContaService // Injete o serviço
     ) { }
 
     ngOnInit(): void {
@@ -51,37 +52,19 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
             this.form.markAllAsTouched();
             return;
         }
-        const { agencia, conta, valor } = this.form.value as { agencia: string; conta: string; valor: number };
+        const { conta, valor } = this.form.value;
 
-        // Regra: não sacar de outra conta
-        if (!this.cliente || agencia !== this.cliente.agencia || conta !== this.cliente.conta) {
-            this.message = { type: 'error', text: 'Você não pode sacar de outra conta.' };
-            return;
-        }
-
-        // Regra: saldo suficiente considerando limite
-        const disponivel = (this.cliente?.saldo ?? 0) + (this.cliente?.limite ?? 0);
-        if (valor > disponivel) {
-            this.message = { type: 'error', text: 'Saldo insuficiente considerando o limite.' };
-            return;
-        }
-
-        // Atualiza saldo localmente (frontend-only)
-        if (this.cliente) {
-            this.transaction = {
-                id: crypto.randomUUID(),
-                clientId: this.cliente.id,
-                operation: 'Saque',
-                amount: -valor,
-                dateTime: new Date(),
+        // Integração com Backend (Validação de saldo/limite ocorre no servidor)
+        this.contaService.sacar(conta, Number(valor)).subscribe({
+            next: () => {
+                this.message = { type: 'success', text: 'Saque realizado com sucesso.' };
+                this.form.patchValue({ valor: null });
+            },
+            error: (err) => {
+                // O backend retorna 400 se não houver saldo/limite
+                const msg = err.error?.message || 'Erro ao realizar saque.';
+                this.message = { type: 'error', text: msg };
             }
-            this.transactionService.addTransaction(this.transaction);
-
-            const updated = { ...this.cliente, saldo: this.cliente.saldo - Number(valor) } as Cliente;
-            this.clientService.updateClient(updated);
-            this.cliente = updated;
-        }
-        this.message = { type: 'success', text: 'Saque realizado com sucesso.' };
-        this.form.patchValue({ valor: null });
+        });
     }
 }

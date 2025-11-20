@@ -16,6 +16,7 @@ import { Transaction } from '../../models/transaction.model';
 import { ClientService } from '../../services/client/client.service';
 import { LocalStorageServiceService } from '../../services/local-storages/local-storage-service.service';
 import { TransactionService } from '../../services/transaction/transaction.service';
+import { ServiceContaService } from '../../services/conta/service-conta.service';
 
 @Component({
     selector: 'app-transfer',
@@ -53,8 +54,7 @@ export class TransferComponent implements OnDestroy, OnInit {
 
     constructor(
         private clientService: ClientService,
-        private storageService: LocalStorageServiceService,
-        private transactionService: TransactionService
+        private contaService: ServiceContaService // Injete o serviço
     ) {}
 
     ngOnInit(): void {
@@ -94,120 +94,22 @@ export class TransferComponent implements OnDestroy, OnInit {
             this.form.markAllAsTouched();
             return;
         }
-        const { agencia, conta, contaDestino, valor } = this.form.value as {
-            agencia: string;
-            conta: string;
-            contaDestino: string;
-            valor: number;
-        };
+        const { conta, contaDestino, valor } = this.form.value;
 
-        // Regra: transferir apenas da conta do cliente
-        if (
-            !this.cliente ||
-            agencia !== this.cliente.agencia ||
-            conta !== this.cliente.conta
-        ) {
-            this.message = {
-                type: 'error',
-                text: 'Você só pode transferir da sua conta.',
-            };
-            return;
-        }
-
-        // Regra: saldo suficiente considerando limite
-        const disponivel =
-            (this.cliente?.saldo ?? 0) + (this.cliente?.limite ?? 0);
-        if (valor > disponivel) {
-            this.message = {
-                type: 'error',
-                text: 'Saldo insuficiente considerando o limite.',
-            };
-            return;
-        }
-
-        // Executa transferência (somente no frontend - mock)
-        if (this.cliente) {
-            const debitAmount = Number(valor);
-
-            // debita conta do cliente logado
-            const updatedOrigin = {
-                ...this.cliente,
-                saldo: this.cliente.saldo - debitAmount,
-            } as Cliente;
-            this.clientService.updateClient(updatedOrigin);
-            this.cliente = updatedOrigin;
-
-            // tenta localizar cliente destino por número da conta
-            const allClientes = this.storageService.getClientes();
-            const destino = allClientes.find((c) => c.conta === contaDestino);
-
-            if (destino) {
-                const updatedDestino = {
-                    ...destino,
-                    saldo: (destino.saldo ?? 0) + debitAmount,
-                } as Cliente;
-                // persiste destino e origem
-                this.storageService.updateCliente(updatedDestino);
-                this.storageService.updateCliente(updatedOrigin);
-                // registra transações (origem negativa, destino positiva)
-                try {
-                    this.transactionService.addTransaction({
-                        id: crypto.randomUUID(),
-                        clientId: this.cliente.id,
-                        dateTime: new Date(),
-                        operation: 'Transferencia',
-                        fromOrToClient: destino.nome,
-                        amount: -debitAmount,
-                    } as any);
-                    this.transactionService.addTransaction({
-                        id: crypto.randomUUID(),
-                        clientId: destino.id,
-                        dateTime: new Date(),
-                        operation: 'Transferencia',
-                        fromOrToClient: this.cliente.nome,
-                        amount: debitAmount,
-                    } as any);
-                } catch {
-                    /* noop */
-                }
-                // notifica mudanças globais
-                try {
-                    window.dispatchEvent(new Event('clientUpdated'));
-                } catch {
-                    /* noop */
-                }
-            } else {
-                // conta destino não encontrada entre clientes — ainda persiste a origem e registra a transação de saída
-                this.storageService.updateCliente(updatedOrigin);
-                try {
-                    this.transaction = {
-                        id: crypto.randomUUID(),
-                        clientId: this.cliente.id,
-                        operation: 'Transferencia',
-                        amount: -debitAmount,
-                        dateTime: new Date(),
-                    };
-
-                    this.transactionService.addTransaction(this.transaction);
-                } catch {
-                    /* noop */
-                }
+        this.contaService.transferir(conta, contaDestino, Number(valor)).subscribe({
+            next: () => {
+                this.message = { type: 'success', text: 'Transferência realizada com sucesso.' };
+                this.lastTransfer = {
+                    destinoConta: contaDestino,
+                    valor: Number(valor),
+                    timestamp: new Date().toISOString(),
+                };
+                this.form.patchValue({ valor: null, contaDestino: '' });
+            },
+            error: (err) => {
+                const msg = err.error?.message || 'Erro na transferência. Verifique o saldo ou a conta destino.';
+                this.message = { type: 'error', text: msg };
             }
-        }
-        const now = new Date().toISOString();
-        this.lastTransfer = {
-            destinoConta: contaDestino,
-            valor: Number(valor),
-            timestamp: now,
-        };
-        this.message = {
-            type: 'success',
-            text: `Transferência de ${valor.toFixed(
-                2
-            )} realizada para ${contaDestino} em ${new Date(
-                now
-            ).toLocaleString()}.`,
-        };
-        this.form.patchValue({ valor: null, contaDestino: '' });
+        });
     }
 }
