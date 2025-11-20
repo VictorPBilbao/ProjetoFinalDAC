@@ -41,6 +41,107 @@
         "security": []
       }
     },
+    "/gerentes": {
+      "post": {
+        "summary": "/gerentes",
+        "deprecated": false,
+        "description": "Inserção de Gerentes.\n<br>Permissões:\n- ADMINISTRADOR\n",
+        "tags": [
+          "Gerentes"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DadoGerenteInsercao"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Gerente inserido com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DadoGerente"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "/gerentes",
+        "deprecated": false,
+        "description": "Busca todos os gerentes cadastrados",
+        "tags": [
+          "Gerentes"
+        ],
+        "parameters": [
+          {
+            "name": "numero",
+            "in": "query",
+            "description": "Se é para retornar todos os gerentes ou se a consulta é para dashboard\n- *dashboard* : retorna os dados para montar o dashboard do gerente\n- sem filtro : retorna todos os dados de gerentes\n",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "dashboard"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retorna a lista de gerentes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/DashboardResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/GerentesResponse"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "O usuário não está logado",
+            "headers": {}
+          },
+          "403": {
+            "description": "O usuário não tem permissão para efetuar esta operação",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/login": {
       "post": {
         "summary": "/login",
@@ -57,7 +158,7 @@
                 "$ref": "#/components/schemas/LoginInfo"
               },
               "example": {
-                "email": "cli1@bantads.com.br",
+                "usuario": "ger1@bantads.com.br",
                 "senha": "tads"
               }
             }
@@ -381,7 +482,7 @@
             "in": "path",
             "description": "CPF do cliente a ser rejeitado",
             "required": true,
-            "example": "",
+            "example": "84665873143",
             "schema": {
               "type": "string"
             }
@@ -400,6 +501,9 @@
                     ]
                   }
                 }
+              },
+              "example": {
+                "motivo": "Documentação incompleta e dados inconsistentes"
               }
             }
           }
@@ -420,7 +524,7 @@
         },
         "security": [
           {
-            "bearerAuth": []
+            "bearer": []
           }
         ]
       }
@@ -716,107 +820,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExtratoResponse"
-                }
-              }
-            },
-            "headers": {}
-          },
-          "401": {
-            "description": "O usuário não está logado",
-            "headers": {}
-          },
-          "403": {
-            "description": "O usuário não tem permissão para efetuar esta operação",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/gerentes": {
-      "get": {
-        "summary": "/gerentes",
-        "deprecated": false,
-        "description": "Busca todos os gerentes cadastrados",
-        "tags": [
-          "Gerentes"
-        ],
-        "parameters": [
-          {
-            "name": "numero",
-            "in": "query",
-            "description": "Se é para retornar todos os gerentes ou se a consulta é para dashboard\n- *dashboard* : retorna os dados para montar o dashboard do gerente\n- sem filtro : retorna todos os dados de gerentes\n",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "dashboard"
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retorna a lista de gerentes",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/DashboardResponse"
-                    },
-                    {
-                      "$ref": "#/components/schemas/GerentesResponse"
-                    }
-                  ]
-                }
-              }
-            },
-            "headers": {}
-          },
-          "401": {
-            "description": "O usuário não está logado",
-            "headers": {}
-          },
-          "403": {
-            "description": "O usuário não tem permissão para efetuar esta operação",
-            "headers": {}
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      },
-      "post": {
-        "summary": "/gerentes",
-        "deprecated": false,
-        "description": "Inserção de Gerentes.\n<br>Permissões:\n- ADMINISTRADOR\n",
-        "tags": [
-          "Gerentes"
-        ],
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DadoGerenteInsercao"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Gerente inserido com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DadoGerente"
                 }
               }
             },
@@ -1726,6 +1729,10 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   },
