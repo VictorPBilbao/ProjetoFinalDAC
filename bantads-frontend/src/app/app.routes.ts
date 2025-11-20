@@ -135,7 +135,7 @@ export const routes: Routes = [
                 data: { role: ['admin'] },
             },
             {
-                path: 'gerente/:id',
+                path: 'gerente/:cpf',
                 component: ManagerDetailsComponent,
                 canActivate: [authGuard],
                 data: { role: ['admin'] },

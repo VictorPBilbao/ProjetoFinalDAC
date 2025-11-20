@@ -25,7 +25,7 @@ import { ManagerService } from '../../services/manager/manager.service';
 })
 export class ManagerDetailsComponent implements OnInit {
     managerForm: FormGroup;
-    managerId?: string;
+    managerCpf?: string;
     isEditMode = false;
 
     constructor(
@@ -45,15 +45,15 @@ export class ManagerDetailsComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.managerId = this.route.snapshot.paramMap.get('id') || undefined;
-        if (this.managerId) {
+        this.managerCpf = this.route.snapshot.paramMap.get('cpf') || undefined;
+        if (this.managerCpf) {
             this.isEditMode = true;
-            this.loadManager(this.managerId);
+            this.loadManager(this.managerCpf);
         }
     }
 
-    private loadManager(id: string): void {
-        this.managerService.getManagerById(id).subscribe((manager) => {
+    private loadManager(managercpf: string): void {
+        this.managerService.getManagerById(managercpf).subscribe((manager) => {
             if (manager) {
                 this.managerForm.patchValue(manager);
 
@@ -83,16 +83,18 @@ export class ManagerDetailsComponent implements OnInit {
 
         action$.subscribe({
             next: (response) => {
-            if (response.success) {
-                Swal.fire('Sucesso!', response.message || 'Gerente salvo com sucesso!', 'success')
-                .then(() => this.router.navigate(['/admin/gerentes']));
-            } else {
-                // Caso o backend retorne success=false mas sem lançar erro HTTP
-                Swal.fire('Erro!', response.message || 'Falha ao salvar o gerente.', 'error');
-            }
+                console.log('Resposta completa:', response);
+                
+                // Verifica se não é uma resposta de erro do catchError
+                if (response.success === false) {
+                    Swal.fire('Erro!', response.message || 'Falha ao salvar o gerente.', 'error');
+                } else {
+                    // Sucesso - backend retornou 200/201
+                    Swal.fire('Sucesso!', 'Gerente salvo com sucesso!', 'success')
+                        .then(() => this.router.navigate(['/admin/gerentes']));
+                }
             },
             error: (err) => {
-                // Captura mensagem vinda do backend (SagaResult.message)
                 const backendMsg = err.error?.message || 'Ocorreu um erro inesperado ao salvar o gerente.';
                 Swal.fire('Erro!', backendMsg, 'error');
                 console.error('Erro ao salvar gerente:', err);

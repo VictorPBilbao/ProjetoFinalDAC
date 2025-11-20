@@ -44,7 +44,7 @@ export class ManagerListComponent implements OnInit, OnDestroy {
             });
     }
 
-    confirmDelete(managerId: string, managerName: string): void {
+    confirmDelete(managerCpf: string, managerName: string): void {
         Swal.fire({
             title: 'Você tem certeza?',
             text: `Deseja realmente remover o gerente "${managerName}"? Esta ação não pode ser desfeita.`,
@@ -56,13 +56,13 @@ export class ManagerListComponent implements OnInit, OnDestroy {
             cancelButtonText: 'Cancelar',
         }).then((result) => {
             if (result.isConfirmed) {
-                this.deleteManager(managerId);
+                this.deleteManager(managerCpf);
             }
         });
     }
 
-    private deleteManager(managerId: string): void {
-        this.managerService.deleteManager(managerId).subscribe({
+    private deleteManager(managerCpf: string): void {
+        this.managerService.deleteManager(managerCpf).subscribe({
             next: (response) => {
             const successMsg = response?.message || 'O gerente foi removido com sucesso.';
             Swal.fire('Removido!', successMsg, 'success').then(() => {

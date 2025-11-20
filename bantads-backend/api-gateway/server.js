@@ -195,7 +195,7 @@ app.get(
 app.get(
   "/relatorio/melhores-clientes",
   authenticateToken,
-  requireRole("GERENTE"),
+  requireRole("GERENTE", "MANAGER"),
   async (req, res) => {
     const managerCpf = req.user?.cpf;
     const authHeader = req.headers.authorization;
@@ -723,7 +723,7 @@ app.get(
 app.get(
     "/clientes/pending",
     authenticateToken,
-    requireRole("GERENTE"),
+    requireRole("GERENTE", "MANAGER"),
     proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
         proxyReqPathResolver: (req) => req.originalUrl,
         proxyErrorHandler: (err, res, next) => {
@@ -877,8 +877,26 @@ app.post(
 app.post(
     "/logout",
     authenticateToken,
+    express.json(),
     proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084", {
-        proxyReqPathResolver: (req) => req.originalUrl,
+        proxyReqPathResolver: (req) => {
+            console.log(`📤 [LOGOUT] ${req.method} ${req.originalUrl} - User: ${req.user?.cpf}`);
+            return req.originalUrl;
+        },
+        proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+            // Repassa o token de autenticação
+            if (srcReq.headers.authorization) {
+                proxyReqOpts.headers["Authorization"] = srcReq.headers.authorization;
+            }
+            return proxyReqOpts;
+        },
+        proxyErrorHandler: (err, res, next) => {
+            console.error("❌ Logout error:", err.message);
+            res.status(503).json({
+                error: "Auth Service unavailable",
+                message: err.message,
+            });
+        },
     })
 );
 
@@ -886,7 +904,7 @@ app.post(
 // AUTH SERVICE ROUTES
 // ============================================
 app.use(
-    ["/login", "/logout", "/validate"],
+    ["/validate"],
     proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084", {
         proxyReqPathResolver: (req) => {
             console.log(`📤 [AUTH] ${req.method} ${req.originalUrl}`);

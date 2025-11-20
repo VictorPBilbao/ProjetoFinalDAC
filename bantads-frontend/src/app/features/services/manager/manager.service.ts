@@ -185,10 +185,18 @@ export class ManagerService {
         this.loadingService.show();
 
         const token = this.authService.getToken();
+        const payload = {
+            cpf: manager.cpf,
+            nome: manager.name,
+            email: manager.email,
+            senha: manager.password,
+            telefone: manager.telephone,
+            tipo: "GERENTE"
+        }
 
         return this.http.post<any>(
             `${this.apiUrl}/gerentes`,
-            manager,
+            payload,
             {
                 headers: token ? { Authorization: token } : {}
             }
@@ -225,10 +233,10 @@ export class ManagerService {
         );
     }
 
-    getManagerById(id: string): Observable<Manager | undefined> {
+    getManagerById(managercpf: string): Observable<Manager | undefined> {
         this.loadingService.show();
         const token = this.authService.getToken();
-        return this.http.get<Manager>(`${this.apiUrl}/gerentes/${id}`, {
+        return this.http.get<Manager>(`${this.apiUrl}/gerentes/${managercpf}`, {
             headers: token ? { Authorization: token } : {}
         }).pipe(
             catchError(err => {
@@ -244,9 +252,18 @@ export class ManagerService {
         this.loadingService.show();
         const token = this.authService.getToken();
         console.log('Atualizando gerente:', updated);
+        const payload = {
+            cpf: updated.cpf,
+            nome: updated.name,
+            email: updated.email,
+            senha: updated.password,
+            telefone: updated.telephone,
+            tipo: "GERENTE"
+        }
+
         return this.http.put<any>(
             `${this.apiUrl}/gerentes/${updated.cpf}`,
-            updated,
+            payload,
             {
                 headers: token ? { Authorization: token } : {}
             }
@@ -262,13 +279,13 @@ export class ManagerService {
     }
 
     // ---------------- DELETE ----------------
-    deleteManager(managerId: string): Observable<any> {
+    deleteManager(managercpf: string): Observable<any> {
         this.loadingService.show();
 
         const token = this.authService.getToken();
 
         return this.http.delete<any>(
-            `${this.apiUrl}/gerentes/${managerId}`,
+            `${this.apiUrl}/gerentes/${managercpf}`,
             {
             headers: token ? { Authorization: token } : {}
             }

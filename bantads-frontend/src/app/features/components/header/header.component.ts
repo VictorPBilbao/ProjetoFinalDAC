@@ -57,6 +57,7 @@ export class HeaderComponent {
             this.router.navigate(['/cliente/dashboard']);
             break;
           case 'GERENTE':
+          case 'MANAGER':
             this.router.navigate(['/gerente/aprovacoes']);
             break;
           case 'ADMINISTRADOR':
