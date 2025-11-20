@@ -481,21 +481,118 @@ app.get(
 // CLIENT SERVICE ROUTES
 // ============================================
 
-// GET /clientes (R09, R12, R14, R16) com autorização por filtro
+
+// GET /clientes (R09, R12, R14, R16)
+// Esse cara ta puxando os dados agregados para relatorio de clientes, dai depende se é admin ou gerente
 app.get(
     "/clientes",
     authenticateToken,
-    authorizeClientesList,
+    authorizeClientesList, 
+    async (req, res, next) => {
+        
+        const userRole = req.user?.tipo;
+        const userCpf = req.user?.cpf;
+        const filtro = req.query.filtro;
+        const busca = req.query.busca || ""; 
+        
+        if (filtro === "adm_relatorio_clientes" || userRole === "GERENTE") {
+            
+            const authHeader = req.headers.authorization;
+            const config = { headers: { Authorization: authHeader } };
+
+            const clientUrl = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+            const managerUrl = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
+            const accountQueryUrl = process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+
+            try {
+                console.log(`[Gateway] Agregando dados para ${userRole}...`);
+
+                let urlClientes = `${clientUrl}/clientes`;
+                if (userRole === "GERENTE") {
+                    urlClientes += `?gerente=${userCpf}`;
+                    if (busca) urlClientes += `&busca=${encodeURIComponent(busca)}`;
+                }
+
+                const [clientsResp, managersResp, accountsResp] = await Promise.all([
+                    axiosInstance.get(urlClientes, config),
+                    axiosInstance.get(`${managerUrl}/gerentes`, config),
+                    axiosInstance.get(`${accountQueryUrl}/query/all`, config)
+                ]);
+
+                const clients = Array.isArray(clientsResp.data) ? clientsResp.data : [];
+                const managers = Array.isArray(managersResp.data) ? managersResp.data : [];
+                const accounts = Array.isArray(accountsResp.data) ? accountsResp.data : [];
+
+                const accountMap = new Map();
+                accounts.forEach(acc => {
+                    const cpf = acc.clientId || acc.clientCpf; 
+                    if (cpf) accountMap.set(cpf, acc);
+                });
+
+                const managerMap = new Map();
+                managers.forEach(mgr => {
+                    if (mgr.cpf) managerMap.set(mgr.cpf, mgr);
+                    if (mgr.id) managerMap.set(String(mgr.id), mgr);
+                });
+                const relatorio = clients.map(client => {
+                    const conta = accountMap.get(client.cpf);
+                    
+                    let gerente = null;
+                    if (conta && conta.managerId) {
+                        gerente = managerMap.get(String(conta.managerId));
+                    } else if (client.gerente) {
+                        gerente = managerMap.get(client.gerente);
+                    }
+
+                    return {
+                        cpf: client.cpf,
+                        nome: client.nome,
+                        email: client.email,
+                        salario: client.salario,
+                        cidade: client.cidade,
+                        estado: client.estado,
+                        
+                        numeroConta: conta ? conta.accountNumber : null,
+                        saldo: conta ? conta.balance : 0,
+                        limite: conta ? conta.limit : 0,
+                        
+                        cpfGerente: gerente ? gerente.cpf : null,
+                        nomeGerente: gerente ? gerente.nome : "Não Atribuído"
+                    };
+                });
+
+                relatorio.sort((a, b) => a.nome.localeCompare(b.nome));
+
+                return res.json(relatorio);
+
+            } catch (error) {
+                console.error("[Gateway Agregação Error]", error.message);
+                return res.status(503).json({ error: "Erro ao agregar dados de clientes." });
+            }
+        }
+
+        next();
+    },
     proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
-        proxyReqPathResolver: (req) => req.originalUrl,
-        proxyErrorHandler: (err, res, next) => {
-            res.status(503).json({
-                error: "Client Service unavailable",
-                message: err.message,
-            });
-        },
+        proxyReqPathResolver: (req) => req.originalUrl
     })
 );
+
+// GET /clientes (R09, R12, R14, R16) com autorização por filtro
+//app.get(
+//    "/clientes",
+//    authenticateToken,
+//    authorizeClientesList,
+//    proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
+//        proxyReqPathResolver: (req) => req.originalUrl,
+//        proxyErrorHandler: (err, res, next) => {
+//           res.status(503).json({
+//                error: "Client Service unavailable",
+//                message: err.message,
+//            });
+//        },
+//    })
+//);
 
 // POST /clientes/validate -> validado no service (pass-through)
 app.post(
@@ -621,6 +718,7 @@ app.get(
     })
 );
 
+
 // (Opcional) Rota de pendentes - não usada nos testes, mantida
 app.get(
     "/clientes/pending",
@@ -740,11 +838,16 @@ app.post(
     })
 );
 
+// R8: Extrato 
 app.get(
-    "/contas/:conta/extrato",
+    "/contas/:numero/extrato", 
     authenticateToken,
-    proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082", {
+    proxy(ACCOUNT_QUERY_URL, {
         proxyReqPathResolver: (req) => req.originalUrl,
+        proxyErrorHandler: (err, res, next) => {
+            console.error("[Gateway] Erro ao buscar extrato:", err.message);
+            res.status(503).json({ error: "Serviço de consulta de conta indisponível." });
+        }
     })
 );
 

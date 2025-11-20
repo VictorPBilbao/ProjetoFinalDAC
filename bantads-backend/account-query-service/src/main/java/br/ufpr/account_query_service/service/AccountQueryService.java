@@ -1,16 +1,23 @@
 package br.ufpr.account_query_service.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import br.ufpr.account_query_service.dto.DailyBalanceDTO;
+import br.ufpr.account_query_service.dto.StatementItemDTO;
 import br.ufpr.account_query_service.model.AccountView;
 import br.ufpr.account_query_service.model.TransactionView;
 import br.ufpr.account_query_service.repository.AccountViewRepository;
@@ -28,20 +35,64 @@ public class AccountQueryService {
     public AccountView getAccountByCpf(String authenticatedCpf) {
         return accountViewRepository.findByClientId(authenticatedCpf)
                 .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "Conta não encontrada para o CPF " + authenticatedCpf + ". Cliente pode não estar aprovado ou conta ainda não foi sincronizada."
-        ));
+                        HttpStatus.NOT_FOUND,
+                        "Conta não encontrada para o CPF " + authenticatedCpf));
     }
 
-    public List<TransactionView> getStatement(String authenticatedCpf, String startDateStr, String endDateStr) {
+    public List<DailyBalanceDTO> getStatement(String authenticatedCpf, String startDateStr, String endDateStr) {
         AccountView account = getAccountByCpf(authenticatedCpf);
 
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
-        LocalDateTime startDate = LocalDate.parse(startDateStr, formatter).atStartOfDay();
-        LocalDateTime endDate = LocalDate.parse(endDateStr, formatter).atTime(LocalTime.MAX);
+        LocalDate end = (endDateStr != null && !endDateStr.isBlank())
+                ? LocalDate.parse(endDateStr)
+                : LocalDate.now();
+        LocalDate start = (startDateStr != null && !startDateStr.isBlank())
+                ? LocalDate.parse(startDateStr)
+                : end.minusDays(30);
 
-        return transactionViewRepository.findByAccountIdAndTimestampBetweenOrderByTimestampAsc(
-                account.getId(), startDate, endDate);
+        LocalDateTime startDateTime = start.atStartOfDay();
+        LocalDateTime endDateTime = end.atTime(LocalTime.MAX);
+
+        BigDecimal currentBalance = transactionViewRepository.getBalanceBefore(account.getId(), startDateTime);
+
+        List<TransactionView> transactions = transactionViewRepository
+                .findByAccountIdAndTimestampBetweenOrderByTimestampAsc(account.getId(), startDateTime, endDateTime);
+
+        Map<LocalDate, List<TransactionView>> txByDate = transactions.stream()
+                .collect(Collectors.groupingBy(t -> t.getTimestamp().toLocalDate()));
+
+        List<DailyBalanceDTO> statement = new ArrayList<>();
+        long daysBetween = ChronoUnit.DAYS.between(start, end);
+
+        for (int i = 0; i <= daysBetween; i++) {
+            LocalDate date = start.plusDays(i);
+            List<TransactionView> dailyTxs = txByDate.getOrDefault(date, new ArrayList<>());
+            List<StatementItemDTO> items = new ArrayList<>();
+
+            for (TransactionView tx : dailyTxs) {
+                currentBalance = currentBalance.add(tx.getAmount());
+
+                String tipoMovimento = tx.getAmount().compareTo(BigDecimal.ZERO) >= 0 ? "ENTRADA" : "SAIDA";
+
+                StatementItemDTO item = new StatementItemDTO();
+                item.setDataHora(tx.getTimestamp());
+                item.setOperacao(tx.getType());
+                item.setTipo(tipoMovimento);
+                item.setValor(tx.getAmount().abs());
+                item.setOrigem(tx.getOriginClientId());
+                item.setDestino(tx.getDestinationClientId());
+
+                items.add(item);
+            }
+
+            DailyBalanceDTO daily = new DailyBalanceDTO();
+            daily.setData(date);
+            daily.setSaldoDoDia(currentBalance);
+            daily.setMovimentacoes(items);
+
+            statement.add(daily);
+        }
+
+        return statement;
     }
 
     public List<Object[]> getSummaryByManager() {
@@ -54,5 +105,4 @@ public class AccountQueryService {
         }
         return accountViewRepository.findTopAccountsByManager(managerCpf, limit);
     }
-
 }

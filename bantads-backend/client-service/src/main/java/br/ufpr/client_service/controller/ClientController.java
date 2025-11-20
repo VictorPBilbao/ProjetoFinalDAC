@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -16,7 +17,10 @@ import br.ufpr.client_service.dto.ApiResponse;
 import br.ufpr.client_service.model.AutocadastroRequestDTO;
 import br.ufpr.client_service.model.ClientDTO;
 import br.ufpr.client_service.model.RejectReasonDTO;
+import br.ufpr.client_service.repository.ClientRepository;
 import br.ufpr.client_service.service.ClientService;
+import br.ufpr.client_service.model.Client;
+import org.springframework.data.domain.Sort;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +36,27 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Validated
 public class ClientController {
 
+    @Autowired
+    private ClientRepository repository;
+
     private final ClientService clientService;
+
+    @GetMapping
+    public ResponseEntity<List<Client>> listarClientes(
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) String gerente,
+            @RequestParam(required = false) String sort) {
+        Sort sorting = Sort.by(Sort.Direction.ASC, "nome");
+
+        if (gerente != null && !gerente.isEmpty()) {
+            if (busca != null && !busca.isEmpty()) {
+                return ResponseEntity.ok(repository.searchByGerenteAndTerm(gerente, busca, sorting));
+            }
+            return ResponseEntity.ok(repository.findByGerente(gerente, sorting));
+        }
+
+        return ResponseEntity.ok(repository.findAll(sorting));
+    }
 
     public ClientController(ClientService clientService) {
         this.clientService = clientService;
