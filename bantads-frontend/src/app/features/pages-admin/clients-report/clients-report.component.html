@@ -5,12 +5,20 @@
         <input
             type="text"
             placeholder="Pesquisar por nome ou CPF..."
-            [(ngModel)]="search"
-            (input)="filterClients()"
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="onSearch()"
         />
+        <button class="btn-search" (click)="onSearch()">
+            <i class="bi bi-search"></i> Pesquisar
+        </button>
     </div>
 
-    <div class="table-wrapper">
+    <div *ngIf="isLoading" class="loading-message">
+        <div class="spinner"></div>
+        <span>Gerando relatório consolidado...</span>
+    </div>
+
+    <div *ngIf="!isLoading" class="table-wrapper">
         <table>
             <thead>
                 <tr>
@@ -18,27 +26,48 @@
                     <th>Nome</th>
                     <th>E-mail</th>
                     <th>Salário</th>
-                    <th>Nº da Conta</th>
+                    <th>Nº Conta</th>
                     <th>Saldo</th>
                     <th>Limite</th>
-                    <th>CPF Gerente</th>
-                    <th>Gerente</th>
+                    <th>Gerente Responsável</th>
                 </tr>
             </thead>
             <tbody>
                 <tr *ngFor="let cliente of pgClients">
                     <td>{{ cliente.cpf | cpf }}</td>
+
                     <td>{{ cliente.nome }}</td>
                     <td>{{ cliente.email }}</td>
+
                     <td>{{ cliente.salario | currency : "BRL" }}</td>
-                    <td>{{ cliente.conta }}</td>
-                    <td>{{ cliente.saldo | currency : "BRL" }}</td>
-                    <td>{{ cliente.limite | currency : "BRL" }}</td>
-                    <td>{{ cliente.manager.cpf | cpf }}</td>
-                    <td>{{ cliente.manager.name }}</td>
+                    <td>{{ cliente.conta || "-" }}</td>
+
+                    <td
+                        [class.negative]="(cliente.saldo || 0) < 0"
+                        [class.positive]="(cliente.saldo || 0) >= 0"
+                    >
+                        {{ cliente.saldo | currency : "BRL" }}
+                    </td>
+
+                    <td class="positive">
+                        {{ cliente.limite | currency : "BRL" }}
+                    </td>
+
+                    <td>
+                        <div *ngIf="cliente.manager?.name">
+                            <strong>{{ cliente.manager?.name }}</strong>
+                            <div class="small-text">
+                                CPF: {{ cliente.manager?.cpf | cpf }}
+                            </div>
+                        </div>
+                        <span *ngIf="!cliente.manager?.name" class="no-data">
+                            Não Atribuído
+                        </span>
+                    </td>
                 </tr>
-                <tr *ngIf="filteredClients.length === 0">
-                    <td colspan="9" class="no-results">
+
+                <tr *ngIf="pgClients.length === 0">
+                    <td colspan="8" class="no-results">
                         Nenhum cliente encontrado.
                     </td>
                 </tr>
@@ -46,7 +75,6 @@
         </table>
     </div>
 
-    <!-- Controle de Paginação -->
     <div class="pg-controls" *ngIf="totalPgs > 1">
         <button (click)="previousPg()" [disabled]="currentPg === 1">
             &laquo; Anterior
@@ -55,7 +83,7 @@
         <span>Página {{ currentPg }} de {{ totalPgs }}</span>
 
         <button (click)="nextPg()" [disabled]="currentPg === totalPgs">
-            &raquo; Próxima
+            Próxima &raquo;
         </button>
     </div>
 </div>
