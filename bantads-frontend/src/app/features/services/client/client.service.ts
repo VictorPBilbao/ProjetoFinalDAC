@@ -14,16 +14,22 @@ export class ClientService {
 
     constructor(private http: HttpClient, private authService: AuthService) {}
 
-    getClients(search?: string): Observable<Cliente[]> {
+    getClients(search?: string, filter?: string): Observable<Cliente[]> {
         let params = new HttpParams();
+
         if (search) {
             params = params.set('busca', search);
         }
 
+        if (filter) {
+            params = params.set('filtro', filter);
+        }
+
         return this.http.get<any[]>(`${this.apiUrl}/clientes`, { params }).pipe(
-            map((response) =>
-                response.map((item) => this.mapToClientModel(item))
-            ),
+            map((response) => {
+                if (!Array.isArray(response)) return [];
+                return response.map((item) => this.mapToClientModel(item));
+            }),
             catchError((err) => {
                 console.error('Erro ao buscar clientes:', err);
                 return of([]);
