@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/gerentes")
@@ -23,27 +25,24 @@ public class ManagerController {
         return ResponseEntity.ok(managers);
     }
 
-    @PostMapping
-    public ResponseEntity<Manager> createManager(@Valid @RequestBody ManagerDTO dto) {
-        Manager createdManager = managerService.createManager(dto);
-        return new ResponseEntity<>(createdManager, HttpStatus.CREATED);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Manager> getManagerById(@PathVariable String id) {
-        Manager manager = managerService.getManagerById(id);
-        return ResponseEntity.ok(manager);
-    }
-
-    @PutMapping("/{cpf}")
-    public ResponseEntity<Manager> updateManager(@PathVariable String cpf, @Valid @RequestBody ManagerDTO dto) {
-        Manager updatedManager = managerService.updateManager(cpf, dto);
-        return ResponseEntity.ok(updatedManager);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteManager(@PathVariable String id) {
-        managerService.deleteManager(id);
-        return ResponseEntity.noContent().build();
+    @GetMapping("/{cpf}")
+    public ResponseEntity<?> getManagerByCpf(@PathVariable String cpf) {
+        try {
+            Manager manager = managerService.getManagerByCpf(cpf);
+            return ResponseEntity.ok(manager);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                .body(Map.of(
+                    "erro", e.getReason(),
+                    "status", e.getStatusCode().value()
+                ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                    "erro", "Erro ao buscar gerente",
+                    "message", e.getMessage(),
+                    "status", 500
+                ));
+        }
     }
 }

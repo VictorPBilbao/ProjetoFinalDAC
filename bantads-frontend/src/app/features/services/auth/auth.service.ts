@@ -3,10 +3,15 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, tap, catchError } from 'rxjs';
 
 interface LoginResponse {
-  access_token: string;   // Bearer <jwt> ou apenas <jwt>
-  cpf: string;
-  tipo: string;    // ADMIN | GERENTE | CLIENTE
+  access_token: string;
+  token_type: string;
+  tipo: string;
   exp?: number;
+  usuario: {
+    cpf: string | null;
+    nome: string;
+    email: string;
+  };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -17,14 +22,16 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  login(email: string, senha: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { email, senha }).pipe(
+  login(usuario: string, senha: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { usuario, senha }).pipe(
       tap(resp => {
         if (resp?.access_token) {
           const token = resp.access_token.startsWith('Bearer') ? resp.access_token : `Bearer ${resp.access_token}`;
           localStorage.setItem(this.TOKEN_KEY, token);
           localStorage.setItem(this.USER_KEY, JSON.stringify({
-            cpf: resp.cpf,
+            cpf: resp.usuario?.cpf,
+            nome: resp.usuario?.nome,
+            email: resp.usuario?.email,
             tipo: resp.tipo,
             exp: resp.exp
           }));
@@ -69,7 +76,7 @@ export class AuthService {
     return !!this.getToken();
   }
 
-  getUser(): { cpf: string; tipo: string; exp?: number } | null {
+  getUser(): { cpf: string | null; nome: string; email: string; tipo: string; exp?: number } | null {
     const raw = localStorage.getItem(this.USER_KEY);
     if (!raw) return null;
     try { return JSON.parse(raw); } catch { return null; }

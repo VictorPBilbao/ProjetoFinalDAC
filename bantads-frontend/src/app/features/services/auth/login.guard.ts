@@ -17,6 +17,7 @@ export const loginGuard: CanActivateFn = (route, state) => {
         targetDashboard = '/cliente/dashboard';
         break;
       case 'GERENTE':
+      case 'MANAGER':
         targetDashboard = '/gerente/dashboard';
         break;
       case 'ADMINISTRADOR':

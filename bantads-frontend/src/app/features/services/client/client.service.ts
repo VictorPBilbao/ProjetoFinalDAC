@@ -17,7 +17,7 @@ export class ClientService {
     getLoggedClient(): Cliente | undefined {
         const user = this.authService.getUser();
         if (user && user.tipo === 'cliente') {
-            return this.storage.getClienteByUsername(user.cpf);
+            return this.storage.getClienteByUsername(user.cpf || '');
         }
 
         return undefined;

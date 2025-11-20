@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 @Service
 public class ManagerService {
@@ -55,9 +57,15 @@ public class ManagerService {
     }
 
     @Transactional(readOnly = true)
-    public Manager getManagerById(String id) {
-        return managerRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Gerente não encontrado."));
+    public Manager getManagerByCpf(String cpf) {
+        Manager manager = managerRepository.findByCpf(cpf);
+        if (manager == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Gerente não encontrado"
+            );
+        }
+        return manager;
     }
 
     private Optional<Manager> findDonorManager(String newManagerId) {

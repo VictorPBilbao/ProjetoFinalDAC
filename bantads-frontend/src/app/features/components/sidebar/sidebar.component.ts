@@ -16,12 +16,15 @@ import { ClientService } from '../../services/client/client.service';
   styleUrl: './sidebar.component.css'
 })
 export class MenuSidebarComponent {
-  client: Cliente | null = null;
   searchTerm : string = '';
   sidebarVisible: boolean = true;
   clientLinksVisible: boolean = false;
   adminLinksVisible: boolean = false;
   managerLinksVisible: boolean = false;
+
+  user: any;
+  nome: string | undefined;
+  email: string | undefined;
 
   constructor(
     private authService: AuthService,
@@ -32,7 +35,9 @@ export class MenuSidebarComponent {
   ngOnInit(): void {
     this.checkScreenSize(); // Verifica o tamanho da tela ao carregar o componente
 
-    this.client = { nome: this.authService.getUser()?.cpf } as Cliente;
+    this.user = this.authService.getUser();
+    this.nome = this.user?.nome;
+    this.email = this.user?.email;
 
     var roleUser = this.authService.getUserRole();
 
@@ -40,7 +45,7 @@ export class MenuSidebarComponent {
         this.clientLinksVisible = true;
     } else if (roleUser === 'ADMINISTRADOR') {
         this.adminLinksVisible = true;
-    } else if (roleUser === 'GERENTE') {
+    } else if (roleUser === 'GERENTE' || roleUser === 'MANAGER') {
         this.managerLinksVisible = true;
     }
   }
@@ -65,12 +70,12 @@ export class MenuSidebarComponent {
   }
 
   getUserInitals(): string {
-    if (!this.client?.nome) return '';
-    return (this.client?.nome)
-      .split(' ')
-      .map(name => name[0])
-      .join('')
-      .toUpperCase();
+    if (!this.user?.nome) return '';
+    const nome = this.user.nome ?? '';
+    const names = nome.trim().split(' ').filter((name: string) => name.length > 0);
+    if (names.length === 0) return '';
+    if (names.length === 1) return names[0][0].toUpperCase();
+    return (names[0][0] + names[names.length - 1][0]).toUpperCase();
   }
 
   openSidebar(): void {
