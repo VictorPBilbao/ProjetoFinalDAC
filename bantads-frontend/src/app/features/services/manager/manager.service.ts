@@ -11,7 +11,6 @@ import { Observable, of } from 'rxjs';
 import { catchError, delay, finalize, map } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 
-
 @Injectable({ providedIn: 'root' })
 export class ManagerService {
     constructor(
@@ -49,6 +48,35 @@ export class ManagerService {
             }),
             catchError((err) => {
                 console.error('Erro ao carregar dashboard de gerentes:', err);
+                return of([]);
+            }),
+            finalize(() => this.loadingService.hide())
+        );
+    }
+
+    getBestClients(): Observable<Cliente[]> {
+        this.loadingService.show();
+        const token = this.authService.getToken();
+
+        return this.http.get<any[]>(`${this.apiUrl}/relatorio/melhores-clientes`, {
+            headers: token ? { Authorization: token } : {}
+        }).pipe(
+            map((response) => {
+                return response.map(item => {
+                    return {
+                        id: item.cpf,
+                        cpf: item.cpf,
+                        nome: item.nome,
+                        saldo: Number(item.saldo),
+                        endereco: {
+                            cidade: item.cidade || 'N/A',
+                            estado: item.estado || 'UF'
+                        }
+                    } as Cliente;
+                });
+            }),
+            catchError((err) => {
+                console.error('Erro ao buscar melhores clientes:', err);
                 return of([]);
             }),
             finalize(() => this.loadingService.hide())
