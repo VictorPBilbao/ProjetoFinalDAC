@@ -1,6 +1,7 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+import Swal from 'sweetalert2';
 
 @Component({
     selector: 'app-login',
@@ -29,16 +30,36 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     currentIndex = 0;
     intervalo: any;
+    errorMessage: string | null = null;
 
     @ViewChild('partnersRef', { static: true }) partnersRef!: ElementRef<HTMLDivElement>;
     intervaloPartners: any;
 
-    constructor(private router: Router) { }
+    constructor(private router: Router, private route: ActivatedRoute) { }
 
     ngOnInit(): void {
         this.iniciarCarrosselAutomatico();
         this.iniciarCarrosselAutomaticoPartners();
 
+        this.route.queryParams.subscribe(params => {
+            const errorMessage = params['error'];
+            if (errorMessage) {
+                console.log('[Login] Mensagem de erro:', errorMessage);
+                
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Acesso Negado',
+                    text: errorMessage,
+                    confirmButtonText: 'Entendi',
+                    confirmButtonColor: '#0ec093'
+                }).then((result) => {
+                    // ✅ Redireciona para /login após clicar em "Entendi"
+                    if (result.isConfirmed || result.isDismissed) {
+                        this.router.navigate(['/login']);
+                    }
+                });
+            }
+        });
     }
 
     ngOnDestroy(): void {

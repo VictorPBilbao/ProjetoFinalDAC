@@ -1,7 +1,12 @@
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+    FormBuilder,
+    FormGroup,
+    ReactiveFormsModule,
+    Validators,
+} from '@angular/forms';
 import { Cliente } from '../../models/cliente.model';
 import { Observable, Subscription } from 'rxjs';
 import { ClientService } from '../../services/client/client.service';
@@ -14,7 +19,7 @@ import { ServiceContaService } from '../../services/conta/service-conta.service'
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule, RouterModule],
     templateUrl: './whithdrawal.component.html',
-    styleUrls: ['./whithdrawal.component.css']
+    styleUrls: ['./whithdrawal.component.css'],
 })
 export class WhithdrawalComponent implements OnInit, OnDestroy {
     private fb = inject(FormBuilder);
@@ -30,8 +35,13 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
         private contaService: ServiceContaService // Injete o serviço
     ) { }
 
+
     ngOnInit(): void {
-        this.cliente = this.clientService.getLoggedClient() || null;
+        this.clienteSub = this.clientService
+            .getLoggedClient()
+            .subscribe((client) => {
+                this.cliente = client ?? null;
+            });
     }
 
     ngOnDestroy(): void {
@@ -41,7 +51,10 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
     form: FormGroup = this.fb.group({
         agencia: ['', [Validators.required]],
         conta: ['', [Validators.required]],
-        valor: [null as number | null, [Validators.required, Validators.min(0.01)]],
+        valor: [
+            null as number | null,
+            [Validators.required, Validators.min(0.01)],
+        ],
     });
 
     message: { type: 'success' | 'error'; text: string } | null = null;

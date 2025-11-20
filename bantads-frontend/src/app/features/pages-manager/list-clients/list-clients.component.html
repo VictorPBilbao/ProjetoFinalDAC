@@ -6,11 +6,17 @@
             type="text"
             placeholder="Pesquisar por nome ou CPF..."
             [(ngModel)]="search"
-            (input)="filterClients()"
+            (keyup.enter)="filterClients()"
         />
+        <button class="btn-search" (click)="filterClients()">
+            <i class="bi bi-search"></i> Pesquisar
+        </button>
     </div>
 
-    <div *ngIf="isLoading" class="loading-message">Carregando clientes...</div>
+    <div *ngIf="isLoading" class="loading-message">
+        <div class="spinner"></div>
+        <span>Carregando dados...</span>
+    </div>
 
     <div *ngIf="!isLoading" class="table-wrapper">
         <table>
@@ -18,8 +24,7 @@
                 <tr>
                     <th>CPF</th>
                     <th>Nome</th>
-                    <th>Cidade</th>
-                    <th>Estado</th>
+                    <th>Cidade/UF</th>
                     <th>Saldo</th>
                     <th>Limite</th>
                     <th>Ações</th>
@@ -29,104 +34,51 @@
                 <tr *ngFor="let cliente of pgClients">
                     <td>{{ cliente.cpf | cpf }}</td>
                     <td>{{ cliente.nome }}</td>
-                    <td>{{ cliente.endereco.cidade }}</td>
-                    <td>{{ cliente.endereco.estado }}</td>
+                    <td>
+                        <span *ngIf="cliente.endereco">
+                            {{ cliente.endereco.cidade }} /
+                            {{ cliente.endereco.estado }}
+                        </span>
+                        <span *ngIf="!cliente.endereco"> - </span>
+                    </td>
+
                     <td
-                        [class.negative]="cliente.saldo < 0"
-                        [class.positive]="cliente.saldo >= 0"
+                        [class.negative]="(cliente.saldo || 0) < 0"
+                        [class.positive]="(cliente.saldo || 0) >= 0"
                     >
                         {{ cliente.saldo | currency : "BRL" }}
                     </td>
+
                     <td class="positive">
                         {{ cliente.limite | currency : "BRL" }}
                     </td>
+
                     <td class="actions">
                         <button
                             class="details-button"
-                            (click)="openModal(cliente)"
+                            (click)="viewClient(cliente)"
                         >
-                            Detalhes
+                            <i class="bi bi-eye-fill"></i> Detalhes
                         </button>
                     </td>
                 </tr>
+
                 <tr *ngIf="pgClients.length === 0">
-                    <td colspan="7" class="no-results">
-                        Nenhum cliente encontrado.
+                    <td colspan="6" class="no-results">
+                        Nenhum cliente encontrado para esta pesquisa.
                     </td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-    <div class="pg-controls" *ngIf="totalPgs > 1"></div>
-</div>
-
-<div *ngIf="modalOpen" class="modal-overlay" (click)="closeModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-            <h3>Detalhes do Cliente</h3>
-            <button class="close-button" (click)="closeModal()">&times;</button>
-        </div>
-        <div class="modal-body" *ngIf="selectedClient">
-            <div class="details-section">
-                <h4>Dados Pessoais</h4>
-                <p><strong>Nome:</strong> {{ selectedClient.nome }}</p>
-                <p><strong>CPF:</strong> {{ selectedClient.cpf | cpf }}</p>
-                <p><strong>Email:</strong> {{ selectedClient.email }}</p>
-                <p><strong>Telefone:</strong> {{ selectedClient.telefone }}</p>
-            </div>
-
-            <div class="details-section">
-                <h4>Endereço</h4>
-                <p>
-                    <strong>Logradouro:</strong>
-                    {{ selectedClient.endereco.tipo }}
-                    {{ selectedClient.endereco.logradouro }},
-                    {{ selectedClient.endereco.numero }}
-                </p>
-                <p>
-                    <strong>Cidade/Estado:</strong>
-                    {{ selectedClient.endereco.cidade }} /
-                    {{ selectedClient.endereco.estado }}
-                </p>
-                <p><strong>CEP:</strong> {{ selectedClient.endereco.cep }}</p>
-                <p *ngIf="selectedClient.endereco.complemento">
-                    <strong>Complemento:</strong>
-                    {{ selectedClient.endereco.complemento }}
-                </p>
-            </div>
-
-            <div class="details-section">
-                <h4>Dados da Conta</h4>
-                <p>
-                    <strong>Agência/Conta:</strong>
-                    {{ selectedClient.agencia }} / {{ selectedClient.conta }}
-                </p>
-                <p>
-                    <strong>Salário:</strong>
-                    {{ selectedClient.salario | currency : "BRL" }}
-                </p>
-                <p>
-                    <strong>Saldo:</strong>
-                    <span
-                        [class.negative]="selectedClient.saldo < 0"
-                        [class.positive]="selectedClient.saldo >= 0"
-                    >
-                        {{ selectedClient.saldo | currency : "BRL" }}
-                    </span>
-                </p>
-                <p>
-                    <strong>Limite:</strong>
-                    {{ selectedClient.limite | currency : "BRL" }}
-                </p>
-                <p>
-                    <strong>Gerente:</strong> {{ selectedClient.manager.name }}
-                </p>
-                <p>
-                    <strong>Cliente desde:</strong>
-                    {{ selectedClient.criadoEm | date : "dd/MM/yyyy" }}
-                </p>
-            </div>
-        </div>
+    <div class="pg-controls" *ngIf="totalPgs > 1">
+        <button (click)="previousPg()" [disabled]="currentPg === 1">
+            &laquo; Anterior
+        </button>
+        <span>Página {{ currentPg }} de {{ totalPgs }}</span>
+        <button (click)="nextPg()" [disabled]="currentPg === totalPgs">
+            Próximo &raquo;
+        </button>
     </div>
 </div>

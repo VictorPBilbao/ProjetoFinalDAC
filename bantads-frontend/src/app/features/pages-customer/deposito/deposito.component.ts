@@ -2,7 +2,12 @@ import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Observable, Subscription } from 'rxjs';
 import { Cliente } from '../../models/cliente.model';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+    FormBuilder,
+    FormGroup,
+    ReactiveFormsModule,
+    Validators,
+} from '@angular/forms';
 import { Transaction } from '../../models/transaction.model';
 import { ClientService } from '../../services/client/client.service';
 import { TransactionService } from '../../services/transaction/transaction.service';
@@ -13,10 +18,10 @@ import { ServiceContaService } from '../../services/conta/service-conta.service'
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule],
     templateUrl: './deposito.component.html',
-    styleUrls: ['./deposito.component.css']
+    styleUrls: ['./deposito.component.css'],
 })
 export class DepositoComponent {
-    cliente$!: Observable<Cliente | null>;
+    cliente$!: Observable<Cliente | undefined>;
     cliente: Cliente | null = null;
     private sub?: Subscription;
     lastAccess$!: string;
@@ -30,15 +35,28 @@ export class DepositoComponent {
     ) { }
 
     ngOnInit(): void {
-        this.cliente = this.clientService.getLoggedClient() || null;
+        this.cliente$ = this.clientService.getLoggedClient();
         this.lastAccess$ = this.clientService.getLastAccess();
         this.form = this.fb.group({
-            agencia: [this.cliente?.agencia ?? '', [Validators.required]],
-            conta: [this.cliente?.conta ?? '', [Validators.required]],
-            valor: [null as number | null, [Validators.required, Validators.min(0.01)]],
+            agencia: ['', [Validators.required]],
+            conta: ['', [Validators.required]],
+            valor: [
+                null as number | null,
+                [Validators.required, Validators.min(0.01)],
+            ],
             id1: [''],
             id2: [''],
             id3: [''],
+        });
+
+        this.sub = this.cliente$?.subscribe((c) => {
+            this.cliente = c ?? null;
+            if (this.form) {
+                this.form.patchValue({
+                    agencia: this.cliente?.agencia ?? '',
+                    conta: this.cliente?.conta ?? '',
+                });
+            }
         });
     }
 
@@ -76,6 +94,13 @@ export class DepositoComponent {
 
     resetForm() {
         // reseta apenas o valor mantendo agência/conta preenchidos a partir do cliente
-        this.form.reset({ agencia: this.cliente?.agencia ?? '', conta: this.cliente?.conta ?? '', valor: null, id1: '', id2: '', id3: '' });
+        this.form.reset({
+            agencia: this.cliente?.agencia ?? '',
+            conta: this.cliente?.conta ?? '',
+            valor: null,
+            id1: '',
+            id2: '',
+            id3: '',
+        });
     }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, tap, catchError } from 'rxjs';
+import { Observable, throwError, tap, catchError, of, map } from 'rxjs';
 
 interface LoginResponse {
   access_token: string;
@@ -72,8 +72,29 @@ export class AuthService {
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
-  isAuthenticated(): boolean {
-    return !!this.getToken();
+  isAuthenticated(): Observable<boolean> {
+    const token = this.getToken();
+    
+    if (!token) {
+        return of(false);
+    }
+
+    return this.http.get<any>(`${this.apiUrl}/validate`, {
+        headers: { Authorization: token }
+    }).pipe(
+        map(() => true),
+        catchError(() => {
+            // Se retornar 401 ou qualquer erro, não está autenticado
+            localStorage.removeItem(this.TOKEN_KEY);
+            localStorage.removeItem(this.USER_KEY);
+            return of(false);
+        })
+    );
+  }
+
+  // Método síncrono para verificação rápida (apenas checa se token existe)
+  hasToken(): boolean {
+      return !!this.getToken();
   }
 
   getUser(): { cpf: string | null; nome: string; email: string; tipo: string; exp?: number } | null {
