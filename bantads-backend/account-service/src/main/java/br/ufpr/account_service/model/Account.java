@@ -1,13 +1,14 @@
 package br.ufpr.account_service.model;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "account", schema = "account_schema")
@@ -15,6 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Account {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,12 +33,16 @@ public class Account {
     @Column(name = "balance", nullable = false)
     private BigDecimal balance;
 
-    @Column(name = "limit", nullable = false)
-    private BigDecimal limit;
+    @Column(name = "account_limit", nullable = false)
+    private BigDecimal accountLimit;
 
     @Column(name = "manager", nullable = false, length = 100)
     private String manager;
 
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Transaction> transactions;
+    @Version
+    @Column(name = "version")
+    private Long version;
+
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<Transaction> transactions = new ArrayList<>();
 }

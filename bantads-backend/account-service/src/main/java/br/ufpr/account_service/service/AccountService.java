@@ -84,15 +84,20 @@ public class AccountService {
 
         Account originAccount = findAccountByClientCpf(clientCpf);
 
+        Account destAccount = accountRepository.findByAccountNumber(destinationAccountNumber)
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta de destino não encontrada."));
+
+        if (originAccount.getId().equals(destAccount.getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é permitido transferir para a própria conta.");
+        }
+
         BigDecimal availableBalance = originAccount.getBalance().add(originAccount.getLimit());
         if (availableBalance.compareTo(amount) < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Saldo insuficiente para transferência.");
         }
         originAccount.setBalance(originAccount.getBalance().subtract(amount));
 
-        Account destAccount = accountRepository.findByAccountNumber(destinationAccountNumber)
-                .orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conta de destino não encontrada."));
         destAccount.setBalance(destAccount.getBalance().add(amount));
 
         Transaction originTx = new Transaction();
