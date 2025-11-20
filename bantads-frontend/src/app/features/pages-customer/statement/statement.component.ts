@@ -1,13 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-
-import { Transaction } from '../../models/transaction.model';
 import { Record } from '../../models/record.model';
-import { TransactionService } from '../../services/transaction/transaction.service';
-import { Cliente } from '../../models/cliente.model';
-import { ClientService } from '../../services/client/client.service';
-import { Subscription } from 'rxjs';
+import { ServiceContaService } from '../../services/conta/service-conta.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -17,11 +12,10 @@ import Swal from 'sweetalert2';
     templateUrl: './statement.component.html',
     styleUrl: './statement.component.css',
 })
-export class StatementComponent implements OnInit, OnDestroy {
+export class StatementComponent implements OnInit {
     beginDate: string = '';
     endDate: string = '';
 
-    private allTransactions: Transaction[] = [];
     dailyRecords: Record[] = [];
     pgDailyRecords: Record[] = [];
 
@@ -29,107 +23,76 @@ export class StatementComponent implements OnInit, OnDestroy {
     itmsPerPg: number = 7;
     totalPgs: number = 0;
 
-    cliente: Cliente | null = null;
-    private sub?: Subscription;
-isLoading: any;
+    isLoading = false;
+    numeroConta: string | null = null;
 
-    constructor(
-        private transactionService: TransactionService,
-        private clientService: ClientService
-    ) {}
+    constructor(private contaService: ServiceContaService) {}
 
     ngOnInit(): void {
-        this.cliente = this.clientService.getLoggedClient() || null;
-
-        if (this.cliente) {
-            this.allTransactions =
-                this.transactionService.getTransactionsByClientId(
-                    this.cliente.id
+        this.contaService.getMinhaConta().subscribe({
+            next: (conta) => {
+                this.numeroConta = conta.numero || conta.accountNumber;
+            },
+            error: (err) => {
+                console.error('Erro ao buscar conta:', err);
+                Swal.fire(
+                    'Erro',
+                    'Não foi possível localizar sua conta.',
+                    'error'
                 );
-        }
-    }
-
-    ngOnDestroy(): void {
-        this.sub?.unsubscribe();
+            },
+        });
     }
 
     getStatement() {
+        if (!this.numeroConta) {
+            Swal.fire('Aguarde', 'Carregando dados da conta...', 'info');
+            return;
+        }
         if (!this.beginDate || !this.endDate) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Atenção',
-                text: 'Por favor, preencha as datas de início e fim.',
-                confirmButtonColor: '#0ec093',
-            });
-            return;
-        }
-        const beginDateFilter = new Date(this.beginDate + 'T00:00:00');
-        const endDateFilter = new Date(this.endDate + 'T23:59:59');
-
-        if (beginDateFilter > endDateFilter) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Datas Inválidas',
-                text: 'A data de início não pode ser posterior à data de fim.',
-                confirmButtonColor: '#0ec093',
-            });
-            return;
-        }
-        this.executeStatement(beginDateFilter, endDateFilter);
-    }
-
-    private executeStatement(begin: Date, end: Date) {
-        const priorTransactions = this.allTransactions.filter(
-            (t) => new Date(t.dateTime) < begin
-        );
-
-        const initialBalanceForPeriod = priorTransactions.reduce(
-            (acc, t) => acc + t.amount,
-            0
-        );
-
-        const finalStatement: Record[] = [];
-
-        let currentBalance = initialBalanceForPeriod;
-
-        for (
-            let day = new Date(begin);
-            day <= end;
-            day.setDate(day.getDate() + 1)
-        ) {
-            const dailyTransaction = this.allTransactions.filter((t) => {
-                const txDate = new Date(t.dateTime);
-                return (
-                    txDate.getFullYear() === day.getFullYear() &&
-                    txDate.getMonth() === day.getMonth() &&
-                    txDate.getDate() === day.getDate()
-                );
-            });
-
-            const totalMovedDaily = dailyTransaction.reduce(
-                (acc, t) => acc + t.amount,
-                0
+            Swal.fire(
+                'Atenção',
+                'Por favor, preencha as datas de início e fim.',
+                'warning'
             );
-
-            currentBalance += totalMovedDaily;
-
-            finalStatement.push({
-                date: new Date(day),
-                transactions: dailyTransaction,
-                consolidatedBalance: currentBalance,
-            });
+            return;
         }
 
-        this.dailyRecords = finalStatement;
-        this.currentPg = 1;
-        this.updatePgView();
+        const start = new Date(this.beginDate);
+        const end = new Date(this.endDate);
+
+        if (start > end) {
+            Swal.fire(
+                'Erro',
+                'Data de início não pode ser maior que o fim.',
+                'error'
+            );
+            return;
+        }
+
+        this.isLoading = true;
+
+        this.contaService
+            .getStatement(this.numeroConta, this.beginDate, this.endDate)
+            .subscribe({
+                next: (dados) => {
+                    this.dailyRecords = dados;
+                    this.currentPg = 1;
+                    this.updatePgView();
+                    this.isLoading = false;
+                },
+                error: (err) => {
+                    this.isLoading = false;
+                    console.error(err);
+                    Swal.fire('Erro', 'Falha ao carregar o extrato.', 'error');
+                },
+            });
     }
 
     updatePgView() {
         this.totalPgs = Math.ceil(this.dailyRecords.length / this.itmsPerPg);
-        if (this.currentPg > this.totalPgs && this.totalPgs > 0) {
-            this.currentPg = this.totalPgs;
-        }
+        if (this.totalPgs === 0) this.currentPg = 1;
+
         const start = (this.currentPg - 1) * this.itmsPerPg;
         const end = start + this.itmsPerPg;
         this.pgDailyRecords = this.dailyRecords.slice(start, end);
@@ -145,7 +108,6 @@ isLoading: any;
     nextPg() {
         this.goToPg(this.currentPg + 1);
     }
-
     previousPg() {
         this.goToPg(this.currentPg - 1);
     }
