@@ -31,7 +31,7 @@ export class StatementComponent implements OnInit, OnDestroy {
 
     cliente: Cliente | null = null;
     private sub?: Subscription;
-isLoading: any;
+    isLoading: any;
 
     constructor(
         private transactionService: TransactionService,
@@ -39,14 +39,18 @@ isLoading: any;
     ) {}
 
     ngOnInit(): void {
-        this.cliente = this.clientService.getLoggedClient() || null;
+        this.sub = this.clientService.getLoggedClient().subscribe((client) => {
+            this.cliente = client || null;
 
-        if (this.cliente) {
-            this.allTransactions =
-                this.transactionService.getTransactionsByClientId(
-                    this.cliente.id
-                );
-        }
+            if (this.cliente) {
+                this.allTransactions =
+                    this.transactionService.getTransactionsByClientId(
+                        this.cliente.id
+                    );
+            } else {
+                this.allTransactions = [];
+            }
+        });
     }
 
     ngOnDestroy(): void {

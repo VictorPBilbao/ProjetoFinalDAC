@@ -27,10 +27,11 @@ import { TransactionService } from '../../services/transaction/transaction.servi
 export class TransferComponent implements OnDestroy, OnInit {
     private fb = inject(FormBuilder);
 
-    cliente$!: Observable<Cliente | null>;
+    cliente$!: Observable<Cliente | undefined>;
     cliente: Cliente | null = null;
     lastAccess$!: string;
     transaction: Transaction | null = null;
+    private sub?: Subscription;
 
     form: FormGroup = this.fb.group({
         agencia: ['', [Validators.required]],
@@ -56,7 +57,6 @@ export class TransferComponent implements OnDestroy, OnInit {
         private storageService: LocalStorageServiceService,
         private transactionService: TransactionService
     ) {}
-
     ngOnInit(): void {
         // restaura preferência de tema
         try {
@@ -64,20 +64,24 @@ export class TransferComponent implements OnDestroy, OnInit {
         } catch {
             this.darkMode = false;
         }
-        this.cliente = this.clientService.getLoggedClient() || null;
+        // expõe como observable para o template e sincroniza cliente local
+        this.cliente$ = this.clientService.getLoggedClient();
+        this.sub = this.cliente$.subscribe((c) => {
+            this.cliente = c ?? null;
+            // preenche os campos de origem com os dados do cliente logado
+            if (this.cliente) {
+                this.form.patchValue({
+                    agencia: this.cliente.agencia,
+                    conta: this.cliente.conta,
+                });
+            }
+        });
         this.lastAccess$ = this.clientService.getLastAccess();
-        // expõe como observable para o template
-        this.cliente$ = of(this.cliente);
-        // preenche os campos de origem com os dados do cliente logado
-        if (this.cliente) {
-            this.form.patchValue({
-                agencia: this.cliente.agencia,
-                conta: this.cliente.conta,
-            });
-        }
     }
 
-    ngOnDestroy(): void {}
+    ngOnDestroy(): void {
+        this.sub?.unsubscribe();
+    }
 
     toggleDarkMode() {
         this.darkMode = !this.darkMode;

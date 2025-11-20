@@ -1,9 +1,13 @@
-
 import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Observable, Subscription } from 'rxjs';
 import { Cliente } from '../../models/cliente.model';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+    FormBuilder,
+    FormGroup,
+    ReactiveFormsModule,
+    Validators,
+} from '@angular/forms';
 import { Transaction } from '../../models/transaction.model';
 import { ClientService } from '../../services/client/client.service';
 import { TransactionService } from '../../services/transaction/transaction.service';
@@ -13,10 +17,10 @@ import { TransactionService } from '../../services/transaction/transaction.servi
     standalone: true,
     imports: [CommonModule, ReactiveFormsModule],
     templateUrl: './deposito.component.html',
-    styleUrls: ['./deposito.component.css']
+    styleUrls: ['./deposito.component.css'],
 })
 export class DepositoComponent {
-    cliente$!: Observable<Cliente | null>;
+    cliente$!: Observable<Cliente | undefined>;
     cliente: Cliente | null = null;
     private sub?: Subscription;
     lastAccess$!: string;
@@ -27,18 +31,31 @@ export class DepositoComponent {
         private fb: FormBuilder,
         private clientService: ClientService,
         private cli: TransactionService
-    ) { }
+    ) {}
 
     ngOnInit(): void {
-        this.cliente = this.clientService.getLoggedClient() || null;
+        this.cliente$ = this.clientService.getLoggedClient();
         this.lastAccess$ = this.clientService.getLastAccess();
         this.form = this.fb.group({
-            agencia: [this.cliente?.agencia ?? '', [Validators.required]],
-            conta: [this.cliente?.conta ?? '', [Validators.required]],
-            valor: [null as number | null, [Validators.required, Validators.min(0.01)]],
+            agencia: ['', [Validators.required]],
+            conta: ['', [Validators.required]],
+            valor: [
+                null as number | null,
+                [Validators.required, Validators.min(0.01)],
+            ],
             id1: [''],
             id2: [''],
             id3: [''],
+        });
+
+        this.sub = this.cliente$?.subscribe((c) => {
+            this.cliente = c ?? null;
+            if (this.form) {
+                this.form.patchValue({
+                    agencia: this.cliente?.agencia ?? '',
+                    conta: this.cliente?.conta ?? '',
+                });
+            }
         });
     }
 
@@ -53,7 +70,11 @@ export class DepositoComponent {
             return;
         }
 
-        const { agencia, conta, valor } = this.form.value as { agencia: string; conta: string; valor: number };
+        const { agencia, conta, valor } = this.form.value as {
+            agencia: string;
+            conta: string;
+            valor: number;
+        };
 
         if (!this.cliente) {
             this.message = { type: 'error', text: 'Cliente não encontrado.' };
@@ -62,23 +83,31 @@ export class DepositoComponent {
 
         // exige que depósito seja na conta do cliente (preenchida automaticamente)
         if (agencia !== this.cliente.agencia || conta !== this.cliente.conta) {
-            this.message = { type: 'error', text: 'Informe a sua agência e conta corretas para depósito.' };
+            this.message = {
+                type: 'error',
+                text: 'Informe a sua agência e conta corretas para depósito.',
+            };
             return;
         }
 
-        const updated: Cliente = { ...this.cliente, saldo: (this.cliente.saldo ?? 0) + Number(valor) };
+        const updated: Cliente = {
+            ...this.cliente,
+            saldo: (this.cliente.saldo ?? 0) + Number(valor),
+        };
 
         // Persiste cliente atualizado e atualiza observable
         this.clientService.updateClient(updated);
 
         // registra transação localmente
         const tx: Transaction = {
-            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2), // Gera um id único
+            id: crypto.randomUUID
+                ? crypto.randomUUID()
+                : Math.random().toString(36).substring(2), // Gera um id único
             clientId: updated.id,
             dateTime: new Date(),
             operation: 'Deposito',
             fromOrToClient: updated.nome ?? updated.email,
-            amount: Number(valor)
+            amount: Number(valor),
         };
         try {
             this.cli.addTransaction(tx);
@@ -87,12 +116,24 @@ export class DepositoComponent {
             console.warn('Não foi possível registrar transação', e);
         }
 
-        this.message = { type: 'success', text: `Depósito de R$ ${Number(valor).toFixed(2)} realizado com sucesso.` };
+        this.message = {
+            type: 'success',
+            text: `Depósito de R$ ${Number(valor).toFixed(
+                2
+            )} realizado com sucesso.`,
+        };
         this.form.patchValue({ valor: null });
     }
 
     resetForm() {
         // reseta apenas o valor mantendo agência/conta preenchidos a partir do cliente
-        this.form.reset({ agencia: this.cliente?.agencia ?? '', conta: this.cliente?.conta ?? '', valor: null, id1: '', id2: '', id3: '' });
+        this.form.reset({
+            agencia: this.cliente?.agencia ?? '',
+            conta: this.cliente?.conta ?? '',
+            valor: null,
+            id1: '',
+            id2: '',
+            id3: '',
+        });
     }
 }

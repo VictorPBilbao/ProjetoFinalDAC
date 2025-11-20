@@ -34,26 +34,30 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        // lê preferência de tema salva
         this.darkMode = localStorage.getItem('dashboardDarkMode') === 'true';
 
-        this.user = this.clientService.getLoggedClient() || null;
-        this.balance = this.user?.saldo ?? 0;
+        this.sub = this.clientService.getLoggedClient().subscribe((client) => {
+            this.user = client ?? null;
+            this.balance = this.user?.saldo ?? 0;
 
-        this.depositsThisMonth = this.transactionService.getMonthlyDeposits(
-            this.user?.id || ''
-        );
+            this.depositsThisMonth = this.transactionService.getMonthlyDeposits(
+                this.user?.id ?? ''
+            );
 
-        // Pega as transações dos ultimos 7 dias
-        const recentActivity =
-            this.transactionService.getTransactionsByClientId(this.user?.id);
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        sevenDaysAgo.setHours(0, 0, 0, 0);
+            const recentActivity =
+                this.transactionService.getTransactionsByClientId(
+                    this.user?.id ?? ''
+                );
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            sevenDaysAgo.setHours(0, 0, 0, 0);
 
-        this.recentActivity = (recentActivity || []).filter((transaction) => {
-            const transactionDate = new Date(transaction.dateTime);
-            return transactionDate >= sevenDaysAgo;
+            this.recentActivity = (recentActivity || []).filter(
+                (transaction) => {
+                    const transactionDate = new Date(transaction.dateTime);
+                    return transactionDate >= sevenDaysAgo;
+                }
+            );
         });
     }
 

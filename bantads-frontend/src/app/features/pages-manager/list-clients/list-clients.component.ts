@@ -1,8 +1,8 @@
 import { Subscription } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
 import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router'; // Import Router para navegação
 
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
@@ -16,7 +16,6 @@ import { CpfPipe } from '../../shared/pipes/cpf.pipe';
     styleUrl: './list-clients.component.css',
 })
 export class ListClientsComponent implements OnInit, OnDestroy {
-    private allClients: Cliente[] = [];
     filteredClients: Cliente[] = [];
     pgClients: Cliente[] = [];
 
@@ -32,41 +31,47 @@ export class ListClientsComponent implements OnInit, OnDestroy {
 
     private clientsSubscription?: Subscription;
 
-    constructor(private clientService: ClientService) {}
+    constructor(private clientService: ClientService, private router: Router) {}
 
     ngOnInit(): void {
-        this.isLoading = true;
-        this.clientsSubscription = this.clientService
-            .getClients()
-            .subscribe((clients) => {
-                this.allClients = clients.sort((a, b) =>
-                    a.nome.localeCompare(b.nome)
-                );
-
-                this.filterClients();
-                this.isLoading = false;
-            });
+        this.loadClients();
     }
 
     ngOnDestroy(): void {
         this.clientsSubscription?.unsubscribe();
     }
 
+    loadClients(searchTerm: string = ''): void {
+        this.isLoading = true;
+
+        this.clientsSubscription?.unsubscribe();
+
+        this.clientsSubscription = this.clientService
+            .getClients(searchTerm)
+            .subscribe({
+                next: (clients) => {
+                    this.filteredClients = clients.sort((a, b) =>
+                        a.nome.localeCompare(b.nome)
+                    );
+
+                    this.currentPg = 1;
+                    this.updatePgView();
+                    this.isLoading = false;
+                },
+                error: (err) => {
+                    console.error('Erro ao listar clientes:', err);
+                    this.isLoading = false;
+                },
+            });
+    }
+
     filterClients(): void {
-        const keyword = this.search.toLowerCase().trim();
-        if (!keyword) {
-            this.filteredClients = [...this.allClients];
-        } else {
-            this.filteredClients = this.allClients.filter(
-                (client) =>
-                    client.nome.toLowerCase().includes(keyword) ||
-                    client.cpf
-                        .replace(/[.-]/g, '')
-                        .includes(keyword.replace(/[.-]/g, ''))
-            );
-        }
-        this.currentPg = 1;
-        this.updatePgView();
+        const keyword = this.search.trim();
+        this.loadClients(keyword);
+    }
+
+    viewClient(cliente: Cliente): void {
+        this.router.navigate(['/manager/consultar-cliente', cliente.cpf]);
     }
 
     openModal(cliente: Cliente): void {
@@ -79,16 +84,23 @@ export class ListClientsComponent implements OnInit, OnDestroy {
         this.selectedClient = undefined;
     }
 
-    @HostListener('document:keydown.escape', ['$event'])
-    onKeydownHandler(event: KeyboardEvent) {
-        this.closeModal();
+    @HostListener('document:keydown', ['$event'])
+    onKeydownHandler(event: Event) {
+        const keyboardEvent = event as KeyboardEvent;
+        if (keyboardEvent.key === 'Escape' || keyboardEvent.key === 'Esc') {
+            this.closeModal();
+        }
     }
 
     updatePgView() {
         this.totalPgs = Math.ceil(this.filteredClients.length / this.itmsPerPg);
-        if (this.currentPg > this.totalPgs && this.totalPgs > 0) {
+
+        if (this.totalPgs === 0) {
+            this.currentPg = 1;
+        } else if (this.currentPg > this.totalPgs) {
             this.currentPg = this.totalPgs;
         }
+
         const start = (this.currentPg - 1) * this.itmsPerPg;
         const end = start + this.itmsPerPg;
         this.pgClients = this.filteredClients.slice(start, end);
