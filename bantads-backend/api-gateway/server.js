@@ -842,7 +842,7 @@ app.post(
 app.get(
     "/contas/:numero/extrato", 
     authenticateToken,
-    proxy(ACCOUNT_QUERY_URL, {
+    proxy(process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086", {
         proxyReqPathResolver: (req) => req.originalUrl,
         proxyErrorHandler: (err, res, next) => {
             console.error("[Gateway] Erro ao buscar extrato:", err.message);
