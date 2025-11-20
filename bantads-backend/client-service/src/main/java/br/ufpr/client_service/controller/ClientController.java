@@ -41,18 +41,19 @@ public class ClientController {
 
     private final ClientService clientService;
 
-    @GetMapping
+    @GetMapping("/listar")
     public ResponseEntity<List<Client>> listarClientes(
             @RequestParam(required = false) String busca,
-            @RequestParam(required = false) String gerente,
             @RequestParam(required = false) String sort) {
         Sort sorting = Sort.by(Sort.Direction.ASC, "nome");
 
-        if (gerente != null && !gerente.isEmpty()) {
-            if (busca != null && !busca.isEmpty()) {
-                return ResponseEntity.ok(repository.searchByGerenteAndTerm(gerente, busca, sorting));
-            }
-            return ResponseEntity.ok(repository.findByGerente(gerente, sorting));
+        if (busca != null && !busca.isEmpty()) {
+            // Busca por nome ou CPF
+            List<Client> result = repository.findAll(sorting).stream()
+                .filter(c -> c.getNome().toLowerCase().contains(busca.toLowerCase()) 
+                        || c.getCpf().contains(busca))
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(result);
         }
 
         return ResponseEntity.ok(repository.findAll(sorting));

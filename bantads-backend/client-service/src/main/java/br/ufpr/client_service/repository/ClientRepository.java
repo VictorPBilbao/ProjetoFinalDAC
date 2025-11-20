@@ -22,9 +22,4 @@ public interface ClientRepository extends JpaRepository<Client, String> {
     List<Client> findByAprovadoFalse();
 
     Client findByCpf(String cpf);
-
-    List<Client> findByGerente(String gerente, Sort sort);
-
-    @Query("SELECT c FROM Client c WHERE c.gerente = :gerente AND (LOWER(c.nome) LIKE LOWER(CONCAT('%', :busca, '%')) OR c.cpf LIKE CONCAT('%', :busca, '%'))")
-    List<Client> searchByGerenteAndTerm(@Param("gerente") String gerente, @Param("busca") String busca, Sort sort);
 }
