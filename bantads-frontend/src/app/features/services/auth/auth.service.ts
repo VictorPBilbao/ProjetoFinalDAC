@@ -79,7 +79,7 @@ export class AuthService {
         return of(false);
     }
 
-    return this.http.get<any>(`${this.apiUrl}/verify`, {
+    return this.http.get<any>(`${this.apiUrl}/validate`, {
         headers: { Authorization: token }
     }).pipe(
         map(() => true),
