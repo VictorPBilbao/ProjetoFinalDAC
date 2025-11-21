@@ -5,15 +5,16 @@ import { RouterModule } from '@angular/router';
 
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
-// Importamos o serviço que conecta com o backend de contas
 import { ServiceContaService } from '../../services/conta/service-conta.service';
+import { Component, HostBinding, OnInit } from '@angular/core';
+import { Transaction } from '../../models/transaction.model';
 
 @Component({
     selector: 'app-user-dashboard',
     standalone: true,
     imports: [CommonModule, RouterModule],
     templateUrl: './user-dashboard.component.html',
-    styleUrl: './user-dashboard.component.css',
+    styleUrls: ['./user-dashboard.component.css'],
 })
 export class UserDashboardComponent implements OnInit {
     user: Cliente | null = null;
@@ -29,7 +30,7 @@ export class UserDashboardComponent implements OnInit {
 
     constructor(
         private clientService: ClientService,
-        private contaService: ServiceContaService // Injetamos o serviço de conta
+        private contaService: ServiceContaService
     ) {}
 
     ngOnInit(): void {
@@ -39,12 +40,9 @@ export class UserDashboardComponent implements OnInit {
             next: (client) => {
                 this.user = client ?? null;
 
-                // O saldo vem da agregação do endpoint /clientes/:cpf (R13) do Gateway
                 this.balance = this.user?.saldo ?? 0;
 
-                // Se o usuário tem conta, buscamos o extrato real
                 if (this.user && this.user.conta) {
-                    // O backend retorna um objeto conta dentro do cliente, ou apenas o número em alguns casos
                     const numeroConta =
                         typeof this.user.conta === 'object'
                             ? (this.user.conta as any).numero
@@ -61,19 +59,17 @@ export class UserDashboardComponent implements OnInit {
     }
 
     loadRealTransactions(numeroConta: string) {
-        // Chama o endpoint de extrato (R8)
-        this.contaService.getStatement(numeroConta).subscribe({
-            next: (records: any[]) => {
-                // Mapeia o retorno do backend para o modelo Transaction do frontend
+        this.contaService
+            .getStatement(numeroConta)
+            .subscribe((records: any[]) => {
                 const transactions: Transaction[] = records.map((r) => ({
                     id: r.id || Math.random().toString(36).substr(2, 9),
                     dateTime: new Date(r.dataHora || r.data),
                     operation: this.formatOperationName(r.tipo),
                     amount: r.valor,
-                    clientId: this.user?.id,
+                    clientId: this.user?.id ?? '',
                 }));
 
-                // 1. Filtra atividade recente (últimos 7 dias)
                 const sevenDaysAgo = new Date();
                 sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
                 sevenDaysAgo.setHours(0, 0, 0, 0);
@@ -84,7 +80,6 @@ export class UserDashboardComponent implements OnInit {
                         (a, b) => b.dateTime.getTime() - a.dateTime.getTime()
                     );
 
-                // 2. Calcula total de depósitos do mês atual
                 const now = new Date();
                 const firstDayOfMonth = new Date(
                     now.getFullYear(),
@@ -95,25 +90,23 @@ export class UserDashboardComponent implements OnInit {
                 this.depositsThisMonth = transactions
                     .filter(
                         (t) =>
-                            (t.operation === 'Depósito' ||
-                                t.operation === 'DEPOSITO') &&
+                            String(t.operation).toUpperCase() === 'DEPOSITO' &&
                             t.dateTime >= firstDayOfMonth
                     )
                     .reduce((sum, t) => sum + t.amount, 0);
-            },
-            error: (err) => console.error('Erro ao buscar extrato:', err),
-        });
+            });
     }
 
-    // Auxiliar para deixar o nome da operação amigável na tela
-    private formatOperationName(tipo: string): string {
-        const map: { [key: string]: string } = {
-            DEPOSITO: 'Depósito',
+    private formatOperationName(
+        tipo: string
+    ): 'Transferencia' | 'Deposito' | 'Saque' {
+        const map: { [key: string]: 'Transferencia' | 'Deposito' | 'Saque' } = {
+            DEPOSITO: 'Deposito',
             SAQUE: 'Saque',
-            TRANSFERENCIA_ORIGEM: 'Transferência Enviada',
-            TRANSFERENCIA_DESTINO: 'Transferência Recebida',
+            TRANSFERENCIA_ORIGEM: 'Transferencia',
+            TRANSFERENCIA_DESTINO: 'Transferencia',
         };
-        return map[tipo] || tipo;
+        return map[tipo] || 'Transferencia';
     }
 
     ngOnDestroy(): void {
@@ -126,7 +119,6 @@ export class UserDashboardComponent implements OnInit {
 
     toggleDarkMode() {
         this.darkMode = !this.darkMode;
-        // opcional: salvar preferência no localStorage
         localStorage.setItem('dashboardDarkMode', String(this.darkMode));
     }
 }
