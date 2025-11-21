@@ -35,58 +35,20 @@ export class ApprovalsComponent implements OnInit {
 
     load(): void {
         this.isLoading = true;
-        const res = this.managerService.getPending();
-
-        // Observable
-        if (res && typeof (res as any).subscribe === 'function') {
-            (res as any).subscribe({
-                next: (data: Cliente[]) => {
-                    this.pending = Array.isArray(data) ? data : [];
-                    this.applyFilter();
-                },
-                error: (err: any) => {
-                    this.setFeedback(
-                        false,
-                        err?.message ?? 'Erro ao carregar pendentes'
-                    );
-                    this.isLoading = false;
-                },
-                complete: () => {
-                    this.isLoading = false;
-                },
-            });
-            return;
-        }
-
-        // Promise
-        if (res && typeof (res as any).then === 'function') {
-            (res as any)
-                .then((data: Cliente[]) => {
-                    this.pending = Array.isArray(data) ? data : [];
-                    this.applyFilter();
-                })
-                .catch((err: any) =>
-                    this.setFeedback(
-                        false,
-                        err?.message ?? 'Erro ao carregar pendentes'
-                    )
-                )
-                .finally(() => (this.isLoading = false));
-            return;
-        }
-
-        // Síncrono
-        try {
-            this.pending = Array.isArray(res) ? res : [];
-            this.applyFilter();
-        } catch (err: any) {
-            this.setFeedback(
-                false,
-                err?.message ?? 'Erro ao carregar pendentes'
-            );
-        } finally {
-            this.isLoading = false;
-        }
+        this.managerService.getPending().subscribe({
+            next: (data: Cliente[]) => {
+                this.pending = Array.isArray(data) ? data : [];
+                this.applyFilter();
+                this.isLoading = false;
+            },
+            error: (err: any) => {
+                this.setFeedback(
+                    false,
+                    err?.message ?? 'Erro ao carregar pendentes'
+                );
+                this.isLoading = false;
+            },
+        });
     }
 
     applyFilter(): void {
@@ -98,17 +60,31 @@ export class ApprovalsComponent implements OnInit {
         this.filtered = this.pending.filter(
             (p) =>
                 p.nome.toLowerCase().includes(term) ||
-                p.cpf.replace(/\D/g, '').includes(term.replace(/\D/g, '')) ||
+                p.cpf
+                    .replaceAll(/\D/g, '')
+                    .includes(term.replaceAll(/\D/g, '')) ||
                 (p.email?.toLowerCase().includes(term) ?? false)
         );
     }
 
-    async approve(id: string): Promise<void> {
-        const res = this.managerService.approve(id);
-        const result = await this.handleActionResult(res, id);
-        if (result?.ok) {
-            this.load();
-        }
+    approve(cpf: string): void {
+        this.actionInProgressId = cpf;
+        this.managerService.approve(cpf).subscribe({
+            next: (result) => {
+                this.setFeedback(result.ok, result.message);
+                if (result.ok) {
+                    this.load();
+                }
+                this.actionInProgressId = null;
+            },
+            error: (err) => {
+                this.setFeedback(
+                    false,
+                    err?.message ?? 'Erro ao aprovar cliente'
+                );
+                this.actionInProgressId = null;
+            },
+        });
     }
 
     startReject(id: string): void {
@@ -121,55 +97,31 @@ export class ApprovalsComponent implements OnInit {
         this.rejectReason = '';
     }
 
-    async confirmReject(): Promise<void> {
+    confirmReject(): void {
         if (!this.rejectingId) {
             return;
         }
-        const res = this.managerService.reject(
-            this.rejectingId,
-            this.rejectReason
-        );
-        const result = await this.handleActionResult(res, this.rejectingId);
-        if (result?.ok) {
-            this.rejectingId = null;
-            this.rejectReason = '';
-            await this.load();
-        }
-    }
+        const cpfToReject = this.rejectingId;
+        this.actionInProgressId = cpfToReject;
 
-    private async handleActionResult(res: any, id?: string): Promise<any> {
-        this.actionInProgressId = id ?? null;
-        try {
-            // Observable
-            if (res && typeof res.subscribe === 'function') {
-                const promise = new Promise<any>((resolve, reject) => {
-                    (res as any).subscribe({
-                        next: (v: any) => resolve(v),
-                        error: (e: any) => reject(e),
-                    });
-                });
-                const result = await promise;
-                this.setFeedback(result?.ok ?? true, result?.message ?? '');
-                return result;
-            }
-
-            // Promise
-            if (res && typeof res.then === 'function') {
-                const result = await res;
-                this.setFeedback(result?.ok ?? true, result?.message ?? '');
-                return result;
-            }
-
-            // Síncrono
-            const result = res;
-            this.setFeedback(result?.ok ?? true, result?.message ?? '');
-            return result;
-        } catch (err: any) {
-            this.setFeedback(false, err?.message ?? 'Erro na operação');
-            return null;
-        } finally {
-            this.actionInProgressId = null;
-        }
+        this.managerService.reject(cpfToReject, this.rejectReason).subscribe({
+            next: (result) => {
+                this.setFeedback(result.ok, result.message);
+                if (result.ok) {
+                    this.rejectingId = null;
+                    this.rejectReason = '';
+                    this.load();
+                }
+                this.actionInProgressId = null;
+            },
+            error: (err) => {
+                this.setFeedback(
+                    false,
+                    err?.message ?? 'Erro ao rejeitar cliente'
+                );
+                this.actionInProgressId = null;
+            },
+        });
     }
 
     trackById(_index: number, item: Cliente): string {

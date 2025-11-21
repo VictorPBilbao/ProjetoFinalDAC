@@ -193,110 +193,105 @@ app.get(
  */
 // R14: Consultar Melhores Clientes (Top 3 do Gerente)
 app.get(
-  "/relatorio/melhores-clientes",
-  authenticateToken,
-  requireRole("GERENTE", "MANAGER"),
-  async (req, res) => {
-    const managerCpf = req.user?.cpf;
-    const authHeader = req.headers.authorization;
-    const limit = Number(req.query.limit ?? 3);
+    "/relatorio/melhores-clientes",
+    authenticateToken,
+    requireRole("GERENTE", "MANAGER"),
+    async (req, res) => {
+        const managerCpf = req.user?.cpf;
+        const authHeader = req.headers.authorization;
+        const limit = Number(req.query.limit ?? 3);
 
-    const clientServiceUrl =
-      process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
-    const accountQueryServiceUrl =
-      process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+        const clientServiceUrl = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+        const accountQueryServiceUrl =
+            process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
 
-    const config = { headers: { Authorization: authHeader } };
+        const config = { headers: { Authorization: authHeader } };
 
-    try {
-      console.log(
-        `[R14] requesting top ${limit} accounts for manager ${managerCpf}`
-      );
+        try {
+            console.log(`[R14] requesting top ${limit} accounts for manager ${managerCpf}`);
 
-      let accounts = [];
-      try {
-        const resp = await axiosInstance.get(
-          `${accountQueryServiceUrl}/query/top-accounts?managerCpf=${encodeURIComponent(
-            managerCpf
-          )}&limit=${limit}`,
-          config
-        );
-        accounts = Array.isArray(resp.data) ? resp.data : [];
-      } catch (acctErr) {
-        console.warn(`[R14] account-query error:`, acctErr.message);
-        if (acctErr.response?.status === 404) {
-          accounts = [];
-        } else if (acctErr.response) {
-          return res.status(acctErr.response.status).json({
-            erro:
-              acctErr.response.data?.message ||
-              acctErr.response.data ||
-              "Erro no account-query",
-            status: acctErr.response.status,
-          });
-        } else {
-          return res.status(503).json({
-            erro: "Serviço de contas indisponível",
-            status: 503,
-          });
-        }
-      }
+            let accounts = [];
+            try {
+                const resp = await axiosInstance.get(
+                    `${accountQueryServiceUrl}/query/top-accounts?managerCpf=${encodeURIComponent(
+                        managerCpf
+                    )}&limit=${limit}`,
+                    config
+                );
+                accounts = Array.isArray(resp.data) ? resp.data : [];
+            } catch (acctErr) {
+                console.warn(`[R14] account-query error:`, acctErr.message);
+                if (acctErr.response?.status === 404) {
+                    accounts = [];
+                } else if (acctErr.response) {
+                    return res.status(acctErr.response.status).json({
+                        erro:
+                            acctErr.response.data?.message ||
+                            acctErr.response.data ||
+                            "Erro no account-query",
+                        status: acctErr.response.status,
+                    });
+                } else {
+                    return res.status(503).json({
+                        erro: "Serviço de contas indisponível",
+                        status: 503,
+                    });
+                }
+            }
 
-      const clientPromises = accounts.map((acc) =>
-        axiosInstance
-          .get(
-            `${clientServiceUrl}/clientes/${encodeURIComponent(
-              acc.clientId || acc.clientCpf || acc.client_id
-            )}`,
-            config
-          )
-          .then((r) => ({ client: r.data, account: acc }))
-          .catch((err) => {
-            console.warn(
-              `[R14] client-service missing for ${
-                acc.clientId || acc.clientCpf || acc.client_id
-              }: ${err.message}`
+            const clientPromises = accounts.map((acc) =>
+                axiosInstance
+                    .get(
+                        `${clientServiceUrl}/clientes/${encodeURIComponent(
+                            acc.clientId || acc.clientCpf || acc.client_id
+                        )}`,
+                        config
+                    )
+                    .then((r) => ({ client: r.data, account: acc }))
+                    .catch((err) => {
+                        console.warn(
+                            `[R14] client-service missing for ${
+                                acc.clientId || acc.clientCpf || acc.client_id
+                            }: ${err.message}`
+                        );
+                        return { client: null, account: acc };
+                    })
             );
-            return { client: null, account: acc };
-          })
-      );
 
-      const results = await Promise.all(clientPromises);
+            const results = await Promise.all(clientPromises);
 
-      const composed = results
-        .map(({ client, account }) => {
-          const cpf =
-            account.clientId ?? account.clientCpf ?? account.client_id ?? null;
-          const saldoRaw =
-            account.balance ?? account.saldo ?? account.Balance ?? 0;
-          const saldo = Number(saldoRaw ?? 0);
-          return {
-            cpf,
-            nome: client?.nome ?? "(Desconhecido)",
-            cidade: client?.cidade ?? client?.addressCity ?? null,
-            estado: client?.estado ?? client?.state ?? null,
-            saldo: Number(saldo).toFixed(2),
-          };
-        })
+            const composed = results
+                .map(({ client, account }) => {
+                    const cpf = account.clientId ?? account.clientCpf ?? account.client_id ?? null;
+                    const saldoRaw = account.balance ?? account.saldo ?? account.Balance ?? 0;
+                    const saldo = Number(saldoRaw ?? 0);
+                    return {
+                        cpf,
+                        nome: client?.nome ?? "(Desconhecido)",
+                        cidade: client?.cidade ?? client?.addressCity ?? null,
+                        estado: client?.estado ?? client?.state ?? null,
+                        saldo: Number(saldo).toFixed(2),
+                    };
+                })
 
-        .sort((a, b) => Number(b.saldo) - Number(a.saldo));
+                .sort((a, b) => Number(b.saldo) - Number(a.saldo));
 
-      return res.status(200).json(composed);
-    } catch (error) {
-      console.error("[API COMPOSITION ERROR] R14:", {
-        message: error.message,
-        status: error.response?.status,
-        downstream: error.response?.data,
-      });
-      if (error.response) {
-        return res.status(error.response.status).json(error.response.data);
-      }
-      return res.status(503).json({
-        error: "Serviço indisponível",
-        message: "Falha ao compor dados para R14",
-      });
+            return res.status(200).json(composed);
+        } catch (error) {
+            console.error("[API COMPOSITION ERROR] R14:", {
+                message: error.message,
+                status: error.response?.status,
+                downstream: error.response?.data,
+            });
+            if (error.response) {
+                return res.status(error.response.status).json(error.response.data);
+            }
+            return res.status(503).json({
+                error: "Serviço indisponível",
+                message: "Falha ao compor dados para R14",
+            });
+        }
     }
-  }
 );
 
 /**
@@ -316,7 +311,8 @@ app.get(
         const config = authHeader ? { headers: { Authorization: authHeader } } : {};
 
         const managerServiceUrl = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
-        const accountQueryServiceUrl = process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+        const accountQueryServiceUrl =
+            process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
 
         try {
             console.log("[R15] Iniciando dashboard de gerentes...");
@@ -375,7 +371,6 @@ app.get(
                     stat.totalPositivo = pos.toFixed(2);
                     stat.totalNegativo = neg.toFixed(2);
                 }
-
             } catch (summaryErr) {
                 console.warn(`[R15] Account Query indisponível: ${summaryErr.message}`);
                 // Mantém gerentes com valores zerados
@@ -388,20 +383,19 @@ app.get(
 
             console.log(`[R15] Dashboard: ${result.length} gerentes`);
             return res.status(200).json(result);
-
         } catch (error) {
             console.error("[R15 ERROR]", error.message);
 
             if (error.code === "ECONNREFUSED") {
                 return res.status(503).json({
                     error: "Serviço indisponível",
-                    message: "Manager Service não acessível"
+                    message: "Manager Service não acessível",
                 });
             }
 
             return res.status(500).json({
                 error: "Erro interno",
-                message: "Falha ao gerar dashboard"
+                message: "Falha ao gerar dashboard",
             });
         }
     }
@@ -451,29 +445,32 @@ app.get(
 // CLIENT SERVICE ROUTES
 // ============================================
 
-
 // GET /clientes (R09, R12, R14, R16)
 // Esse cara ta puxando os dados agregados para relatorio de clientes, dai depende se é admin ou gerente
 // GET /clientes (R09, R12, R14, R16)
 app.get(
     "/clientes",
     authenticateToken,
-    authorizeClientesList, 
+    authorizeClientesList,
     async (req, res, next) => {
-        
         const userRole = req.user?.tipo;
         const userCpf = req.user?.cpf;
         const filtro = req.query.filtro;
-        const busca = req.query.busca || ""; 
-        
+        const busca = req.query.busca || "";
+
+        // Skip aggregation for para_aprovar filter - let it pass through to client service
+        if (filtro === "para_aprovar") {
+            return next();
+        }
+
         if (filtro === "adm_relatorio_clientes" || userRole === "GERENTE") {
-            
             const authHeader = req.headers.authorization;
             const config = { headers: { Authorization: authHeader } };
 
             const clientUrl = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
             const managerUrl = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
-            const accountQueryUrl = process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+            const accountQueryUrl =
+                process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
 
             try {
                 console.log(`[Gateway] Agregando dados para ${userRole}...`);
@@ -488,7 +485,7 @@ app.get(
                 const [clientsResp, managersResp, accountsResp] = await Promise.all([
                     axiosInstance.get(urlClientes, config),
                     axiosInstance.get(`${managerUrl}/gerentes`, config),
-                    axiosInstance.get(`${accountQueryUrl}/query/all`, config)
+                    axiosInstance.get(`${accountQueryUrl}/query/all`, config),
                 ]);
 
                 let clients = Array.isArray(clientsResp.data) ? clientsResp.data : [];
@@ -498,32 +495,32 @@ app.get(
                 // ✅ Se for GERENTE, filtra no Gateway baseado nas contas
                 if (userRole === "GERENTE" || userRole === "MANAGER") {
                     const myCpfsSet = new Set();
-                    accounts.forEach(acc => {
-                        const managerId = String(acc.managerId || acc.managerCpf || '');
+                    accounts.forEach((acc) => {
+                        const managerId = String(acc.managerId || acc.managerCpf || "");
                         if (managerId === userCpf) {
                             const clientCpf = acc.clientId || acc.clientCpf;
                             if (clientCpf) myCpfsSet.add(clientCpf);
                         }
                     });
-                    clients = clients.filter(c => myCpfsSet.has(c.cpf));
+                    clients = clients.filter((c) => myCpfsSet.has(c.cpf));
                     console.log(`[Gateway] Gerente ${userCpf} tem ${clients.length} clientes`);
                 }
 
                 const accountMap = new Map();
-                accounts.forEach(acc => {
-                    const cpf = acc.clientId || acc.clientCpf; 
+                accounts.forEach((acc) => {
+                    const cpf = acc.clientId || acc.clientCpf;
                     if (cpf) accountMap.set(cpf, acc);
                 });
 
                 const managerMap = new Map();
-                managers.forEach(mgr => {
+                managers.forEach((mgr) => {
                     if (mgr.cpf) managerMap.set(mgr.cpf, mgr);
                     if (mgr.id) managerMap.set(String(mgr.id), mgr);
                 });
 
-                const relatorio = clients.map(client => {
+                const relatorio = clients.map((client) => {
                     const conta = accountMap.get(client.cpf);
-                    
+
                     let gerente = null;
                     if (conta && conta.managerId) {
                         gerente = managerMap.get(String(conta.managerId));
@@ -536,20 +533,19 @@ app.get(
                         salario: client.salario,
                         cidade: client.cidade,
                         estado: client.estado,
-                        
+
                         numeroConta: conta ? conta.accountNumber : null,
                         saldo: conta ? conta.balance : 0,
                         limite: conta ? conta.limit : 0,
-                        
+
                         cpfGerente: gerente ? gerente.cpf : null,
-                        nomeGerente: gerente ? gerente.nome : "Não Atribuído"
+                        nomeGerente: gerente ? gerente.nome : "Não Atribuído",
                     };
                 });
 
                 relatorio.sort((a, b) => a.nome.localeCompare(b.nome));
 
                 return res.json(relatorio);
-
             } catch (error) {
                 console.error("[Gateway Agregação Error]", error.message);
                 return res.status(503).json({ error: "Erro ao agregar dados de clientes." });
@@ -559,7 +555,7 @@ app.get(
         next();
     },
     proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
-        proxyReqPathResolver: (req) => req.originalUrl
+        proxyReqPathResolver: (req) => req.originalUrl,
     })
 );
 
@@ -687,7 +683,6 @@ app.get(
     })
 );
 
-
 // (Opcional) Rota de pendentes - não usada nos testes, mantida
 app.get(
     "/clientes/pending",
@@ -807,16 +802,16 @@ app.post(
     })
 );
 
-// R8: Extrato 
+// R8: Extrato
 app.get(
-    "/contas/:numero/extrato", 
+    "/contas/:numero/extrato",
     authenticateToken,
     proxy(process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086", {
         proxyReqPathResolver: (req) => req.originalUrl,
         proxyErrorHandler: (err, res, next) => {
             console.error("[Gateway] Erro ao buscar extrato:", err.message);
             res.status(503).json({ error: "Serviço de consulta de conta indisponível." });
-        }
+        },
     })
 );
 
