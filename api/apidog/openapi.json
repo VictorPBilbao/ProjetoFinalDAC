@@ -55,7 +55,8 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DadoGerenteInsercao"
-              }
+              },
+              "example": {}
             }
           }
         },
@@ -82,7 +83,7 @@
         },
         "security": [
           {
-            "bearerAuth": []
+            "bearer": []
           }
         ]
       },
@@ -226,11 +227,11 @@
                 "$ref": "#/components/schemas/AutocadastroInfo"
               },
               "example": {
-                "cpf": "12345678901",
-                "nome": "João Silva",
-                "email": "joao@example.com",
+                "cpf": "12225276935",
+                "nome": "Victor Pasini Bilbao",
+                "email": "victor.pasini.bilbao@gmail.com",
                 "telefone": "(11) 99999-9999",
-                "salario": 3000,
+                "salario": 2200,
                 "endereco": "Rua X, 100",
                 "cep": "80000000",
                 "cidade": "Curitiba",
@@ -434,7 +435,7 @@
             "in": "path",
             "description": "CPF do cliente a ser aprovado",
             "required": true,
-            "example": "",
+            "example": "12225276935",
             "schema": {
               "type": "string"
             }
@@ -463,7 +464,7 @@
         },
         "security": [
           {
-            "bearerAuth": []
+            "bearer": []
           }
         ]
       }
