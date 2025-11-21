@@ -16,7 +16,7 @@ public class AdminInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        String adminCpf = "00000000002";
+        String adminCpf = "40501740066";
         
         if (userRepository.existsByCpf(adminCpf) || userRepository.existsByEmail("admin@admin")) {
             System.out.println("[INIT] Admin já existe: " + adminCpf);
@@ -25,9 +25,9 @@ public class AdminInitializer implements CommandLineRunner {
 
         User admin = new User();
         admin.setCpf(adminCpf);
-        admin.setNome("Administrador");
-        admin.setEmail("admin@admin");
-        admin.setSenha(passwordEncoder.encode("admin"));
+        admin.setNome("Adamântio");
+        admin.setEmail("adm1@bantads.com.br");
+        admin.setSenha(passwordEncoder.encode("tads"));
         admin.setTipo("ADMINISTRADOR");
         admin.setAtivo(true);
 
