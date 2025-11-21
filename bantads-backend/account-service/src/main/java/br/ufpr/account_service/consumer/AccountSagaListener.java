@@ -36,15 +36,21 @@ public class AccountSagaListener {
     @Value("${rabbit.saga.exchange:saga.exchange}")
     private String sagaExchange;
 
-    @RabbitListener(queues = "${rabbit.account.create.queue}")
+     @RabbitListener(queues = "${rabbit.account.create.queue}")
     public void handleCreateAccount(Message message) throws Exception {
         String correlationId = message.getMessageProperties().getCorrelationId();
         Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
 
         try {
             String clientId = (String) payload.get("clientId");
-            BigDecimal salary = new BigDecimal(payload.get("salary").toString());
+            BigDecimal salary = parseBigDecimal(payload.get("salary"));
+            if (salary == null) {
+                throw new IllegalArgumentException("Salary ausente ou inválido: " + payload.get("salary"));
+            }
             String managerId = (String) payload.get("managerId");
+
+            // Debug: confirmar valor recebido
+            System.out.println("handleCreateAccount payload salary=" + salary + " clientId=" + clientId + " managerId=" + managerId);
 
             if (accountRepository.findByClientId(clientId).isPresent()) {
                 throw new IllegalStateException("Cliente já possui uma conta.");
@@ -52,7 +58,7 @@ public class AccountSagaListener {
 
             BigDecimal limit = BigDecimal.ZERO;
             if (salary.compareTo(new BigDecimal("2000.00")) >= 0) {
-                limit = salary.divide(new BigDecimal(2));
+                limit = salary.divide(new BigDecimal("2"), 2, java.math.RoundingMode.HALF_UP);
             }
 
             String accountNumber = String.format("%04d", new Random().nextInt(10000));
@@ -75,12 +81,14 @@ public class AccountSagaListener {
                     "limit", savedAccount.getAccountLimit(),
                     "creationDate", savedAccount.getCreationDate().toString());
 
+            System.out
+                    .println("Account created successfully: " + accountData);
             rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountCreatedKey(), accountData, m -> {
                 m.getMessageProperties().setCorrelationId(correlationId);
                 return m;
             });
 
-            accountService.publishCqrsEvent("account.created", savedAccount);
+            accountService.publishCqrsEvent("account.created", accountData);
 
         } catch (Exception ex) {
             rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountCreateFailedKey(),
@@ -88,6 +96,23 @@ public class AccountSagaListener {
                         m.getMessageProperties().setCorrelationId(correlationId);
                         return m;
                     });
+        }
+    }
+
+    private BigDecimal parseBigDecimal(Object value) {
+        if (value == null) return null;
+        if (value instanceof BigDecimal) return (BigDecimal) value;
+        if (value instanceof Number) {
+            return BigDecimal.valueOf(((Number) value).doubleValue());
+        }
+        String s = value.toString().trim();
+        if (s.isEmpty()) return null;
+        // aceita vírgula como separador decimal
+        s = s.replace(",", ".");
+        try {
+            return new BigDecimal(s);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 

@@ -74,9 +74,18 @@ public class SagaListener {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
             String cpf = getString(payload, "cpf");
             String nome = getString(payload, "nome");
+            String accountNumber = "";
+            String limit = "";
+
+            if (payload.containsKey("accountNumber")) {
+                accountNumber = String.valueOf(payload.get("accountNumber"));
+            }
+            if (payload.containsKey("limit")) {
+                limit = String.valueOf(payload.get("limit"));
+            }
 
             log.info("Auth criado correlationId={}", correlationId);
-            saga.notifyGatewaySuccess(correlationId, cpf, nome);
+            saga.notifyGatewaySuccess(correlationId, cpf, nome, accountNumber, limit);
         } catch (Exception ex) {
             log.error("Erro ao processar auth.created: {}", ex.getMessage());
             saga.notifyGatewayFailure(correlationId, "Erro ao processar autenticação: " + ex.getMessage(), 500);
@@ -232,9 +241,10 @@ public class SagaListener {
         String correlationId = message.getMessageProperties().getCorrelationId();
         try {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
-            log.info("Conta criada correlationId={}", correlationId);
+            log.info("Conta criada correlationId={} e payload={}", correlationId, payload);
 
             String accountNumber = getString(payload, "accountNumber");
+            log.info("Account number extracted: {}", accountNumber);
             if (accountNumber != null) {
                 saga.handleAccountCreated(correlationId, payload);
             } else {

@@ -85,6 +85,7 @@ public class AuthListener {
             // Pass through accountNumber if it exists
             if (payload.containsKey("accountNumber")) {
                 event.put("accountNumber", payload.get("accountNumber"));
+                event.put("limit", payload.get("limit"));
             }
             rabbit.convertAndSend(authExchange, createdKey, event, m -> {
                 if (correlationId != null)

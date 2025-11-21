@@ -259,9 +259,9 @@ public class SagaService {
         return sagaResults.get(correlationId);
     }
 
-    public void notifyGatewaySuccess(String correlationId, String cpf, String nome) {
+    public void notifyGatewaySuccess(String correlationId, String cpf, String nome, String accountNumber, String limit) {
         sagaResults.put(correlationId, new SagaResult(true, "create-manager", "Manager criado com sucesso",
-                Map.of("cpf", cpf != null ? cpf : "", "nome", nome != null ? nome : ""), 201));
+                Map.of("cpf", cpf != null ? cpf : "", "nome", nome != null ? nome : "", "conta", accountNumber != null ? accountNumber : "", "limite", limit != null ? limit : ""), 201));
     }
 
     public void notifyGatewayFailure(String correlationId, String errorMessage, int statusCode) {
@@ -372,11 +372,13 @@ public class SagaService {
     }
 
     public void handleAccountCreated(String correlationId, Map<String, Object> payload) {
+        log.info("[SAGA] Conta criada correlationId={} payload={}", correlationId, payload);
         if (correlationId == null)
             return;
 
         String clientId = getString(payload, "clientId");
         String accountNumber = getString(payload, "accountNumber");
+        String limit = getString(payload, "limit");
 
         log.info("[SAGA] Conta criada, criando autenticação e senha correlationId={}", correlationId);
 
@@ -391,7 +393,8 @@ public class SagaService {
         authPayload.put("email", email);
         authPayload.put("tipo", "CLIENT");
         authPayload.put("generatePassword", true);
-        authPayload.put("accountNumber", accountNumber); // Pass account number through
+        authPayload.put("accountNumber", accountNumber);
+        authPayload.put("limit", limit);
 
         try {
             sendEvent(authExchange, authCreateKey, authPayload, correlationId);
@@ -404,6 +407,7 @@ public class SagaService {
     }
 
     public void notifyApproveClientSuccess(String correlationId, Map<String, Object> accountData) {
+        log.info("[SAGA] Cliente aprovado com sucesso correlationId={} accountData={}", correlationId, accountData);
         sagaResults.put(correlationId, new SagaResult(true, "approve-client", "Cliente aprovado com sucesso",
                 accountData, 200));
     }
