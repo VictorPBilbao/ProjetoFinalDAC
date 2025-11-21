@@ -200,7 +200,7 @@ public class SagaService {
         authPayload.put("nome", getString(payload, "name"));
         authPayload.put("email", getString(payload, "email"));
         authPayload.put("senha", getString(payload, "password"));
-        authPayload.put("tipo", "MANAGER");
+        authPayload.put("tipo", "GERENTE");
         authPayload.put("managerId", managerId);
 
         log.info("[SAGA] Manager criado, publicando auth correlationId={}", correlationId);
