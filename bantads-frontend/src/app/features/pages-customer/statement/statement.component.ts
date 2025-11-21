@@ -39,6 +39,12 @@ export class StatementComponent implements OnInit, OnDestroy {
         private readonly transactionService: TransactionService
     ) {}
 
+    ngOnDestroy(): void {
+        if (this.sub) {
+            this.sub.unsubscribe();
+        }
+    }
+
     ngOnInit(): void {
         this.contaService.getMinhaConta().subscribe({
             next: (conta) => {
