@@ -137,6 +137,6 @@ public class SagaController {
             return ResponseEntity.status(202).body(Map.of("correlationId", cid, "status", "pending"));
         }
 
-        return ResponseEntity.status(code).body(result.getDetail());
+        return ResponseEntity.ok(result.getDetail());
     }
 }
