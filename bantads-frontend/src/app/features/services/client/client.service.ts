@@ -16,14 +16,8 @@ export class ClientService {
 
     getClients(search?: string, filter?: string): Observable<Cliente[]> {
         let params = new HttpParams();
-
-        if (search) {
-            params = params.set('busca', search);
-        }
-
-        if (filter) {
-            params = params.set('filtro', filter);
-        }
+        if (search) params = params.set('busca', search);
+        if (filter) params = params.set('filtro', filter);
 
         return this.http.get<any[]>(`${this.apiUrl}/clientes`, { params }).pipe(
             map((response) => {
@@ -39,11 +33,10 @@ export class ClientService {
 
     getClientById(cpf: string): Observable<Cliente | undefined> {
         const endpoint = `${this.apiUrl}/relatorio/cliente-detalhado/${cpf}`;
-
         return this.http.get<any>(endpoint).pipe(
             map((dto) => this.mapToClientModel(dto)),
             catchError((err) => {
-                console.error('Erro ao buscar detalhe do cliente:', err);
+                console.error('Erro ao buscar detalhe:', err);
                 return of(undefined);
             })
         );
@@ -58,24 +51,16 @@ export class ClientService {
     }
 
     addClient(newClient: any): Observable<any> {
-        return this.http.post(`${this.apiUrl}/clientes`, newClient).pipe(
-            catchError((err) => {
-                console.error('Erro no cadastro:', err);
-                return throwError(() => err);
-            })
-        );
+        return this.http
+            .post(`${this.apiUrl}/clientes`, newClient)
+            .pipe(catchError((err) => throwError(() => err)));
     }
 
     updateClient(updatedClient: Cliente): Observable<any> {
         const cpf = updatedClient.cpf;
         return this.http
             .put(`${this.apiUrl}/clientes/${cpf}`, updatedClient)
-            .pipe(
-                catchError((err) => {
-                    console.error('Erro ao atualizar:', err);
-                    return throwError(() => err);
-                })
-            );
+            .pipe(catchError((err) => throwError(() => err)));
     }
 
     deleteClient(cpf: string): Observable<any> {
@@ -90,7 +75,6 @@ export class ClientService {
 
     private mapToClientModel(data: any): Cliente {
         if (!data) return {} as Cliente;
-
         const contaData = data.conta || {};
         const gerenteData = data.gerente || {};
         const enderecoData = data.endereco || {};
@@ -102,7 +86,6 @@ export class ClientService {
             email: data.email,
             telefone: data.telefone,
             salario: data.salario,
-
             endereco: {
                 tipo: enderecoData.tipo || data.tipoLogradouro || '',
                 logradouro: enderecoData.logradouro || data.logradouro || '',
@@ -112,20 +95,16 @@ export class ClientService {
                 cidade: enderecoData.cidade || data.cidade || '',
                 estado: enderecoData.estado || data.estado || '',
             },
-
             cidade: data.cidade || enderecoData.cidade,
             estado: data.estado || enderecoData.estado,
-
             conta: data.numeroConta || contaData.numero || contaData.conta,
             saldo: data.saldo !== undefined ? data.saldo : contaData.saldo || 0,
             limite:
                 data.limite !== undefined ? data.limite : contaData.limite || 0,
-
             manager: {
                 cpf: data.cpfGerente || gerenteData.cpf,
                 name: data.nomeGerente || data.gerenteName || 'Não Atribuído',
             },
-
             criadoEm: data.criadoEm,
         } as any as Cliente;
     }

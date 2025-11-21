@@ -40,22 +40,20 @@ export class StatementComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        this.sub = this.clientService.getLoggedClient().subscribe((client) => {
-            this.cliente = client || null;
-
-            if (this.cliente) {
-                this.allTransactions =
-                    this.transactionService.getTransactionsByClientId(
-                        this.cliente.id
-                    );
-            } else {
-                this.allTransactions = [];
-            }
+        this.contaService.getMinhaConta().subscribe({
+            next: (conta) => {
+                this.numeroConta =
+                    conta.numero || conta.conta || conta.accountNumber;
+            },
+            error: (err) => {
+                console.error('Erro ao buscar conta:', err);
+                Swal.fire(
+                    'Erro',
+                    'Não foi possível localizar sua conta.',
+                    'error'
+                );
+            },
         });
-    }
-
-    ngOnDestroy(): void {
-        this.sub?.unsubscribe();
     }
 
     getStatement() {
