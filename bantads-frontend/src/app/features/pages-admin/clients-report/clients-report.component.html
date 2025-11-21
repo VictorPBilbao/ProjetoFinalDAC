@@ -54,13 +54,25 @@
                     </td>
 
                     <td>
-                        <div *ngIf="cliente.manager?.name">
-                            <strong>{{ cliente.manager?.name }}</strong>
+                        <!-- CORREÇÃO: Removido o '?' pois o manager é garantido pelo Service -->
+                        <div
+                            *ngIf="
+                                cliente.manager.name &&
+                                cliente.manager.name !== 'Não Atribuído'
+                            "
+                        >
+                            <strong>{{ cliente.manager.name }}</strong>
                             <div class="small-text">
-                                CPF: {{ cliente.manager?.cpf | cpf }}
+                                CPF: {{ cliente.manager.cpf | cpf }}
                             </div>
                         </div>
-                        <span *ngIf="!cliente.manager?.name" class="no-data">
+                        <span
+                            *ngIf="
+                                !cliente.manager.name ||
+                                cliente.manager.name === 'Não Atribuído'
+                            "
+                            class="no-data"
+                        >
                             Não Atribuído
                         </span>
                     </td>

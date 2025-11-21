@@ -41,18 +41,15 @@
                         </span>
                         <span *ngIf="!cliente.endereco"> - </span>
                     </td>
-
                     <td
                         [class.negative]="(cliente.saldo || 0) < 0"
                         [class.positive]="(cliente.saldo || 0) >= 0"
                     >
                         {{ cliente.saldo | currency : "BRL" }}
                     </td>
-
                     <td class="positive">
                         {{ cliente.limite | currency : "BRL" }}
                     </td>
-
                     <td class="actions">
                         <button
                             class="details-button"
@@ -62,7 +59,6 @@
                         </button>
                     </td>
                 </tr>
-
                 <tr *ngIf="pgClients.length === 0">
                     <td colspan="6" class="no-results">
                         Nenhum cliente encontrado para esta pesquisa.

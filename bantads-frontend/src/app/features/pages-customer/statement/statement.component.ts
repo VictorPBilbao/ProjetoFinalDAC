@@ -23,29 +23,26 @@ export class StatementComponent implements OnInit {
     itmsPerPg: number = 7;
     totalPgs: number = 0;
 
-    cliente: Cliente | null = null;
-    private sub?: Subscription;
-    isLoading: any;
+    isLoading = false;
+    numeroConta: string | null = null;
 
     constructor(private contaService: ServiceContaService) {}
 
     ngOnInit(): void {
-        this.sub = this.clientService.getLoggedClient().subscribe((client) => {
-            this.cliente = client || null;
-
-            if (this.cliente) {
-                this.allTransactions =
-                    this.transactionService.getTransactionsByClientId(
-                        this.cliente.id
-                    );
-            } else {
-                this.allTransactions = [];
-            }
+        this.contaService.getMinhaConta().subscribe({
+            next: (conta) => {
+                this.numeroConta =
+                    conta.numero || conta.conta || conta.accountNumber;
+            },
+            error: (err) => {
+                console.error('Erro ao buscar conta:', err);
+                Swal.fire(
+                    'Erro',
+                    'Não foi possível localizar sua conta.',
+                    'error'
+                );
+            },
         });
-    }
-
-    ngOnDestroy(): void {
-        this.sub?.unsubscribe();
     }
 
     getStatement() {

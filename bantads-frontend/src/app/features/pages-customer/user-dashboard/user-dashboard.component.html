@@ -1,133 +1,64 @@
-<main class="dashboard-container">
-    <header class="dashboard-header">
-        <h1>Olá, {{ user?.nome }}!</h1>
+<main class="dashboard-container" [class.dark-theme]="darkMode">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-message">
+        <div class="spinner"></div>
+        <span>Carregando informações...</span>
+    </div>
 
-        <p>Bem-vindo(a) de volta à sua conta.</p>
+    <div *ngIf="!isLoading">
+        <header class="dashboard-header">
+            <h1>Olá, {{ user?.nome }}!</h1>
+            <p>Bem-vindo(a) de volta à sua conta.</p>
+        </header>
 
-        <!-- botão de alternância do tema: usa assets e ficará fixo via CSS -->
-        <button
-            type="button"
-            class="theme-toggle"
-            (click)="toggleDarkMode()"
-            [attr.aria-pressed]="darkMode"
-            aria-label="Alternar modo escuro"
-            title="Alternar tema"
-        >
-            <img
-                [src]="
-                    darkMode
-                        ? 'assets/images/icon-sun.svg'
-                        : 'assets/images/icon-moon.svg'
-                "
-                alt="Alternar tema"
-            />
-        </button>
-    </header>
+        <section class="main-card">
+            <div class="balance-info">
+                <span class="balance-title"> Saldo disponível </span>
 
-    <section class="main-card">
-        <div class="balance-info">
-            <span class="balance-title"> Saldo disponível </span>
+                <!-- Exibe o saldo diretamente (sem botão de ocultar) -->
+                <h2 class="balance-value">
+                    {{ balance | currency : "BRL" }}
+                </h2>
+            </div>
 
-            <h2 class="balance-value">
-                @if (!hideBalance) {
-                {{ balance | currency : "BRL" }}
-                } @else { •••••• }
+            <nav class="quick-actions">
+                <a routerLink="/cliente/deposito" class="action-item">
+                    <div class="icon-background">
+                        <img
+                            src="images/deposito.png"
+                            alt="Ícone de depósito"
+                        />
+                    </div>
+                    <span> Depositar </span>
+                </a>
 
-                <button
-                    type="button"
-                    class="icon-button"
-                    (click)="toggleBalanceVisibility()"
-                    [attr.aria-label]="
-                        hideBalance ? 'Mostrar saldo' : 'Ocultar saldo'
-                    "
-                >
-                    <img
-                        [src]="
-                            hideBalance
-                                ? 'images/eye-closed.png'
-                                : 'images/eye-icon.png'
-                        "
-                        alt=""
-                        class="visibility-icon"
-                    />
-                </button>
-            </h2>
+                <a routerLink="/cliente/saque" class="action-item">
+                    <div class="icon-background">
+                        <img src="images/saque.png" alt="Ícone de saque" />
+                    </div>
+                    <span> Sacar </span>
+                </a>
 
-            <p class="monthly-deposits">
-                Depositados este mês:
-                {{ depositsThisMonth | currency : "BRL" }}
-            </p>
-        </div>
+                <a routerLink="/cliente/extrato" class="action-item">
+                    <div class="icon-background">
+                        <img
+                            src="images/extrato-bancario.png"
+                            alt="Ícone de extrato"
+                        />
+                    </div>
+                    <span> Extrato </span>
+                </a>
 
-        <nav class="quick-actions">
-            <a href="/cliente/deposito" class="action-item">
-                <div class="icon-background">
-                    <img src="images/deposito.png" alt="Ícone de depósito" />
-                </div>
-                <span> Depositar </span>
-            </a>
-
-            <a href="/cliente/saque" class="action-item">
-                <div class="icon-background">
-                    <img src="images/saque.png" alt="Ícone de saque" />
-                </div>
-                <span> Sacar </span>
-            </a>
-
-            <a href="/cliente/extrato" class="action-item">
-                <div class="icon-background">
-                    <img
-                        src="images/extrato-bancario.png"
-                        alt="Ícone de extrato"
-                    />
-                </div>
-                <span> Extrato </span>
-            </a>
-
-            <a href="/cliente/detalhes" class="action-item">
-                <div class="icon-background">
-                    <img src="images/conta-bancaria.png" alt="Ícone da conta" />
-                </div>
-                <span> Minha Conta </span>
-            </a>
-        </nav>
-    </section>
-
-    <section class="recent-activity">
-        <h3>Atividade Recente</h3>
-
-        @if (recentActivity.length > 0) {
-        <ul>
-            <li
-                class="transaction-item"
-                *ngFor="let transaction of recentActivity; let i = index"
-            >
-                <div class="transaction-details">
-                    <strong class="transaction-description">
-                        {{ transaction.operation }}
-                    </strong>
-                    <span class="transaction-date">
-                        {{ transaction.dateTime | date : "dd 'de' MMM, yyyy" }}
-                    </span>
-                </div>
-                <span
-                    class="transaction-amount"
-                    [ngClass]="{
-                        positive: transaction.amount > 0,
-                        negative: transaction.amount < 0
-                    }"
-                >
-                    {{
-                        transaction.amount
-                            | currency : "BRL" : "symbol" : "1.2-2"
-                    }}
-                </span>
-            </li>
-        </ul>
-        } @else {
-        <li>Nenhuma operação recente.</li>
-        }
-
-        <a href="/cliente/extrato" class="view-all">Ver extrato completo</a>
-    </section>
+                <a routerLink="/cliente/detalhes" class="action-item">
+                    <div class="icon-background">
+                        <img
+                            src="images/conta-bancaria.png"
+                            alt="Ícone da conta"
+                        />
+                    </div>
+                    <span> Minha Conta </span>
+                </a>
+            </nav>
+        </section>
+    </div>
 </main>

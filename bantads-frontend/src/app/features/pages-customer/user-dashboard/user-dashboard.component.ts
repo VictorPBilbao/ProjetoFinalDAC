@@ -1,77 +1,42 @@
-import { Subscription } from 'rxjs';
-
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 import { Cliente } from '../../models/cliente.model';
-import { Transaction } from '../../models/transaction.model';
 import { ClientService } from '../../services/client/client.service';
-import { TransactionService } from '../../services/transaction/transaction.service';
+import { ServiceContaService } from '../../services/conta/service-conta.service';
 
 @Component({
     selector: 'app-user-dashboard',
     standalone: true,
     imports: [CommonModule, RouterModule],
     templateUrl: './user-dashboard.component.html',
-    styleUrls: ['./user-dashboard.component.css'],
+    styleUrl: './user-dashboard.component.css',
 })
-export class UserDashboardComponent implements OnInit, OnDestroy {
+export class UserDashboardComponent implements OnInit {
     user: Cliente | null = null;
     balance: number = 0;
-    depositsThisMonth: number = 0;
-    recentActivity!: Transaction[];
+    isLoading = true;
+    darkMode = false;
 
-    private sub?: Subscription;
-
-    hideBalance = false;
-
-    @HostBinding('class.dark') darkMode = false;
-
-    constructor(
-        private clientService: ClientService,
-        private transactionService: TransactionService
-    ) {}
+    constructor(private clientService: ClientService) {}
 
     ngOnInit(): void {
         this.darkMode = localStorage.getItem('dashboardDarkMode') === 'true';
+        this.isLoading = true;
 
-        this.sub = this.clientService.getLoggedClient().subscribe((client) => {
-            this.user = client ?? null;
-            this.balance = this.user?.saldo ?? 0;
-
-            this.depositsThisMonth = this.transactionService.getMonthlyDeposits(
-                this.user?.id ?? ''
-            );
-
-            const recentActivity =
-                this.transactionService.getTransactionsByClientId(
-                    this.user?.id ?? ''
-                );
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            sevenDaysAgo.setHours(0, 0, 0, 0);
-
-            this.recentActivity = (recentActivity || []).filter(
-                (transaction) => {
-                    const transactionDate = new Date(transaction.dateTime);
-                    return transactionDate >= sevenDaysAgo;
+        this.clientService.getLoggedClient().subscribe({
+            next: (cliente) => {
+                this.user = cliente || null;
+                if (this.user) {
+                    this.balance = this.user.saldo || 0;
                 }
-            );
+                this.isLoading = false;
+            },
+            error: (err) => {
+                console.error(err);
+                this.isLoading = false;
+            },
         });
-    }
-
-    ngOnDestroy(): void {
-        this.sub?.unsubscribe();
-    }
-
-    toggleBalanceVisibility(): void {
-        this.hideBalance = !this.hideBalance;
-    }
-
-    toggleDarkMode() {
-        this.darkMode = !this.darkMode;
-        // opcional: salvar preferência no localStorage
-        localStorage.setItem('dashboardDarkMode', String(this.darkMode));
     }
 }
