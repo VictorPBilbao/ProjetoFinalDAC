@@ -134,7 +134,7 @@ public class SagaController {
                 if (c != null)
                     cid = String.valueOf(c);
             }
-            return ResponseEntity.status(202).body(Map.of("correlationId", cid, "status", "pending"));
+            return ResponseEntity.status(200).body(Map.of("correlationId", cid, "status", "pending"));
         }
 
         return ResponseEntity.ok(result.getDetail());
