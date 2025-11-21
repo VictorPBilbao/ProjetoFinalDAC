@@ -26,17 +26,13 @@ public class AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     public LoginResponse login(LoginRequest request) {
-        System.out.println("Tentativa de login para o usuário: " + request.getUsuario());
-        User user = userRepository.findByEmail(request.getUsuario())
-                .or(() -> {
-                    System.out.println("Procurando usuário pelo email: " + request.getUsuario());
-                    return userRepository.findByCpf(request.getUsuario());
-                })
+        System.out.println("Tentativa de login para o usuário: " + request.getLogin());
+        User user = userRepository.findByEmail(request.getLogin())
                 .orElseThrow(() -> new RuntimeException("Usuário/Senha incorretos"));
 
 
         if (!passwordEncoder.matches(request.getSenha(), user.getSenha())) {
-            System.out.println("Senha inválida para o usuário: " + request.getUsuario());
+            System.out.println("Senha inválida para o usuário: " + request.getLogin());
             throw new RuntimeException("Usuário/Senha incorretos");
         }
 
