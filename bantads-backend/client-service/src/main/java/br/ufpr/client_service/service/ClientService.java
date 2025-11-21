@@ -150,4 +150,9 @@ public class ClientService {
                 client.getCidade(),
                 client.getEstado());
     }
+
+    @Transactional
+    public void reboot() {
+        clientRepository.deleteAll();
+    }
 }

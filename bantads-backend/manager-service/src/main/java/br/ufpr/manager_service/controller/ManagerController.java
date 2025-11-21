@@ -45,4 +45,15 @@ public class ManagerController {
                 ));
         }
     }
+
+    @PostMapping("/reboot")
+    public ResponseEntity<?> reboot() {
+        try {
+            managerService.reboot();
+            return ResponseEntity.ok(Map.of("message", "Dados apagados com sucesso"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Erro ao apagar dados: " + e.getMessage()));
+        }
+    }
 }

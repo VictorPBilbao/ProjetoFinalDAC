@@ -53,4 +53,13 @@ public class AccountController {
         return ResponseEntity.ok(updatedAccount);
     }
 
+    @PostMapping("/reboot")
+    public ResponseEntity<Boolean> rebootAccounts() {
+        try {
+            accountService.rebootAccounts();
+            return ResponseEntity.status(200).body(true);     
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(false);
+        }
+    }
 }

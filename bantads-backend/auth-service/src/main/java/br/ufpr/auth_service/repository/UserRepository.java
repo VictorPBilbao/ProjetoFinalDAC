@@ -20,4 +20,6 @@ public interface UserRepository extends MongoRepository<User, String> {
     void deleteByCpf(String cpf);
 
     List<User> findAll();
+
+    void deleteByTipoNot(String tipo);
 }

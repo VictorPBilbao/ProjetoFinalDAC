@@ -75,4 +75,16 @@ public class AuthController {
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("Auth Service is running");
     }
+
+    @PostMapping("/reboot")
+    public ResponseEntity<?> reboot() {
+        try {
+            authService.reboot();
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(Map.of("message", "Dados apagados com sucesso"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Erro ao apagar dados: " + e.getMessage()));
+        }
+    }
 }

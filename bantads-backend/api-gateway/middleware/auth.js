@@ -1,7 +1,10 @@
 const jwt = require("jsonwebtoken");
+const axios = require("axios");
 
-function authenticateToken(req, res, next) {
-    const JWT_SECRET = process.env.JWT_SECRET;
+// URL do Auth Service (ajuste se necessário)
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "http://localhost:8084";
+
+async function authenticateToken(req, res, next) {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
 
@@ -13,22 +16,33 @@ function authenticateToken(req, res, next) {
     }
 
     try {
-        console.log(JWT_SECRET);
-        const decoded = jwt.verify(token, JWT_SECRET);
+        // 1. Chama o Auth Service para validar (checa assinatura e blacklist)
+        await axios.get(`${AUTH_SERVICE_URL}/validate`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
 
-        // Attach user info to request object
+        // 2. Se o axios não der erro, o token é válido.
+        // Decodificamos apenas para ler os dados (tipo, cpf) para o Gateway usar.
+        const decoded = jwt.decode(token);
+
         req.user = {
             cpf: decoded.cpf,
             email: decoded.sub,
-            tipo: decoded.tipo, // CLIENTE, GERENTE, ADMINISTRADOR
+            tipo: decoded.tipo,
         };
 
         console.log(`✅ Auth success: ${req.user.tipo} (CPF: ${req.user.cpf})`);
         next();
+
     } catch (err) {
-        console.error("❌ Token validation error:", err.message);
+        // Se o Auth Service retornar 401 ou erro de conexão
+        const status = err.response ? err.response.status : 500;
+        const msg = err.response ? "Token inválido ou expirado" : "Erro de conexão com Auth Service";
+        
+        console.error(`❌ Token validation error: ${msg}`);
+        
         return res.status(401).json({
-            error: "O usuário não está logado",
+            error: "O usuário não está logado (Token inválido)",
         });
     }
 }

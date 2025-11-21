@@ -182,4 +182,9 @@ public class ManagerService {
     private Map<String, Long> getManagerClientCountsFromClientService() {
         return Map.of();
     }
+
+    @Transactional
+    public void reboot() {
+        managerRepository.deleteAll();
+    }
 }

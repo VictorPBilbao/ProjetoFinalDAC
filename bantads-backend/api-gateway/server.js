@@ -425,21 +425,6 @@ app.get("/health/client", proxy(process.env.CLIENT_SERVICE_URL || "http://localh
 app.get("/health/account", proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"));
 app.get("/health/manager", proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083"));
 
-// ============================================
-// REBOOT ENDPOINT (R00 - Initialize Database)
-// ============================================
-app.get(
-    "/reboot",
-    proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
-        proxyErrorHandler: (err, res, next) => {
-            console.error("❌ Reboot proxy error:", err.message);
-            res.status(503).json({
-                error: "Service unavailable",
-                message: "Could not initialize database",
-            });
-        },
-    })
-);
 
 // ============================================
 // CLIENT SERVICE ROUTES
@@ -883,6 +868,59 @@ app.use(
         },
     })
 );
+
+// ============================================
+// REBOOT SYSTEM (API Composition)
+// ============================================
+app.get("/reboot", async (req, res) => {
+    console.log("[Gateway] Iniciando reboot do sistema (API Composition)...");
+
+    const authHeader = req.headers.authorization;
+    const config = { headers: { Authorization: authHeader } };
+
+    // Lista de serviços para resetar
+    const services = [
+        { name: "Auth Service", url: process.env.AUTH_SERVICE_URL },
+        { name: "Manager Service", url: process.env.MANAGER_SERVICE_URL + "/gerentes" },
+        { name: "Client Service", url: process.env.CLIENT_SERVICE_URL + "/clientes" },
+        { name: "Account Service", url: process.env.ACCOUNT_SERVICE_URL + "/contas" },
+    ];
+
+    // Dispara as requisições em paralelo usando Promise.all
+    // Nota: Certifique-se que seus microsserviços aceitam POST /reboot
+    const promises = services.map(async (service) => {
+        try {
+            // Tenta chamar o endpoint /reboot do serviço
+            const response = await axiosInstance.post(`${service.url}/reboot`, {}, config);
+            return {
+                service: service.name,
+                status: "SUCCESS",
+                details: response.data
+            };
+        } catch (error) {
+            return {
+                service: service.name,
+                status: "ERROR",
+                error: error.message,
+                details: error.response?.data || "Sem detalhes"
+            };
+        }
+    });
+
+    // Aguarda todas as respostas
+    const results = await Promise.all(promises);
+
+    // Verifica se houve algum erro
+    const hasError = results.some(r => r.status === "ERROR");
+    const statusCode = hasError ? 207 : 200; // 207 Multi-Status se houver falhas parciais
+
+    res.status(statusCode).json({
+        action: "System Reboot",
+        timestamp: new Date(),
+        summary: hasError ? "Alguns serviços falharam" : "Todos os serviços resetados com sucesso",
+        results: results
+    });
+});
 
 // ============================================
 // 404 HANDLER - Route Not Found

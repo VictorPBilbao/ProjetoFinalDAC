@@ -15,12 +15,18 @@ import org.springframework.dao.DuplicateKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.text.Normalizer;
+import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import br.ufpr.auth_service.model.BlacklistedToken;
+import br.ufpr.auth_service.repository.BlacklistedTokenRepository;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
     private final JwtUtil jwtUtil;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
@@ -50,9 +56,26 @@ public class AuthService {
     }
 
     public LogoutResponse logout(String token) {
-        String cpf = jwtUtil.extractCpf(token.replace("Bearer ", ""));
+        String jwt = token.replace("Bearer ", "");
+        String cpf = jwtUtil.extractCpf(jwt);
+        
         User user = userRepository.findByCpf(cpf)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        // Adiciona o token à Blacklist
+        try {
+            Date expiration = jwtUtil.extractExpiration(jwt);
+            LocalDateTime localExpiration = expiration.toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+
+            BlacklistedToken blacklistedToken = new BlacklistedToken(jwt, localExpiration);
+            blacklistedTokenRepository.save(blacklistedToken);
+            log.info("Token invalidado e adicionado à blacklist para o usuário: {}", cpf);
+        } catch (Exception e) {
+            log.error("Erro ao adicionar token à blacklist", e);
+            // Não impede o logout, mas loga o erro
+        }
 
         return new LogoutResponse(
                 user.getCpf(),
@@ -62,7 +85,15 @@ public class AuthService {
     }
 
     public boolean validateToken(String token) {
-        return jwtUtil.isTokenValid(token.replace("Bearer ", ""));
+        String jwt = token.replace("Bearer ", "");
+        
+        // ✅ Verifica se o token está na blacklist antes de validar a assinatura
+        if (blacklistedTokenRepository.findByToken(jwt).isPresent()) {
+            log.warn("Tentativa de uso de token revogado (blacklist)");
+            return false;
+        }
+
+        return jwtUtil.isTokenValid(jwt);
     }
 
     public void createUser(Map<String, String> userDto) {
@@ -137,5 +168,9 @@ public class AuthService {
     // Get All Users
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    public void reboot() {
+        userRepository.deleteByTipoNot("ADMINISTRADOR");
     }
 }

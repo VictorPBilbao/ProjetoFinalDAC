@@ -160,4 +160,10 @@ public class AccountService {
                 account.getBalance()
         );
     }
+
+    @Transactional
+    public void rebootAccounts() {
+        accountRepository.deleteAll();
+        transactionRepository.deleteAll();
+    }
 }
