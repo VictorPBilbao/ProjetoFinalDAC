@@ -1,9 +1,10 @@
 import { Subscription } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
+import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 import { Cliente } from '../../models/cliente.model';
+import { Transaction } from '../../models/transaction.model';
 import { ClientService } from '../../services/client/client.service';
 // Importamos o serviço que conecta com o backend de contas
 import { ServiceContaService } from '../../services/conta/service-conta.service';
@@ -13,9 +14,9 @@ import { ServiceContaService } from '../../services/conta/service-conta.service'
     standalone: true,
     imports: [CommonModule, RouterModule],
     templateUrl: './user-dashboard.component.html',
-    styleUrl: './user-dashboard.component.css',
+    styleUrls: ['./user-dashboard.component.css'],
 })
-export class UserDashboardComponent implements OnInit {
+export class UserDashboardComponent implements OnInit, OnDestroy {
     user: Cliente | null = null;
     balance: number = 0;
     depositsThisMonth: number = 0;
@@ -38,25 +39,23 @@ export class UserDashboardComponent implements OnInit {
         this.sub = this.clientService.getLoggedClient().subscribe({
             next: (client) => {
                 this.user = client ?? null;
-
+                
                 // O saldo vem da agregação do endpoint /clientes/:cpf (R13) do Gateway
                 this.balance = this.user?.saldo ?? 0;
 
                 // Se o usuário tem conta, buscamos o extrato real
                 if (this.user && this.user.conta) {
                     // O backend retorna um objeto conta dentro do cliente, ou apenas o número em alguns casos
-                    const numeroConta =
-                        typeof this.user.conta === 'object'
-                            ? (this.user.conta as any).numero
-                            : this.user.conta;
+                    const numeroConta = typeof this.user.conta === 'object' 
+                        ? (this.user.conta as any).numero 
+                        : this.user.conta;
 
                     if (numeroConta) {
                         this.loadRealTransactions(numeroConta);
                     }
                 }
             },
-            error: (err) =>
-                console.error('Erro ao carregar dados do cliente:', err),
+            error: (err) => console.error('Erro ao carregar dados do cliente:', err)
         });
     }
 
@@ -70,7 +69,7 @@ export class UserDashboardComponent implements OnInit {
                     dateTime: new Date(r.dataHora || r.data),
                     operation: this.formatOperationName(r.tipo),
                     amount: r.valor,
-                    clientId: this.user?.id,
+                    clientId: this.user?.id
                 }));
 
                 // 1. Filtra atividade recente (últimos 7 dias)
@@ -80,23 +79,16 @@ export class UserDashboardComponent implements OnInit {
 
                 this.recentActivity = transactions
                     .filter((t) => t.dateTime >= sevenDaysAgo)
-                    .sort(
-                        (a, b) => b.dateTime.getTime() - a.dateTime.getTime()
-                    );
+                    .sort((a, b) => b.dateTime.getTime() - a.dateTime.getTime());
 
                 // 2. Calcula total de depósitos do mês atual
                 const now = new Date();
-                const firstDayOfMonth = new Date(
-                    now.getFullYear(),
-                    now.getMonth(),
-                    1
-                );
+                const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
                 this.depositsThisMonth = transactions
                     .filter(
                         (t) =>
-                            (t.operation === 'Depósito' ||
-                                t.operation === 'DEPOSITO') &&
+                            (t.operation === 'Depósito' || t.operation === 'DEPOSITO') &&
                             t.dateTime >= firstDayOfMonth
                     )
                     .reduce((sum, t) => sum + t.amount, 0);
@@ -108,10 +100,10 @@ export class UserDashboardComponent implements OnInit {
     // Auxiliar para deixar o nome da operação amigável na tela
     private formatOperationName(tipo: string): string {
         const map: { [key: string]: string } = {
-            DEPOSITO: 'Depósito',
-            SAQUE: 'Saque',
-            TRANSFERENCIA_ORIGEM: 'Transferência Enviada',
-            TRANSFERENCIA_DESTINO: 'Transferência Recebida',
+            'DEPOSITO': 'Depósito',
+            'SAQUE': 'Saque',
+            'TRANSFERENCIA_ORIGEM': 'Transferência Enviada',
+            'TRANSFERENCIA_DESTINO': 'Transferência Recebida'
         };
         return map[tipo] || tipo;
     }
