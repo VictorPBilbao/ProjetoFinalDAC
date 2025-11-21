@@ -27,33 +27,27 @@ export class ManagerService {
         const token = this.authService.getToken();
 
         return this.http
-            .get<any[]>(`${this.apiUrl}/admin/dashboard/managers`, {
+            .get<any[]>(`${this.apiUrl}/gerentes?filtro=dashboard`, {
                 headers: token ? { Authorization: token } : {},
             })
             .pipe(
                 map((response) => {
-                    return response.map(
-                        (item) =>
-                            ({
-                                id: item.id || item.cpf,
-                                cpf: item.cpf,
-                                name: item.nome,
-                                email: item.email,
-                                telephone: item.telefone,
+                    return response.map((item) => {
+                        return {
+                            id: item.gerente.id || item.gerente.cpf,
+                            name: item.gerente.nome,
+                            cpf: item.gerente.cpf,
+                            email: item.gerente.email,
+                            telephone: item.gerente.telefone,
 
-                                clientCount: item.clientCount,
-                                positiveTotal: Number(item.totalPositivo),
-                                negativeTotal: Number(item.totalNegativo),
-
-                                clients: [],
-                            } as Manager)
-                    );
+                            clientCount: item.clientes ? item.clientes.length : 0,
+                            positiveTotal: item.saldo_positivo,
+                            negativeTotal: item.saldo_negativo
+                        } as Manager;
+                    });
                 }),
                 catchError((err) => {
-                    console.error(
-                        'Erro ao carregar dashboard de gerentes:',
-                        err
-                    );
+                    console.error('Erro ao buscar dashboard de gerentes:', err);
                     return of([]);
                 }),
                 finalize(() => this.loadingService.hide())

@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 
 import { Cliente } from '../../models/cliente.model';
 import { AuthService } from '../auth/auth.service';
+import { Manager } from '../../models/manager.model';
 
 @Injectable({
     providedIn: 'root',
@@ -32,12 +33,28 @@ export class ClientService {
     }
 
     getClientById(cpf: string): Observable<Cliente | undefined> {
-        const endpoint = `${this.apiUrl}/relatorio/cliente-detalhado/${cpf}`;
-        return this.http.get<any>(endpoint).pipe(
-            map((dto) => this.mapToClientModel(dto)),
+        const endpoint = `${this.apiUrl}/clientes/${cpf}`;
+
+        const token = this.authService.getToken();
+        let headers = new HttpHeaders();
+        if (token) {
+            headers = headers.set('Authorization', token);
+        }
+
+        return this.http.get<any>(endpoint, { headers }).pipe(
+            map((data) => this.mapToClientModel(data)),
             catchError((err) => {
-                console.error('Erro ao buscar detalhe:', err);
+                console.error('Erro ao buscar cliente:', err);
                 return of(undefined);
+            })
+        );
+    }
+
+    createClient(client: Cliente): Observable<Cliente> {
+        return this.http.post<Cliente>(`${this.apiUrl}/clientes`, client).pipe(
+            catchError((err) => {
+                console.error('Erro ao criar cliente:', err);
+                return throwError(() => err);
             })
         );
     }
@@ -75,9 +92,19 @@ export class ClientService {
 
     private mapToClientModel(data: any): Cliente {
         if (!data) return {} as Cliente;
+
         const contaData = data.conta || {};
         const gerenteData = data.gerente || {};
         const enderecoData = data.endereco || {};
+
+        let numeroConta = '';
+        if (data.numeroConta) {
+            numeroConta = data.numeroConta;
+        } else if (typeof data.conta === 'string' || typeof data.conta === 'number') {
+            numeroConta = String(data.conta);
+        } else if (contaData.numero || contaData.conta) {
+            numeroConta = contaData.numero || contaData.conta;
+        }
 
         return {
             id: data.id || data.cpf,
@@ -86,26 +113,31 @@ export class ClientService {
             email: data.email,
             telefone: data.telefone,
             salario: data.salario,
+
             endereco: {
-                tipo: enderecoData.tipo || data.tipoLogradouro || '',
-                logradouro: enderecoData.logradouro || data.logradouro || '',
-                numero: enderecoData.numero || data.numero || '',
-                complemento: enderecoData.complemento || data.complemento || '',
-                cep: enderecoData.cep || data.cep || '',
-                cidade: enderecoData.cidade || data.cidade || '',
-                estado: enderecoData.estado || data.estado || '',
+                tipo: data.tipoLogradouro || enderecoData.tipo || '',
+                logradouro: data.logradouro || enderecoData.logradouro || '',
+                numero: data.numero || enderecoData.numero || '',
+                complemento: data.complemento || enderecoData.complemento || '',
+                cep: data.cep || enderecoData.cep || '',
+                cidade: data.cidade || enderecoData.cidade || '',
+                estado: data.estado || enderecoData.estado || '',
+                bairro: data.bairro || enderecoData.bairro || ''
             },
-            cidade: data.cidade || enderecoData.cidade,
-            estado: data.estado || enderecoData.estado,
-            conta: data.numeroConta || contaData.numero || contaData.conta,
-            saldo: data.saldo !== undefined ? data.saldo : contaData.saldo || 0,
-            limite:
-                data.limite !== undefined ? data.limite : contaData.limite || 0,
+
+            conta: numeroConta,
+            saldo: data.saldo !== undefined ? data.saldo : (contaData.saldo || 0),
+            limite: data.limite !== undefined ? data.limite : (contaData.limite || 0),
+            agencia: data.agencia || '0001',
+            criadoEm: data.criadoEm || new Date().toISOString(),
+
             manager: {
-                cpf: data.cpfGerente || gerenteData.cpf,
-                name: data.nomeGerente || data.gerenteName || 'Não Atribuído',
-            },
-            criadoEm: data.criadoEm,
-        } as any as Cliente;
+                cpf: data.cpfGerente || data.idGerente || gerenteData.cpf,
+                name: data.nomeGerente || data.gerenteName || gerenteData.nome || 'Não Atribuído',
+                id: gerenteData.id || null,
+                email: gerenteData.email || '',
+                telephone: gerenteData.telefone || ''
+            } as Manager,
+        };
     }
 }
