@@ -115,11 +115,84 @@ VALUES
         'PR',
         TRUE,
         '2025-01-01 00:00:00'
+    ),
+    -- Clients pending approval for testing
+    (
+        '11122233344',
+        'Crysthôncio',
+        'cli6@bantads.com.br',
+        '(41) 9 9999-6666',
+        4500.00,
+        'Rua Barão do Rio Branco, 600',
+        '80050-000',
+        'Curitiba',
+        'PR',
+        FALSE,
+        CURRENT_TIMESTAMP
+    ),
+    (
+        '55566677788',
+        'Drauzylda',
+        'cli7@bantads.com.br',
+        '(41) 9 9999-7777',
+        6000.00,
+        'Av. Cândido de Abreu, 700',
+        '80060-000',
+        'Curitiba',
+        'PR',
+        FALSE,
+        CURRENT_TIMESTAMP
     ) ON CONFLICT (cpf) DO NOTHING;
 
 -- ============================================================================
--- 4. CREATE INDEX FOR PERFORMANCE
+-- 4. MANAGERS TABLE (client_schema)
+-- ============================================================================
+CREATE TABLE
+    IF NOT EXISTS client_schema.managers (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+        name VARCHAR(100) NOT NULL,
+        cpf VARCHAR(11) UNIQUE NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        telephone VARCHAR(20),
+        password VARCHAR(255) NOT NULL
+    );
+
+-- ============================================================================
+-- 5. INSERT PRE-REGISTERED MANAGERS (as per specification)
+-- ============================================================================
+-- Insert 3 pre-registered managers
+INSERT INTO
+    client_schema.managers (cpf, name, email, telephone, password)
+VALUES
+    (
+        '98574307084',
+        'Geniéve',
+        'ger1@bantads.com.br',
+        '(41) 9 8888-1111',
+        '$2a$10$U0qjOCPVy/Sj3A3W9DCCkO7YSWDyPUYoHyRHkfRBpd0sXTvbEOgSG' -- 'tads' hashed with bcrypt
+    ),
+    (
+        '64065268052',
+        'Godophredo',
+        'ger2@bantads.com.br',
+        '(41) 9 8888-2222',
+        '$2a$10$U0qjOCPVy/Sj3A3W9DCCkO7YSWDyPUYoHyRHkfRBpd0sXTvbEOgSG' -- 'tads' hashed with bcrypt
+    ),
+    (
+        '23862179060',
+        'Gyândula',
+        'ger3@bantads.com.br',
+        '(41) 9 8888-3333',
+        '$2a$10$U0qjOCPVy/Sj3A3W9DCCkO7YSWDyPUYoHyRHkfRBpd0sXTvbEOgSG' -- 'tads' hashed with bcrypt
+    ) ON CONFLICT (cpf) DO NOTHING;
+
+-- ============================================================================
+-- 6. CREATE INDEXES FOR PERFORMANCE
 -- ============================================================================
 CREATE INDEX IF NOT EXISTS idx_clients_email ON client_schema.clients (email);
 
 CREATE INDEX IF NOT EXISTS idx_clients_aprovado ON client_schema.clients (aprovado);
+
+CREATE INDEX IF NOT EXISTS idx_managers_email ON client_schema.managers (email);
+
+CREATE INDEX IF NOT EXISTS idx_managers_cpf ON client_schema.managers (cpf);

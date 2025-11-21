@@ -1,8 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { Record } from '../../models/record.model';
+import { Cliente } from '../../models/cliente.model';
 import { ServiceContaService } from '../../services/conta/service-conta.service';
+import { ClientService } from '../../services/client/client.service';
+import { TransactionService } from '../../services/transaction/transaction.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -12,7 +16,7 @@ import Swal from 'sweetalert2';
     templateUrl: './statement.component.html',
     styleUrl: './statement.component.css',
 })
-export class StatementComponent implements OnInit {
+export class StatementComponent implements OnInit, OnDestroy {
     beginDate: string = '';
     endDate: string = '';
 
@@ -23,10 +27,17 @@ export class StatementComponent implements OnInit {
     itmsPerPg: number = 7;
     totalPgs: number = 0;
 
-    isLoading = false;
-    numeroConta: string | null = null;
+    cliente: Cliente | null = null;
+    numeroConta: string = '';
+    allTransactions: any[] = [];
+    private sub?: Subscription;
+    isLoading: any;
 
-    constructor(private contaService: ServiceContaService) {}
+    constructor(
+        private readonly contaService: ServiceContaService,
+        private readonly clientService: ClientService,
+        private readonly transactionService: TransactionService
+    ) {}
 
     ngOnInit(): void {
         this.contaService.getMinhaConta().subscribe({

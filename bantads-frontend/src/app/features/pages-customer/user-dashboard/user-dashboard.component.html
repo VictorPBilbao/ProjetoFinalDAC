@@ -1,11 +1,11 @@
 <main class="dashboard-container" [class.dark-theme]="darkMode">
     <!-- Loading State -->
-    <div *ngIf="isLoading" class="loading-message">
+    <div *ngIf="!user" class="loading-message">
         <div class="spinner"></div>
         <span>Carregando informações...</span>
     </div>
 
-    <div *ngIf="!isLoading">
+    <div *ngIf="user">
         <header class="dashboard-header">
             <h1>Olá, {{ user?.nome }}!</h1>
             <p>Bem-vindo(a) de volta à sua conta.</p>

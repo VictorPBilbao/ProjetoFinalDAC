@@ -1,12 +1,11 @@
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
-
 import { Cliente } from '../../models/cliente.model';
-import { Transaction } from '../../models/transaction.model';
 import { ClientService } from '../../services/client/client.service';
 import { ServiceContaService } from '../../services/conta/service-conta.service';
+import { Component, HostBinding, OnInit, OnDestroy } from '@angular/core';
+import { Transaction } from '../../models/transaction.model';
 
 @Component({
     selector: 'app-user-dashboard',
