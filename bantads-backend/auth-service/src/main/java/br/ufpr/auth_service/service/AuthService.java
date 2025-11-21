@@ -1,25 +1,26 @@
 package br.ufpr.auth_service.service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import br.ufpr.auth_service.model.BlacklistedToken;
 import br.ufpr.auth_service.model.User;
 import br.ufpr.auth_service.model.dto.LoginRequest;
 import br.ufpr.auth_service.model.dto.LoginResponse;
 import br.ufpr.auth_service.model.dto.LogoutResponse;
+import br.ufpr.auth_service.repository.BlacklistedTokenRepository;
 import br.ufpr.auth_service.repository.UserRepository;
 import br.ufpr.auth_service.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import java.util.List;
-import java.util.Map;
-import org.springframework.dao.DuplicateKeyException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.text.Normalizer;
-import java.util.Date;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import br.ufpr.auth_service.model.BlacklistedToken;
-import br.ufpr.auth_service.repository.BlacklistedTokenRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +36,6 @@ public class AuthService {
         System.out.println("Tentativa de login para o usuário: " + request.getLogin());
         User user = userRepository.findByEmail(request.getLogin())
                 .orElseThrow(() -> new RuntimeException("Usuário/Senha incorretos"));
-
 
         if (!passwordEncoder.matches(request.getSenha(), user.getSenha())) {
             System.out.println("Senha inválida para o usuário: " + request.getLogin());
@@ -58,7 +58,7 @@ public class AuthService {
     public LogoutResponse logout(String token) {
         String jwt = token.replace("Bearer ", "");
         String cpf = jwtUtil.extractCpf(jwt);
-        
+
         User user = userRepository.findByCpf(cpf)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -86,7 +86,7 @@ public class AuthService {
 
     public boolean validateToken(String token) {
         String jwt = token.replace("Bearer ", "");
-        
+
         // ✅ Verifica se o token está na blacklist antes de validar a assinatura
         if (blacklistedTokenRepository.findByToken(jwt).isPresent()) {
             log.warn("Tentativa de uso de token revogado (blacklist)");
@@ -97,15 +97,21 @@ public class AuthService {
     }
 
     public void createUser(Map<String, String> userDto) {
-        String cpf   = norm(userDto.get("cpf"));
-        String nome  = norm(userDto.get("nome"));
+        String cpf = norm(userDto.get("cpf"));
+        String nome = norm(userDto.get("nome"));
         String email = norm(userDto.get("email"));
         String senha = norm(userDto.getOrDefault("senha", userDto.get("password")));
-        String tipo  = norm(userDto.getOrDefault("tipo", userDto.get("role")));
+        String tipo = norm(userDto.getOrDefault("tipo", userDto.get("role")));
 
-        if (cpf == null)  throw new IllegalArgumentException("cpf é obrigatório");
-        if (senha == null) throw new IllegalArgumentException("senha é obrigatória");
-        if (tipo == null)  throw new IllegalArgumentException("tipo é obrigatório");
+        if (cpf == null) {
+            throw new IllegalArgumentException("cpf é obrigatório");
+        }
+        if (senha == null) {
+            throw new IllegalArgumentException("senha é obrigatória");
+        }
+        if (tipo == null) {
+            throw new IllegalArgumentException("tipo é obrigatório");
+        }
 
         log.info("Criando usuário Auth com CPF: {}, Nome: {}, Email: {}", cpf, nome, email);
 
@@ -139,38 +145,81 @@ public class AuthService {
     }
 
     private String norm(String s) {
-        if (s == null) return null;
+        if (s == null) {
+            return null;
+        }
         s = s.trim();
         return s.isEmpty() || "null".equalsIgnoreCase(s) ? null : s;
     }
-    
+
     public void updateUser(String cpf, Map<String, String> updates) {
         User user = userRepository.findByCpf(cpf)
-            .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         String nome = norm(updates.get("nome"));
         String email = norm(updates.get("email"));
         String senha = norm(updates.getOrDefault("senha", updates.get("password")));
 
-        if (nome != null) user.setNome(nome);
+        if (nome != null) {
+            user.setNome(nome);
+        }
         if (email != null) {
             if (userRepository.findByEmail(email).isPresent() && !email.equals(user.getEmail())) {
                 throw new DuplicateKeyException("Email já está em uso");
             }
             user.setEmail(email);
         }
-        if (senha != null) user.setSenha(passwordEncoder.encode(senha));
+        if (senha != null) {
+            user.setSenha(passwordEncoder.encode(senha));
+        }
 
         userRepository.save(user);
         log.info("Usuário atualizado: CPF={}", cpf);
     }
-    
+
     // Get All Users
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
     public void reboot() {
-        userRepository.deleteByTipoNot("ADMINISTRADOR");
+        userRepository.deleteAll();
+        insertDefaultUsers();
+        log.info("Reboot do AuthService concluído com sucesso.");
+    }
+
+    private void insertDefaultUsers() {
+        String defaultPassword = passwordEncoder.encode("tads");
+
+        // ADMIN
+        createSeedUser("40501740066", "Adamântio", "adm1@bantads.com.br", defaultPassword, "ADMINISTRADOR");
+
+        // GERENTES 
+        createSeedUser("98574307084", "Geniéve", "ger1@bantads.com.br", defaultPassword, "GERENTE");
+        createSeedUser("64065268052", "Godophredo", "ger2@bantads.com.br", defaultPassword, "GERENTE");
+        createSeedUser("23862179060", "Gyândula", "ger3@bantads.com.br", defaultPassword, "GERENTE");
+
+        // CLIENTES 
+        createSeedUser("12912861012", "Catharyna", "cli1@bantads.com.br", defaultPassword, "CLIENTE");
+        createSeedUser("09506382000", "Cleuddônio", "cli2@bantads.com.br", defaultPassword, "CLIENTE");
+        createSeedUser("85733854057", "Catianna", "cli3@bantads.com.br", defaultPassword, "CLIENTE");
+        createSeedUser("58872160006", "Cutardo", "cli4@bantads.com.br", defaultPassword, "CLIENTE");
+        createSeedUser("76179646090", "Coândrya", "cli5@bantads.com.br", defaultPassword, "CLIENTE");
+    }
+
+    private void createSeedUser(String cpf, String nome, String email, String senhaCodificada, String tipo) {
+        if (userRepository.findByCpf(cpf).isPresent()) {
+            return;
+        }
+
+        User user = new User();
+        user.setCpf(cpf);
+        user.setNome(nome);
+        user.setEmail(email);
+        user.setSenha(senhaCodificada);
+        user.setTipo(tipo);
+        user.setAtivo(true);
+        userRepository.save(user);
+        System.out.println("Seed inserido: " + nome + " (" + tipo + ")");
     }
 }

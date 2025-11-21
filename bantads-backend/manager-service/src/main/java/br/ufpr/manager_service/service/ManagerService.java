@@ -1,19 +1,21 @@
 package br.ufpr.manager_service.service;
 
-import br.ufpr.manager_service.model.ManagerDTO;
-import br.ufpr.manager_service.model.Manager;
-import br.ufpr.manager_service.repository.ManagerRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
+
+import br.ufpr.manager_service.model.Manager;
+import br.ufpr.manager_service.model.ManagerDTO;
+import br.ufpr.manager_service.repository.ManagerRepository;
 
 @Service
 public class ManagerService {
@@ -28,8 +30,8 @@ public class ManagerService {
 
     @Transactional
     public Manager createManager(ManagerDTO dto) {
-        if (!StringUtils.hasText(dto.getName()) || !StringUtils.hasText(dto.getCpf()) ||
-                !StringUtils.hasText(dto.getEmail()) || !StringUtils.hasText(dto.getPassword())) {
+        if (!StringUtils.hasText(dto.getName()) || !StringUtils.hasText(dto.getCpf())
+                || !StringUtils.hasText(dto.getEmail()) || !StringUtils.hasText(dto.getPassword())) {
             throw new IllegalArgumentException(
                     "Todos os campos (Nome, CPF, E-mail, Senha) são obrigatórios para criar um gerente.");
         }
@@ -73,15 +75,17 @@ public class ManagerService {
         List<Manager> candidates = managerRepository.findAll().stream()
                 .filter(m -> !m.getId().equals(newManagerId)).toList();
 
-        if (candidates.isEmpty())
+        if (candidates.isEmpty()) {
             return Optional.empty();
+        }
 
         long maxClients = candidates.stream()
                 .mapToLong(m -> clientCounts.getOrDefault(m.getId(), 0L))
                 .max().orElse(0);
 
-        if (maxClients <= 1)
+        if (maxClients <= 1) {
             return Optional.empty();
+        }
 
         List<Manager> topManagers = candidates.stream()
                 .filter(m -> clientCounts.getOrDefault(m.getId(), 0L) == maxClients).toList();
@@ -186,5 +190,28 @@ public class ManagerService {
     @Transactional
     public void reboot() {
         managerRepository.deleteAll();
+        insertInitialData();
+    }
+
+    private void insertInitialData() {
+        createSeedManager("Geniéve", "ger1@bantads.com.br", "98574307084");
+        createSeedManager("Godophredo", "ger2@bantads.com.br", "64065268052");
+        createSeedManager("Gyândula", "ger3@bantads.com.br", "23862179060");
+    }
+
+    private void createSeedManager(String name, String email, String cpf) {
+
+        if (managerRepository.existsByCpf(cpf)) {
+            return;
+        }
+
+        Manager manager = new Manager();
+        manager.setName(name);
+        manager.setCpf(cpf);
+        manager.setEmail(email);
+        manager.setTelephone("(41) 99999-9999");
+        manager.setPassword("tads");
+
+        managerRepository.save(manager);
     }
 }

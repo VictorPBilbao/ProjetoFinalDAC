@@ -1,5 +1,6 @@
 package br.ufpr.client_service.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -154,5 +155,52 @@ public class ClientService {
     @Transactional
     public void reboot() {
         clientRepository.deleteAll();
+        insertInitialData();
+        logger.info("Reboot do ClientService finalizado com sucesso.");
+    }
+
+    private void insertInitialData() {
+        createSeedClient(
+                "12912861012", "Catharyna", "cli1@bantads.com.br",
+                new BigDecimal("10000.00"), LocalDateTime.of(2000, 1, 1, 0, 0)
+        );
+
+        createSeedClient(
+                "09506382000", "Cleuddônio", "cli2@bantads.com.br",
+                new BigDecimal("20000.00"), LocalDateTime.of(1990, 10, 10, 0, 0)
+        );
+
+        createSeedClient(
+                "85733854057", "Catianna", "cli3@bantads.com.br",
+                new BigDecimal("3000.00"), LocalDateTime.of(2012, 12, 12, 0, 0)
+        );
+
+        createSeedClient(
+                "58872160006", "Cutardo", "cli4@bantads.com.br",
+                new BigDecimal("500.00"), LocalDateTime.of(2022, 2, 22, 0, 0)
+        );
+
+        createSeedClient(
+                "76179646090", "Coândrya", "cli5@bantads.com.br",
+                new BigDecimal("1500.00"), LocalDateTime.of(2025, 1, 1, 0, 0)
+        );
+    }
+
+    private void createSeedClient(String cpf, String nome, String email, BigDecimal salario, LocalDateTime dataCadastro) {
+        Client client = new Client();
+        client.setCpf(cpf);
+        client.setNome(nome);
+        client.setEmail(email);
+        client.setSalario(salario);
+        client.setDataCadastro(dataCadastro);
+
+        client.setAprovado(true);
+        client.setTelefone("(41) 99999-9999");
+        client.setEndereco("Rua do Seed, 123");
+        client.setCep("80000-000");
+        client.setCidade("Curitiba");
+        client.setEstado("PR");
+
+        clientRepository.save(client);
     }
 }
