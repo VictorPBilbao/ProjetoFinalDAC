@@ -3,12 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Observable, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Cliente } from '../../models/cliente.model';
-import {
-    FormBuilder,
-    FormGroup,
-    ReactiveFormsModule,
-    Validators,
-} from '@angular/forms';
+import {FormBuilder,FormGroup,ReactiveFormsModule,Validators,} from '@angular/forms';
 import { Transaction } from '../../models/transaction.model';
 import { ClientService } from '../../services/client/client.service';
 import { TransactionService } from '../../services/transaction/transaction.service';
