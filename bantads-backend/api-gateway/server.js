@@ -15,7 +15,7 @@ const services = {
     manager: process.env.MANAGER_SERVICE_URL || "http://localhost:8083",
     auth: process.env.AUTH_SERVICE_URL || "http://localhost:8084",
     saga: process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085",
-    query: process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086"
+    query: process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086",
 };
 
 require("dotenv").config();
@@ -82,84 +82,77 @@ app.use(morgan("dev"));
  * Combina dados do Client-Service e do Account-Query-Service
  */
 
-app.get(
-    "/clientes/:cpf",
-    authenticateToken,
-    authorizeClienteByCpf("cpf"),
-    async (req, res) => {
-        const { cpf } = req.params;
-        const authHeader = req.headers.authorization;
+app.get("/clientes/:cpf", authenticateToken, authorizeClienteByCpf("cpf"), async (req, res) => {
+    const { cpf } = req.params;
+    const authHeader = req.headers.authorization;
 
-        const clientServiceUrl = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
-        const accountQueryServiceUrl = process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+    const clientServiceUrl = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+    const accountQueryServiceUrl = process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
 
+    try {
+        const config = {
+            headers: {
+                Authorization: authHeader,
+                "X-User-CPF": cpf,
+            },
+        };
+
+        let clientData;
         try {
-            const config = {
-                headers: {
-                    Authorization: authHeader,
-                    "X-User-CPF": cpf, 
-                },
-            };
-
-            let clientData;
-            try {
-                const clientResponse = await axiosInstance.get(
-                    `${clientServiceUrl}/clientes/${cpf}`,
-                    config
-                );
-                clientData = clientResponse.data;
-            } catch (clientError) {
-                console.error(`Client Service error for CPF ${cpf}:`, clientError.message);
-                if (clientError.response && clientError.response.status === 404) {
-                     return res.status(404).json({ erro: "Cliente não encontrado" });
-                }
-                return res.status(503).json({ erro: "Serviço de clientes indisponível" });
+            const clientResponse = await axiosInstance.get(
+                `${clientServiceUrl}/clientes/${cpf}`,
+                config
+            );
+            clientData = clientResponse.data;
+        } catch (clientError) {
+            console.error(`Client Service error for CPF ${cpf}:`, clientError.message);
+            if (clientError.response && clientError.response.status === 404) {
+                return res.status(404).json({ erro: "Cliente não encontrado" });
             }
-
-            let accountData = null;
-            try {
-                const accountResponse = await axiosInstance.get(
-                    `${accountQueryServiceUrl}/query/my-account`,
-                    config
-                );
-                accountData = accountResponse.data;
-            } catch (accountError) {
-            
-                if (accountError.response?.status !== 404) {
-                    console.warn(`Erro ao buscar conta para CPF ${cpf}:`, accountError.message);
-                }
-            }
-
-            const composedResponse = {
-                id: clientData.id,
-                cpf: clientData.cpf,
-                nome: clientData.nome,
-                email: clientData.email,
-                telefone: clientData.telefone,
-                endereco: clientData.endereco,
-                cidade: clientData.cidade,
-                estado: clientData.estado,
-                cep: clientData.cep,
-                salario: clientData.salario,
-                status: clientData.status,
-
-                conta: accountData ? accountData.accountNumber : null, 
-                saldo: accountData ? accountData.balance : 0,
-                limite: accountData ? accountData.limit : 0,
-                idGerente: accountData ? accountData.managerId : null
-            };
-
-            res.status(200).json(composedResponse);
-
-        } catch (error) {
-            console.error(`[API COMPOSITION ERROR] R13 para CPF ${cpf}:`, error.message);
-            res.status(500).json({
-                erro: "Erro interno ao processar requisição",
-                message: error.message
-            });
+            return res.status(503).json({ erro: "Serviço de clientes indisponível" });
         }
+
+        let accountData = null;
+        try {
+            const accountResponse = await axiosInstance.get(
+                `${accountQueryServiceUrl}/query/account-by-cpf/${cpf}`,
+                { headers: { Authorization: authHeader } }
+            );
+            accountData = accountResponse.data;
+        } catch (accountError) {
+            if (accountError.response?.status !== 404) {
+                console.warn(`Erro ao buscar conta para CPF ${cpf}:`, accountError.message);
+            }
+        }
+
+        const composedResponse = {
+            id: clientData.id,
+            cpf: clientData.cpf,
+            nome: clientData.nome,
+            email: clientData.email,
+            telefone: clientData.telefone,
+            endereco: clientData.endereco,
+            cidade: clientData.cidade,
+            estado: clientData.estado,
+            cep: clientData.cep,
+            salario: clientData.salario,
+            status: clientData.status,
+
+            conta: accountData ? accountData.accountNumber : null,
+            saldo: accountData ? accountData.balance : 0,
+            limite: accountData ? accountData.limit : 0,
+            idGerente: accountData ? accountData.managerId : null,
+        };
+
+        res.status(200).json(composedResponse);
+    } catch (error) {
+        console.error(`[API COMPOSITION ERROR] R13 para CPF ${cpf}:`, error.message);
+        res.status(500).json({
+            erro: "Erro interno ao processar requisição",
+            message: error.message,
+        });
     }
-);
+});
 
 /**
  * R14: Consultar Melhores Clientes (Agregação)
@@ -280,86 +273,97 @@ app.get(
   primeiro;
  */
 
-app.get("/gerentes", authenticateToken, requireRole("ADMINISTRADOR"), async (req, res, next) => {
+app.get(
+    "/gerentes",
+    authenticateToken,
+    requireRole("ADMINISTRADOR"),
+    async (req, res, next) => {
+        if (req.query.filtro === "dashboard") {
+            try {
+                console.log("📊 [DASHBOARD] Gerando dashboard de gerentes (R15)...");
 
-    if (req.query.filtro === 'dashboard') {
-        try {
-            console.log("📊 [DASHBOARD] Gerando dashboard de gerentes (R15)...");
-            
-            const MANAGER_URL = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
-            const ACCOUNT_QUERY_URL = process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
-            const CLIENT_URL = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+                const MANAGER_URL = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
+                const ACCOUNT_QUERY_URL =
+                    process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+                const CLIENT_URL = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
 
-            const config = {
-                headers: { Authorization: req.headers.authorization }
-            };
+                const config = {
+                    headers: { Authorization: req.headers.authorization },
+                };
 
-            const managersResp = await axiosInstance.get(`${MANAGER_URL}/gerentes`, config);
-            const managers = managersResp.data || [];
+                const managersResp = await axiosInstance.get(`${MANAGER_URL}/gerentes`, config);
+                const managers = managersResp.data || [];
 
-            const accountsResp = await axiosInstance.get(`${ACCOUNT_QUERY_URL}/query/all`, config);
-            const accounts = accountsResp.data || [];
-
-            const clientsResp = await axiosInstance.get(`${CLIENT_URL}/clientes/listar`, config);
-            const clientsList = clientsResp.data || [];
-   
-            const clientsMap = new Map();
-            clientsList.forEach(c => clientsMap.set(c.cpf, c));
-
-            const dashboard = managers.map(mgr => {
-      
-                const mgrAccounts = accounts.filter(acc => 
-                    String(acc.managerId) === String(mgr.id) || acc.managerCpf === mgr.cpf
+                const accountsResp = await axiosInstance.get(
+                    `${ACCOUNT_QUERY_URL}/query/all`,
+                    config
                 );
+                const accounts = accountsResp.data || [];
 
-                let totalPos = 0;
-                let totalNeg = 0;
-                const clientesDoGerente = [];
+                const clientsResp = await axiosInstance.get(
+                    `${CLIENT_URL}/clientes/listar`,
+                    config
+                );
+                const clientsList = clientsResp.data || [];
 
-                mgrAccounts.forEach(acc => {
-                    const saldo = Number(acc.balance || acc.saldo || 0);
-                    
-                    if (saldo >= 0) {
-                        totalPos += saldo;
-                    } else {
-                        totalNeg += saldo;
-                    }
+                const clientsMap = new Map();
+                clientsList.forEach((c) => clientsMap.set(c.cpf, c));
 
-                    const clientInfo = clientsMap.get(acc.clientId || acc.clientCpf);
-                    
-                    if (clientInfo) {
-                        clientesDoGerente.push({
-                            cpf: clientInfo.cpf,
-                            nome: clientInfo.nome,
-                            saldo: saldo
-                        });
-                    }
+                const dashboard = managers.map((mgr) => {
+                    const mgrAccounts = accounts.filter(
+                        (acc) =>
+                            String(acc.managerId) === String(mgr.id) || acc.managerCpf === mgr.cpf
+                    );
+
+                    let totalPos = 0;
+                    let totalNeg = 0;
+                    const clientesDoGerente = [];
+
+                    mgrAccounts.forEach((acc) => {
+                        const saldo = Number(acc.balance || acc.saldo || 0);
+
+                        if (saldo >= 0) {
+                            totalPos += saldo;
+                        } else {
+                            totalNeg += saldo;
+                        }
+
+                        const clientInfo = clientsMap.get(acc.clientId || acc.clientCpf);
+
+                        if (clientInfo) {
+                            clientesDoGerente.push({
+                                cpf: clientInfo.cpf,
+                                nome: clientInfo.nome,
+                                saldo: saldo,
+                            });
+                        }
+                    });
+
+                    return {
+                        gerente: {
+                            cpf: mgr.cpf,
+                            nome: mgr.nome,
+                            email: mgr.email,
+                        },
+                        clientes: clientesDoGerente,
+                        saldo_positivo: Number(totalPos.toFixed(2)),
+                        saldo_negativo: Number(totalNeg.toFixed(2)),
+                    };
                 });
 
-                return {
-                    gerente: {
-                        cpf: mgr.cpf,
-                        nome: mgr.nome,
-                        email: mgr.email
-                    },
-                    clientes: clientesDoGerente, 
-                    saldo_positivo: Number(totalPos.toFixed(2)),
-                    saldo_negativo: Number(totalNeg.toFixed(2))
-                };
-            });
+                dashboard.sort((a, b) => b.saldo_positivo - a.saldo_positivo);
 
-            dashboard.sort((a, b) => b.saldo_positivo - a.saldo_positivo);
-
-            return res.status(200).json(dashboard);
-
-        } catch (error) {
-            console.error("❌ [DASHBOARD ERROR] Falha ao agregar dados:", error.message);
-            return res.status(500).json({ error: "Erro ao gerar dashboard de gerentes" });
+                return res.status(200).json(dashboard);
+            } catch (error) {
+                console.error("❌ [DASHBOARD ERROR] Falha ao agregar dados:", error.message);
+                return res.status(500).json({ error: "Erro ao gerar dashboard de gerentes" });
+            }
         }
-    }
 
-    next();
-}, proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083"));
+        next();
+    },
+    proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083")
+);
 
 // ============================================
 // HEALTH CHECK ENDPOINT
@@ -384,7 +388,6 @@ app.get("/health/auth", proxy(process.env.AUTH_SERVICE_URL || "http://localhost:
 app.get("/health/client", proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081"));
 app.get("/health/account", proxy(process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"));
 app.get("/health/manager", proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083"));
-
 
 // ============================================
 // CLIENT SERVICE ROUTES
@@ -571,20 +574,30 @@ app.post(
     })
 );
 
-app.put("/clientes/:cpf", authenticateToken, authorizeClienteByCpf("cpf"), proxy(services.client, {
-    proxyReqPathResolver: (req) => req.originalUrl,
-    proxyErrorHandler: (err, res, next) => {
-        res.status(503).json({ error: "Client Service indisponível para atualização." });
-    }
-}));
+app.put(
+    "/clientes/:cpf",
+    authenticateToken,
+    authorizeClienteByCpf("cpf"),
+    proxy(services.client, {
+        proxyReqPathResolver: (req) => req.originalUrl,
+        proxyErrorHandler: (err, res, next) => {
+            res.status(503).json({ error: "Client Service indisponível para atualização." });
+        },
+    })
+);
 
 // POST /clientes/:cpf/aprovar (R10) - GERENTE
-app.post("/clientes/:cpf/aprovar", authenticateToken, requireRole("GERENTE"), proxy(services.saga, {
-    proxyReqPathResolver: (req) => req.originalUrl,
-    proxyErrorHandler: (err, res, next) => {
-        res.status(503).json({ error: "Saga Orchestrator indisponível para aprovação." });
-    }
-}));
+app.post(
+    "/clientes/:cpf/aprovar",
+    authenticateToken,
+    requireRole("GERENTE"),
+    proxy(services.saga, {
+        proxyReqPathResolver: (req) => req.originalUrl,
+        proxyErrorHandler: (err, res, next) => {
+            res.status(503).json({ error: "Saga Orchestrator indisponível para aprovação." });
+        },
+    })
+);
 
 // POST /clientes/:cpf/rejeitar (R11) - GERENTE
 app.post(
@@ -740,25 +753,31 @@ app.get("/contas/:numero/extrato", authenticateToken, async (req, res) => {
     const config = { headers: { Authorization: req.headers.authorization } };
 
     try {
-        const extratoResp = await axiosInstance.get(`${services.query}/query/contas/${numero}/extrato`, config);
+        const extratoResp = await axiosInstance.get(
+            `${services.query}/query/contas/${numero}/extrato`,
+            config
+        );
         const listaDiaria = extratoResp.data || [];
 
-        const saldoResp = await axiosInstance.get(`${services.account}/contas/${numero}/saldo`, config);
+        const saldoResp = await axiosInstance.get(
+            `${services.account}/contas/${numero}/saldo`,
+            config
+        );
 
         let todasMovimentacoes = [];
-        listaDiaria.forEach(dia => {
+        listaDiaria.forEach((dia) => {
             if (dia.movimentacoes && Array.isArray(dia.movimentacoes)) {
-                const movs = dia.movimentacoes.map(m => {
+                const movs = dia.movimentacoes.map((m) => {
                     let tipo = m.tipo ? m.tipo.toLowerCase() : "";
-                    
+
                     if (tipo.includes("deposit") || tipo.includes("deposito")) tipo = "depósito";
                     else if (tipo.includes("withdraw") || tipo.includes("saque")) tipo = "saque";
                     else if (tipo.includes("transfer")) tipo = "transferência";
-                    
-                    return { 
-                        ...m, 
-                        tipo, 
-                        data: m.data || dia.data 
+
+                    return {
+                        ...m,
+                        tipo,
+                        data: m.data || dia.data,
                     };
                 });
                 todasMovimentacoes = todasMovimentacoes.concat(movs);
@@ -768,7 +787,7 @@ app.get("/contas/:numero/extrato", authenticateToken, async (req, res) => {
         res.json({
             conta: numero,
             saldo: saldoResp.data.balance || saldoResp.data.saldo || 0,
-            movimentacoes: todasMovimentacoes
+            movimentacoes: todasMovimentacoes,
         });
     } catch (error) {
         console.error("Erro extrato:", error.message);
@@ -871,14 +890,14 @@ app.get("/reboot", async (req, res) => {
             return {
                 service: service.name,
                 status: "SUCCESS",
-                details: response.data
+                details: response.data,
             };
         } catch (error) {
             return {
                 service: service.name,
                 status: "ERROR",
                 error: error.message,
-                details: error.response?.data || "Sem detalhes"
+                details: error.response?.data || "Sem detalhes",
             };
         }
     });
@@ -887,14 +906,14 @@ app.get("/reboot", async (req, res) => {
     const results = await Promise.all(promises);
 
     // Verifica se houve algum erro
-    const hasError = results.some(r => r.status === "ERROR");
+    const hasError = results.some((r) => r.status === "ERROR");
     const statusCode = hasError ? 207 : 200; // 207 Multi-Status se houver falhas parciais
 
     res.status(statusCode).json({
         action: "System Reboot",
         timestamp: new Date(),
         summary: hasError ? "Alguns serviços falharam" : "Todos os serviços resetados com sucesso",
-        results: results
+        results: results,
     });
 });
 

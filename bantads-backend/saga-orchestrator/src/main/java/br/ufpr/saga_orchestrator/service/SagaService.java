@@ -259,9 +259,12 @@ public class SagaService {
         return sagaResults.get(correlationId);
     }
 
-    public void notifyGatewaySuccess(String correlationId, String cpf, String nome, String accountNumber, String limit) {
+    public void notifyGatewaySuccess(String correlationId, String cpf, String nome, String accountNumber,
+            String limit) {
         sagaResults.put(correlationId, new SagaResult(true, "create-manager", "Manager criado com sucesso",
-                Map.of("cpf", cpf != null ? cpf : "", "nome", nome != null ? nome : "", "conta", accountNumber != null ? accountNumber : "", "limite", limit != null ? limit : ""), 201));
+                Map.of("cpf", cpf != null ? cpf : "", "nome", nome != null ? nome : "", "conta",
+                        accountNumber != null ? accountNumber : "", "limite", limit != null ? limit : ""),
+                201));
     }
 
     public void notifyGatewayFailure(String correlationId, String errorMessage, int statusCode) {
@@ -391,7 +394,7 @@ public class SagaService {
         authPayload.put("cpf", clientId);
         authPayload.put("nome", nome);
         authPayload.put("email", email);
-        authPayload.put("tipo", "CLIENT");
+        authPayload.put("tipo", "CLIENTE");
         authPayload.put("generatePassword", true);
         authPayload.put("accountNumber", accountNumber);
         authPayload.put("limit", limit);

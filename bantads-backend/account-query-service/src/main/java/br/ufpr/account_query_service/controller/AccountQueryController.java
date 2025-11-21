@@ -36,6 +36,11 @@ public class AccountQueryController {
         return ResponseEntity.ok(accountQueryService.getAccountByCpf(authenticatedCpf));
     }
 
+    @GetMapping("/account-by-cpf/{cpf}")
+    public ResponseEntity<AccountView> getAccountByCpf(@PathVariable String cpf) {
+        return ResponseEntity.ok(accountQueryService.getAccountByCpf(cpf));
+    }
+
     @GetMapping("/summary-by-manager")
     public ResponseEntity<List<ManagerSummaryDTO>> getSummaryByManager() {
         List<Object[]> rows = accountQueryService.getSummaryByManager();

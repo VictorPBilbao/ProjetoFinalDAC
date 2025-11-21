@@ -36,7 +36,7 @@ public class AccountSagaListener {
     @Value("${rabbit.saga.exchange:saga.exchange}")
     private String sagaExchange;
 
-     @RabbitListener(queues = "${rabbit.account.create.queue}")
+    @RabbitListener(queues = "${rabbit.account.create.queue}")
     public void handleCreateAccount(Message message) throws Exception {
         String correlationId = message.getMessageProperties().getCorrelationId();
         Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
@@ -50,7 +50,8 @@ public class AccountSagaListener {
             String managerId = (String) payload.get("managerId");
 
             // Debug: confirmar valor recebido
-            System.out.println("handleCreateAccount payload salary=" + salary + " clientId=" + clientId + " managerId=" + managerId);
+            System.out.println("handleCreateAccount payload salary=" + salary + " clientId=" + clientId + " managerId="
+                    + managerId);
 
             if (accountRepository.findByClientId(clientId).isPresent()) {
                 throw new IllegalStateException("Cliente já possui uma conta.");
@@ -88,7 +89,15 @@ public class AccountSagaListener {
                 return m;
             });
 
-            accountService.publishCqrsEvent("account.created", accountData);
+            // Publish CQRS event with correct field names for account-query-service
+            Map<String, Object> cqrsEvent = Map.of(
+                    "clientCpf", savedAccount.getClientId(),
+                    "numero", savedAccount.getAccountNumber(),
+                    "saldo", savedAccount.getBalance(),
+                    "limite", savedAccount.getAccountLimit(),
+                    "managerCpf", savedAccount.getManager(),
+                    "dataCriacao", savedAccount.getCreationDate());
+            accountService.publishCqrsEvent("account.created", cqrsEvent);
 
         } catch (Exception ex) {
             rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountCreateFailedKey(),
@@ -100,13 +109,16 @@ public class AccountSagaListener {
     }
 
     private BigDecimal parseBigDecimal(Object value) {
-        if (value == null) return null;
-        if (value instanceof BigDecimal) return (BigDecimal) value;
+        if (value == null)
+            return null;
+        if (value instanceof BigDecimal)
+            return (BigDecimal) value;
         if (value instanceof Number) {
             return BigDecimal.valueOf(((Number) value).doubleValue());
         }
         String s = value.toString().trim();
-        if (s.isEmpty()) return null;
+        if (s.isEmpty())
+            return null;
         // aceita vírgula como separador decimal
         s = s.replace(",", ".");
         try {

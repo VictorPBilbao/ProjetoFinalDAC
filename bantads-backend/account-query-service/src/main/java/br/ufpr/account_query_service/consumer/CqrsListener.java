@@ -1,14 +1,19 @@
 package br.ufpr.account_query_service.consumer;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import br.ufpr.account_query_service.dto.AccountMessageDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import br.ufpr.account_query_service.dto.TransactionMessageDTO;
 import br.ufpr.account_query_service.model.AccountView;
 import br.ufpr.account_query_service.model.TransactionView;
@@ -24,27 +29,60 @@ public class CqrsListener {
     @Autowired
     private TransactionViewRepository transactionViewRepository;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @RabbitListener(queues = "account-update-queue")
-    public void onAccountUpdate(AccountMessageDTO accountDto) {
+    public void onAccountUpdate(Message message) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> payload = objectMapper.readValue(message.getBody(), Map.class);
 
-        Optional<AccountView> existing = accountViewRepository.findByClientId(accountDto.getClientCpf());
-        AccountView view = existing.orElse(new AccountView());
+            String clientCpf = (String) payload.get("clientCpf");
+            String numero = (String) payload.get("numero");
+            Object saldoObj = payload.get("saldo");
+            Object limiteObj = payload.get("limite");
+            String managerCpf = (String) payload.get("managerCpf");
+            Object dataCriacaoObj = payload.get("dataCriacao");
 
-        view.setClientId(accountDto.getClientCpf());
-        view.setAccountNumber(accountDto.getNumero());
-        view.setBalance(BigDecimal.valueOf(accountDto.getSaldo()));
-        view.setLimit(BigDecimal.valueOf(accountDto.getLimite()));
+            Optional<AccountView> existing = accountViewRepository.findByClientId(clientCpf);
+            AccountView view = existing.orElse(new AccountView());
 
-        if (accountDto.getManagerCpf() != null) {
-            view.setManagerId(accountDto.getManagerCpf());
+            view.setClientId(clientCpf);
+            view.setAccountNumber(numero);
+
+            if (saldoObj != null) {
+                view.setBalance(
+                        saldoObj instanceof BigDecimal ? (BigDecimal) saldoObj : new BigDecimal(saldoObj.toString()));
+            }
+
+            if (limiteObj != null) {
+                view.setLimit(
+                        limiteObj instanceof BigDecimal ? (BigDecimal) limiteObj
+                                : new BigDecimal(limiteObj.toString()));
+            }
+
+            if (managerCpf != null) {
+                view.setManagerId(managerCpf);
+            }
+
+            if (dataCriacaoObj != null) {
+                if (dataCriacaoObj instanceof Date) {
+                    view.setCreationDate(((Date) dataCriacaoObj).toInstant()
+                            .atZone(ZoneId.systemDefault()).toLocalDateTime());
+                } else if (dataCriacaoObj instanceof LocalDateTime) {
+                    view.setCreationDate((LocalDateTime) dataCriacaoObj);
+                } else if (dataCriacaoObj instanceof String) {
+                    view.setCreationDate(LocalDateTime.parse((String) dataCriacaoObj));
+                }
+            }
+
+            accountViewRepository.save(view);
+            System.out.println("Account view saved: " + view.getClientId() + " - " + view.getAccountNumber());
+        } catch (Exception e) {
+            System.err.println("Error processing account update: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        if (accountDto.getDataCriacao() != null) {
-
-            view.setCreationDate(accountDto.getDataCriacao().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
-        }
-
-        accountViewRepository.save(view);
     }
 
     @RabbitListener(queues = "transaction-created-queue")
