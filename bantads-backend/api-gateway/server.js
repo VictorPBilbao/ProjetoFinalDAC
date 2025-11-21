@@ -9,6 +9,15 @@ const axiosInstance = axios.create({
     timeout: Number(process.env.GATEWAY_AXIOS_TIMEOUT_MS || 4000),
 });
 
+const services = {
+    client: process.env.CLIENT_SERVICE_URL || "http://localhost:8081",
+    account: process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082",
+    manager: process.env.MANAGER_SERVICE_URL || "http://localhost:8083",
+    auth: process.env.AUTH_SERVICE_URL || "http://localhost:8084",
+    saga: process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085",
+    query: process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086"
+};
+
 require("dotenv").config();
 
 const app = express();
@@ -626,33 +635,20 @@ app.post(
     })
 );
 
-app.put(
-    "/clientes/:cpf",
-    authenticateToken,
-    authorizeClienteByCpf("cpf"),
-    proxy(process.env.CLIENT_SERVICE_URL || "http://localhost:8081", {
-        proxyReqPathResolver: (req) => req.originalUrl,
-        proxyErrorHandler: (err, res, next) => {
-            res.status(503).json({
-                error: "Client Service unavailable",
-                message: err.message,
-            });
-        },
-    })
-);
+app.put("/clientes/:cpf", authenticateToken, authorizeClienteByCpf("cpf"), proxy(services.client, {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+        res.status(503).json({ error: "Client Service indisponível para atualização." });
+    }
+}));
 
 // POST /clientes/:cpf/aprovar (R10) - GERENTE
-app.post(
-    "/clientes/:cpf/aprovar",
-    authenticateToken,
-    requireRole("GERENTE", "MANAGER"),
-    proxy(process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085", {
-        proxyReqPathResolver: (req) => req.originalUrl,
-        proxyErrorHandler: (err, res, next) => {
-            res.status(503).json({ error: "Saga Orchestrator unavailable", message: err.message });
-        },
-    })
-);
+app.post("/clientes/:cpf/aprovar", authenticateToken, requireRole("GERENTE"), proxy(services.saga, {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+        res.status(503).json({ error: "Saga Orchestrator indisponível para aprovação." });
+    }
+}));
 
 // POST /clientes/:cpf/rejeitar (R11) - GERENTE
 app.post(
@@ -803,17 +799,46 @@ app.post(
 );
 
 // R8: Extrato
-app.get(
-    "/contas/:numero/extrato",
-    authenticateToken,
-    proxy(process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086", {
-        proxyReqPathResolver: (req) => req.originalUrl,
-        proxyErrorHandler: (err, res, next) => {
-            console.error("[Gateway] Erro ao buscar extrato:", err.message);
-            res.status(503).json({ error: "Serviço de consulta de conta indisponível." });
-        },
-    })
-);
+app.get("/contas/:numero/extrato", authenticateToken, async (req, res) => {
+    const { numero } = req.params;
+    const config = { headers: { Authorization: req.headers.authorization } };
+
+    try {
+        const extratoResp = await axiosInstance.get(`${services.query}/query/contas/${numero}/extrato`, config);
+        const listaDiaria = extratoResp.data || [];
+
+        const saldoResp = await axiosInstance.get(`${services.account}/contas/${numero}/saldo`, config);
+
+        let todasMovimentacoes = [];
+        listaDiaria.forEach(dia => {
+            if (dia.movimentacoes && Array.isArray(dia.movimentacoes)) {
+                const movs = dia.movimentacoes.map(m => {
+                    let tipo = m.tipo ? m.tipo.toLowerCase() : "";
+                    
+                    if (tipo.includes("deposit") || tipo.includes("deposito")) tipo = "depósito";
+                    else if (tipo.includes("withdraw") || tipo.includes("saque")) tipo = "saque";
+                    else if (tipo.includes("transfer")) tipo = "transferência";
+                    
+                    return { 
+                        ...m, 
+                        tipo, 
+                        data: m.data || dia.data 
+                    };
+                });
+                todasMovimentacoes = todasMovimentacoes.concat(movs);
+            }
+        });
+
+        res.json({
+            conta: numero,
+            saldo: saldoResp.data.balance || saldoResp.data.saldo || 0,
+            movimentacoes: todasMovimentacoes
+        });
+    } catch (error) {
+        console.error("Erro extrato:", error.message);
+        res.status(503).json({ error: "Erro ao buscar extrato" });
+    }
+});
 
 app.post(
     "/login",
