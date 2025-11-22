@@ -71,7 +71,6 @@ public class ClientService {
         return convertToDTO(savedClient);
     }
 
-    // NOVO MÉTODO: Atualiza a conta do cliente
     @Transactional
     public void updateClientAccount(String cpf, String conta) {
         Client client = clientRepository.findById(cpf)

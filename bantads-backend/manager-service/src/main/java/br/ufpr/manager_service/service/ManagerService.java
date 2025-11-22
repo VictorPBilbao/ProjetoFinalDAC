@@ -1,6 +1,7 @@
 package br.ufpr.manager_service.service;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -184,7 +185,25 @@ public class ManagerService {
     }
 
     private Map<String, Long> getManagerClientCountsFromClientService() {
-        return Map.of();
+        List<Object[]> results = managerRepository.countClientsPerManager();
+        Map<String, Long> counts = new HashMap<>();
+        List<Manager> allManagers = managerRepository.findAll();
+        Map<String, Manager> managerById = new HashMap<>();
+        Map<String, Manager> managerByCpf = new HashMap<>();
+        for (Manager m : allManagers) {
+            managerById.put(m.getId(), m);
+            managerByCpf.put(m.getCpf(), m);
+        }
+        for (Object[] row : results) {
+            String managerValue = (String) row[0];
+            Long count = ((Number) row[1]).longValue();
+            Manager mgr = managerById.get(managerValue);
+            if (mgr == null) mgr = managerByCpf.get(managerValue);
+            if (mgr != null) {
+                counts.put(mgr.getId(), count);
+            }
+        }
+        return counts;
     }
 
     @Transactional

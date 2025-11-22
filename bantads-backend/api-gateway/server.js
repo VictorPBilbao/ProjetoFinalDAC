@@ -290,7 +290,7 @@ app.get(
           const mgrAccounts = accounts.filter(
             (acc) =>
               String(acc.managerId) === String(mgr.id) ||
-              acc.managerCpf === mgr.cpf
+              String(acc.managerId) === mgr.cpf
           );
 
           let totalPos = 0;
