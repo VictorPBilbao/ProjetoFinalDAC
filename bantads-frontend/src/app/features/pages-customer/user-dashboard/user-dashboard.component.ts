@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
 import { ServiceContaService } from '../../services/conta/service-conta.service';
-import { Component, HostBinding, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Transaction } from '../../models/transaction.model';
 
 @Component({
@@ -25,16 +25,12 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
     hideBalance = false;
     isLoading = true; // adicionada para o template
 
-    @HostBinding('class.dark') darkMode = false;
-
     constructor(
         private clientService: ClientService,
         private contaService: ServiceContaService
     ) {}
 
     ngOnInit(): void {
-        this.darkMode = localStorage.getItem('dashboardDarkMode') === 'true';
-
         this.sub = this.clientService.getLoggedClient().subscribe({
             next: (client) => {
                 this.user = client ?? null;
@@ -113,10 +109,5 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
 
     toggleBalanceVisibility(): void {
         this.hideBalance = !this.hideBalance;
-    }
-
-    toggleDarkMode() {
-        this.darkMode = !this.darkMode;
-        localStorage.setItem('dashboardDarkMode', String(this.darkMode));
     }
 }
