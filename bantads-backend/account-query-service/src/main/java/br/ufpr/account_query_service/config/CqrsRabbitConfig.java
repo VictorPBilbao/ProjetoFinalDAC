@@ -20,6 +20,8 @@ public class CqrsRabbitConfig {
     @Value("${rabbit.transaction.created.queue:transaction-created-queue}")
     private String transactionCreatedQueue;
 
+    // Estas variáveis ainda existem para carregar valores do properties,
+    // mas vamos forçar os valores corretos nos bindings abaixo.
     @Value("${rabbit.account.update.key:account.update}")
     private String accountUpdateKey;
 
@@ -53,16 +55,17 @@ public class CqrsRabbitConfig {
 
     @Bean
     public Binding bindAccountUpdate(Queue accountUpdateQueue, TopicExchange accountEventsExchange) {
-        return BindingBuilder.bind(accountUpdateQueue).to(accountEventsExchange).with(accountUpdateKey);
-    }
-
-    @Bean
-    public Binding bindAccountCreated(Queue accountUpdateQueue, TopicExchange accountEventsExchange) {
-        return BindingBuilder.bind(accountUpdateQueue).to(accountEventsExchange).with("account.created");
+        // CORREÇÃO CRÍTICA: Usar "account.#" para capturar "account.updated" e
+        // "account.created"
+        // O AccountService envia "account.updated", mas a config antiga esperava
+        // "account.update"
+        return BindingBuilder.bind(accountUpdateQueue).to(accountEventsExchange).with("account.#");
     }
 
     @Bean
     public Binding bindTransactionCreated(Queue transactionCreatedQueue, TopicExchange accountEventsExchange) {
-        return BindingBuilder.bind(transactionCreatedQueue).to(accountEventsExchange).with(transactionCreatedKey);
+        // CORREÇÃO: Fixar "transaction.created" para garantir match exato com o
+        // produtor
+        return BindingBuilder.bind(transactionCreatedQueue).to(accountEventsExchange).with("transaction.created");
     }
 }

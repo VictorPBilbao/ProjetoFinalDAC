@@ -27,21 +27,16 @@ public class ClientService {
         this.emailService = emailService;
     }
 
-    // ? Autocadastro - R1
     @Transactional
     public ClientDTO autocadastro(AutocadastroRequestDTO request) {
-        // Check if CPF already exists (approved or pending)
         if (clientRepository.existsById(request.getCpf())) {
             throw new IllegalArgumentException(
                     "Cliente já cadastrado ou aguardando aprovação com CPF: " + request.getCpf());
         }
-
-        // Check if email already exists
         if (clientRepository.findByEmail(request.getEmail()) != null) {
             throw new IllegalArgumentException("Email já cadastrado: " + request.getEmail());
         }
 
-        // Create new client entity
         Client client = new Client();
         client.setCpf(request.getCpf());
         client.setNome(request.getNome());
@@ -49,15 +44,13 @@ public class ClientService {
         client.setTelefone(request.getTelefone());
         client.setSalario(request.getSalario());
         client.setEndereco(request.getEndereco());
-        client.setCep(request.getCep()); // Note: converting from uppercase CEP
+        client.setCep(request.getCep());
         client.setCidade(request.getCidade());
         client.setEstado(request.getEstado());
-        client.setAprovado(false); // Awaiting approval
+        client.setAprovado(false);
         client.setDataCadastro(LocalDateTime.now());
 
-        // Save client
         Client savedClient = clientRepository.save(client);
-
         return convertToDTO(savedClient);
     }
 
@@ -65,7 +58,6 @@ public class ClientService {
         Client client = clientRepository.findById(cpf)
                 .orElseThrow(() -> new RuntimeException("Cliente não encontrado com CPF: " + cpf));
 
-        // Update fields
         client.setNome(updatedData.getNome());
         client.setEmail(updatedData.getEmail());
         client.setTelefone(updatedData.getTelefone());
@@ -79,36 +71,42 @@ public class ClientService {
         return convertToDTO(savedClient);
     }
 
-    // ? Get all approved clients
+    // NOVO MÉTODO: Atualiza a conta do cliente
+    @Transactional
+    public void updateClientAccount(String cpf, String conta) {
+        Client client = clientRepository.findById(cpf)
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com CPF: " + cpf));
+
+        client.setConta(conta);
+        clientRepository.save(client);
+        logger.info("Conta {} atribuída ao cliente {}", conta, cpf);
+    }
+
     public List<ClientDTO> getAllApprovedClients() {
         return clientRepository.findByAprovadoTrue().stream().map(this::convertToDTO).toList();
     }
 
-    // ? Get client by CPF
     public ClientDTO getClientByCpf(String cpf) {
         return clientRepository.findById(cpf)
                 .map(this::convertToDTO)
-                .orElse(null); // não lança exceção
+                .orElse(null);
     }
 
     public ClientDTO findByEmail(String email) {
         Client client = clientRepository.findByEmail(email);
         if (client == null) {
-            return null; // sem exception
+            return null;
         }
         return convertToDTO(client);
     }
 
-    // ? Get pending clients
     public List<ClientDTO> getAllPendingClients() {
         return clientRepository.findByAprovadoFalse().stream().map(this::convertToDTO).toList();
     }
 
-    // get approve client
     @Transactional
     public void approveClient(String cpf) {
         logger.info("[Gerente] Iniciando aprovação para CPF: {}", cpf);
-
         Client client = clientRepository.findById(cpf)
                 .orElseThrow(() -> new RuntimeException("Cliente não encontrado com CPF: " + cpf));
 
@@ -118,12 +116,9 @@ public class ClientService {
         }
         client.setAprovado(true);
         clientRepository.save(client);
-
         logger.info("[Gerente] Cliente {} APROVADO com sucesso no client-service.", cpf);
-
     }
 
-    // get reject client
     @Transactional
     public void rejectClient(String cpf, String motivo) {
         Client client = clientRepository.findById(cpf)
@@ -135,7 +130,6 @@ public class ClientService {
 
         clientRepository.delete(client);
         emailService.sendRejectionEmail(client.getEmail(), client.getNome(), motivo);
-
         logger.info("Cliente {} rejeitado e email enviado", cpf);
     }
 
@@ -149,7 +143,9 @@ public class ClientService {
                 client.getEndereco(),
                 client.getCep(),
                 client.getCidade(),
-                client.getEstado());
+                client.getEstado(),
+                client.getConta() // Incluindo a conta
+        );
     }
 
     @Transactional
@@ -160,46 +156,33 @@ public class ClientService {
     }
 
     private void insertInitialData() {
-        createSeedClient(
-                "12912861012", "Catharyna", "cli1@bantads.com.br",
-                new BigDecimal("10000.00"), LocalDateTime.of(2000, 1, 1, 0, 0)
-        );
-
-        createSeedClient(
-                "09506382000", "Cleuddônio", "cli2@bantads.com.br",
-                new BigDecimal("20000.00"), LocalDateTime.of(1990, 10, 10, 0, 0)
-        );
-
-        createSeedClient(
-                "85733854057", "Catianna", "cli3@bantads.com.br",
-                new BigDecimal("3000.00"), LocalDateTime.of(2012, 12, 12, 0, 0)
-        );
-
-        createSeedClient(
-                "58872160006", "Cutardo", "cli4@bantads.com.br",
-                new BigDecimal("500.00"), LocalDateTime.of(2022, 2, 22, 0, 0)
-        );
-
-        createSeedClient(
-                "76179646090", "Coândrya", "cli5@bantads.com.br",
-                new BigDecimal("1500.00"), LocalDateTime.of(2025, 1, 1, 0, 0)
-        );
+        createSeedClient("12912861012", "Catharyna", "cli1@bantads.com.br", new BigDecimal("10000.00"),
+                LocalDateTime.of(2000, 1, 1, 0, 0), "1291");
+        createSeedClient("09506382000", "Cleuddônio", "cli2@bantads.com.br", new BigDecimal("20000.00"),
+                LocalDateTime.of(1990, 10, 10, 0, 0), "0950");
+        createSeedClient("85733854057", "Catianna", "cli3@bantads.com.br", new BigDecimal("3000.00"),
+                LocalDateTime.of(2012, 12, 12, 0, 0), "8573");
+        createSeedClient("58872160006", "Cutardo", "cli4@bantads.com.br", new BigDecimal("500.00"),
+                LocalDateTime.of(2022, 2, 22, 0, 0), "5887");
+        createSeedClient("76179646090", "Coândrya", "cli5@bantads.com.br", new BigDecimal("1500.00"),
+                LocalDateTime.of(2025, 1, 1, 0, 0), "7617");
     }
 
-    private void createSeedClient(String cpf, String nome, String email, BigDecimal salario, LocalDateTime dataCadastro) {
+    private void createSeedClient(String cpf, String nome, String email, BigDecimal salario, LocalDateTime dataCadastro,
+            String conta) {
         Client client = new Client();
         client.setCpf(cpf);
         client.setNome(nome);
         client.setEmail(email);
         client.setSalario(salario);
         client.setDataCadastro(dataCadastro);
-
         client.setAprovado(true);
         client.setTelefone("(41) 99999-9999");
         client.setEndereco("Rua do Seed, 123");
         client.setCep("80000-000");
         client.setCidade("Curitiba");
         client.setEstado("PR");
+        client.setConta(conta); // Define a conta no seed
 
         clientRepository.save(client);
     }

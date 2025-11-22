@@ -1,51 +1,150 @@
 package br.ufpr.client_service.model;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.*;
+
 @Entity
-@Table(name = "clients", schema = "client_schema")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class Client {
+@Table(name = "clientes")
+public class Client implements Serializable {
 
     @Id
-    @Column(name = "cpf", length = 11)
+    @Column(length = 11)
     private String cpf;
 
-    @Column(name = "nome", nullable = false, length = 100)
+    @Column(nullable = false)
     private String nome;
 
-    @Column(name = "email", nullable = false, unique = true, length = 100)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "telefone", length = 20)
+    @Column(nullable = false)
     private String telefone;
 
-    @Column(name = "salario", nullable = false, precision = 10, scale = 2)
+    @Column(nullable = false)
     private BigDecimal salario;
 
-    @Column(name = "endereco", columnDefinition = "TEXT")
+    @Column(nullable = false)
     private String endereco;
 
-    @Column(name = "cep", length = 9)
+    @Column(nullable = false)
     private String cep;
 
-    @Column(name = "cidade", length = 100)
+    @Column(nullable = false)
     private String cidade;
 
-    @Column(name = "estado", length = 2)
+    @Column(nullable = false)
     private String estado;
 
-    @Column(name = "aprovado")
-    private Boolean aprovado = false;
+    @Column(nullable = false)
+    private Boolean aprovado;
 
     @Column(name = "data_cadastro")
-    private LocalDateTime dataCadastro = LocalDateTime.now();
+    private LocalDateTime dataCadastro;
+
+    // NOVO CAMPO
+    @Column(name = "conta")
+    private String conta;
+
+    public Client() {
+    }
+
+    // Getters e Setters
+    public String getCpf() {
+        return cpf;
+    }
+
+    public void setCpf(String cpf) {
+        this.cpf = cpf;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getTelefone() {
+        return telefone;
+    }
+
+    public void setTelefone(String telefone) {
+        this.telefone = telefone;
+    }
+
+    public BigDecimal getSalario() {
+        return salario;
+    }
+
+    public void setSalario(BigDecimal salario) {
+        this.salario = salario;
+    }
+
+    public String getEndereco() {
+        return endereco;
+    }
+
+    public void setEndereco(String endereco) {
+        this.endereco = endereco;
+    }
+
+    public String getCep() {
+        return cep;
+    }
+
+    public void setCep(String cep) {
+        this.cep = cep;
+    }
+
+    public String getCidade() {
+        return cidade;
+    }
+
+    public void setCidade(String cidade) {
+        this.cidade = cidade;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public Boolean getAprovado() {
+        return aprovado;
+    }
+
+    public void setAprovado(Boolean aprovado) {
+        this.aprovado = aprovado;
+    }
+
+    public LocalDateTime getDataCadastro() {
+        return dataCadastro;
+    }
+
+    public void setDataCadastro(LocalDateTime dataCadastro) {
+        this.dataCadastro = dataCadastro;
+    }
+
+    public String getConta() {
+        return conta;
+    }
+
+    public void setConta(String conta) {
+        this.conta = conta;
+    }
 }
