@@ -311,7 +311,7 @@ app.get(
 
                 const dashboard = managers.map((mgr) => {
                     const mgrAccounts = accounts.filter(
-                        (acc) => String(acc.managerId) === String(mgr.id)
+                        (acc) => String(acc.managerId) === String(mgr.cpf)
                     );
 
                     let totalPos = 0;
