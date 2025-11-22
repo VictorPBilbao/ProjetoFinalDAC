@@ -1,5 +1,9 @@
 package br.ufpr.account_service.controller;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,11 +50,12 @@ public class AccountController {
             @Valid @RequestBody TransactionRequestDTO request) {
 
         Account updatedAccount = accountService.withdraw(authenticatedCpf, request.getValor());
+
         return ResponseEntity.ok(updatedAccount);
     }
 
     @PostMapping("/{conta}/transferir")
-    public ResponseEntity<Account> transfer(
+    public ResponseEntity<Map<String, Object>> transfer(
             @RequestHeader("X-User-CPF") String authenticatedCpf,
             @Valid @RequestBody TransferRequestDTO request) {
 
@@ -58,7 +63,15 @@ public class AccountController {
                 authenticatedCpf,
                 request.getDestinationAccountNumber(),
                 request.getValor());
-        return ResponseEntity.ok(updatedAccount);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("conta", updatedAccount.getAccountNumber());
+        response.put("saldo", updatedAccount.getBalance());
+        response.put("destino", request.getDestinationAccountNumber());
+        response.put("valor", request.getValor());
+        response.put("data", LocalDateTime.now().toString());
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/reboot")
