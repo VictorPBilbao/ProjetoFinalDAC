@@ -1,4 +1,3 @@
-// ...existing code...
 package br.ufpr.saga_orchestrator.config;
 
 import org.springframework.amqp.core.*;
@@ -41,6 +40,18 @@ public class RabbitConfig {
     @Bean
     public Queue managerDeletedQueue() {
         return new Queue("manager.deleted.queue", true);
+    }
+
+    @Bean
+    public Queue sagaManagerProcessedQueue(
+            @Value("${rabbit.saga.manager.processed.queue:saga-manager-processed-queue}") String queueName) {
+        return new Queue(queueName, true);
+    }
+
+    @Bean
+    public Queue sagaManagerAccountFailedQueue(
+            @Value("${rabbit.saga.manager.account.failed.queue:saga-manager-account-failed-queue}") String queueName) {
+        return new Queue(queueName, true);
     }
 
     @Bean
@@ -215,4 +226,19 @@ public class RabbitConfig {
             @Value("${rabbit.account.create-failed-key:saga.account.create-failed}") String key) {
         return BindingBuilder.bind(accountCreateFailedForApprovalQueue).to(sagaExchange).with(key);
     }
+
+    @Bean
+    public Binding bindSagaManagerProcessed(Queue sagaManagerProcessedQueue, TopicExchange sagaExchange) {
+        return BindingBuilder.bind(sagaManagerProcessedQueue)
+                .to(sagaExchange)
+                .with("saga.manager.account.processed");
+    }
+
+    @Bean
+    public Binding bindSagaManagerAccountFailed(Queue sagaManagerAccountFailedQueue, TopicExchange sagaExchange) {
+        return BindingBuilder.bind(sagaManagerAccountFailedQueue)
+                .to(sagaExchange)
+                .with("saga.manager.account.failed");
+    }
+
 }

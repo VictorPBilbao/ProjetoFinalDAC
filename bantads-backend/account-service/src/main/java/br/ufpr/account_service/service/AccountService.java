@@ -18,6 +18,7 @@ import br.ufpr.account_service.model.Account;
 import br.ufpr.account_service.model.Transaction;
 import br.ufpr.account_service.repository.AccountRepository;
 import br.ufpr.account_service.repository.TransactionRepository;
+import java.util.Optional;
 
 @Service
 public class AccountService {
@@ -154,6 +155,39 @@ public class AccountService {
         return savedAccount;
     }
 
+    @Transactional
+    public Account reassignAccountToNewManager(String newManagerCpf) {
+        long totalManagers = accountRepository.countDistinctManagers();
+        long totalAccounts = accountRepository.count();
+
+        // Regra: "Se for o primeiro gerente a ser cadastrado" (totalManagers == 0)
+        // Regra: "ou se só houver somente mais um gerente e ele tiver somente uma conta"
+        // (totalManagers == 1 && totalAccounts == 1)
+        
+        if (totalManagers == 0 || (totalManagers == 1 && totalAccounts <= 1)) {
+            // Este gerente fica sem nenhuma conta
+            System.out.println("Gerente " + newManagerCpf + " cadastrado sem contas iniciais (Regra de incialização).");
+            return null; 
+        }
+
+        // Busca a conta candidata (Gerente com mais contas -> Menor saldo positivo)
+        Optional<Account> candidateOpt = accountRepository.findAccountToReassign();
+
+        if (candidateOpt.isPresent()) {
+            Account account = candidateOpt.get();
+            String oldManager = account.getManager();
+            
+            // Atualiza o gerente
+            account.setManager(newManagerCpf);
+            Account updated = accountRepository.save(account);
+            
+            System.out.println("Conta " + updated.getAccountNumber() + " movida do gerente " + oldManager + " para " + newManagerCpf);
+            return updated;
+        }
+        
+        return null;
+    }
+    
     public void publishCqrsEvent(String routingKey, Object event) {
         Object payload = event;
 
