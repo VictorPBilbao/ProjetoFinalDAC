@@ -209,17 +209,17 @@ app.get("/gerentes", authenticateToken, requireRole("ADMINISTRADOR"), async (req
                     }
                 });
 
-                return {
-                    gerente: {
-                        cpf: mgr.cpf,
-                        nome: mgr.nome,
-                        email: mgr.email
-                    },
-                    clientes: clientesDoGerente, 
-                    saldo_positivo: Number(totalPos.toFixed(2)),
-                    saldo_negativo: Number(totalNeg.toFixed(2))
-                };
-            });
+                    return {
+                        gerente: {
+                            cpf: mgr.cpf,
+                            nome: mgr.nome,
+                            email: mgr.email,
+                        },
+                        clientes: clientesDoGerente,
+                        saldo_positivo: Number(totalPos.toFixed(2)),
+                        saldo_negativo: Number(totalNeg.toFixed(2)),
+                    };
+                });
 
             dashboard.sort((a, b) => b.saldo_positivo - a.saldo_positivo);
 
