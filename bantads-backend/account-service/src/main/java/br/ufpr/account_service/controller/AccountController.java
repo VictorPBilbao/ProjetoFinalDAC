@@ -40,7 +40,7 @@ public class AccountController {
         return ResponseEntity.ok(updatedAccount);
     }
 
-    @PostMapping("/{conta}sacar")
+    @PostMapping("/{conta}/sacar")
     public ResponseEntity<Account> withdraw(
             @RequestHeader("X-User-CPF") String authenticatedCpf,
             @Valid @RequestBody TransactionRequestDTO request) {
@@ -49,7 +49,7 @@ public class AccountController {
         return ResponseEntity.ok(updatedAccount);
     }
 
-    @PostMapping("/{conta}transferir")
+    @PostMapping("/{conta}/transferir")
     public ResponseEntity<Account> transfer(
             @RequestHeader("X-User-CPF") String authenticatedCpf,
             @Valid @RequestBody TransferRequestDTO request) {
