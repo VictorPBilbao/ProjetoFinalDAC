@@ -273,9 +273,16 @@ public class SagaService {
                 Map.of("erro", errorMessage, "statusCode", code), code));
     }
 
-    public void notifyUpdateSuccess(String correlationId) {
-        sagaResults.put(correlationId, new SagaResult(true, "update-manager", "Manager atualizado com sucesso",
-                Map.of("correlationId", correlationId), 200));
+    public void notifyUpdateSuccess(String correlationId, Map<String, Object> payload) {
+        sagaResults.put(correlationId,
+            new SagaResult(
+                true,
+                "update-manager",
+                "Manager atualizado com sucesso",
+                payload,  // <<--- Aqui agora envia o JSON real vindo do Auth
+                200
+            )
+        );
     }
 
     public void notifyUpdateFailure(String correlationId, String errorMessage, int statusCode) {

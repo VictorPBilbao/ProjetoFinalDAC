@@ -22,8 +22,8 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  login(usuario: string, senha: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { usuario, senha }).pipe(
+  login(login: string, senha: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { login, senha }).pipe(
       tap(resp => {
         if (resp?.access_token) {
           const token = resp.access_token.startsWith('Bearer') ? resp.access_token : `Bearer ${resp.access_token}`;
