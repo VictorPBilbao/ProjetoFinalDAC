@@ -89,6 +89,8 @@ app.get(
       process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
     const accountQueryServiceUrl =
       process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+    const managerServiceUrl = 
+      process.env.MANAGER_SERVICE_URL || "http://localhost:8083"; 
 
     try {
       const config = {
@@ -97,8 +99,6 @@ app.get(
           "X-User-CPF": cpf,
         },
       };
-
-      // 1. Busca dados do cliente
       let clientData;
       try {
         const clientResponse = await axiosInstance.get(
@@ -119,7 +119,6 @@ app.get(
           .json({ erro: "Serviço de clientes indisponível" });
       }
 
-      // 2. Busca dados da conta (pode não existir)
       let accountData = null;
       try {
         const accountResponse = await axiosInstance.get(
@@ -136,7 +135,23 @@ app.get(
         }
       }
 
-      // 3. Composição da resposta
+      let gerenteCpf = accountData?.managerId || null;
+      
+      if (gerenteCpf && gerenteCpf.length > 11) {
+        try {
+            const managerResp = await axiosInstance.get(`${managerServiceUrl}/gerentes`, config);
+            if (Array.isArray(managerResp.data)) {
+                const foundManager = managerResp.data.find(m => m.id === gerenteCpf);
+                if (foundManager) {
+                    gerenteCpf = foundManager.cpf;
+                }
+            }
+        } catch (mgrError) {
+            console.warn(`[Gateway] Falha ao resolver CPF do gerente ${gerenteCpf}: ${mgrError.message}`);
+        
+        }
+      }
+
       const composedResponse = {
         id: clientData.id,
         cpf: clientData.cpf,
@@ -153,6 +168,7 @@ app.get(
         saldo: accountData ? accountData.balance : 0,
         limite: accountData?.limit ?? clientData.limite ?? 0,
         idGerente: accountData ? accountData.managerId : null,
+        gerente: gerenteCpf, 
       };
 
       return res.status(200).json(composedResponse);
@@ -506,7 +522,7 @@ app.post(
   })
 );
 
-// POST /clientes/validateEmail -> validado no service (pass-through)
+// POST /clientes/validateEmail 
 app.post(
   "/clientes/validateEmail",
   express.json(),
@@ -523,7 +539,7 @@ app.post(
   })
 );
 
-// POST /clientes (R01) autocadastro, apenas normalização leve
+// POST /clientes (R01) autocadastro
 app.post(
   "/clientes",
   express.json(),
@@ -531,16 +547,15 @@ app.post(
     proxyReqPathResolver: () => "/clientes/cadastro",
     proxyReqBodyDecorator: (bodyContent) => {
       const sanitized = { ...bodyContent };
-      // normaliza CPF
+     
       if (sanitized.cpf)
         sanitized.cpf = String(sanitized.cpf).replace(/[^\d]/g, "");
-      // aceita CEP (maiúsculo) e cep (minúsculo)
+      
       const cepRaw = sanitized.cep ?? sanitized.CEP;
       if (cepRaw !== undefined) {
         sanitized.cep = String(cepRaw).replace(/[^\d]/g, "");
         delete sanitized.CEP;
       }
-      // normaliza email e UF
       if (sanitized.email)
         sanitized.email = String(sanitized.email).trim().toLowerCase();
       if (sanitized.estado)
@@ -565,6 +580,24 @@ app.put(
   authorizeClienteByCpf("cpf"),
   proxy(services.client, {
     proxyReqPathResolver: (req) => req.originalUrl,
+    proxyReqBodyDecorator: (bodyContent) => {
+      const sanitized = { ...bodyContent };
+      
+      const cepRaw = sanitized.cep ?? sanitized.CEP;
+      if (cepRaw !== undefined) {
+        sanitized.cep = String(cepRaw).replace(/[^\d]/g, "");
+        delete sanitized.CEP;
+      }
+
+      if (sanitized.cpf)
+        sanitized.cpf = String(sanitized.cpf).replace(/[^\d]/g, "");
+      if (sanitized.email)
+        sanitized.email = String(sanitized.email).trim().toLowerCase();
+      if (sanitized.estado)
+        sanitized.estado = String(sanitized.estado).toUpperCase();
+
+      return sanitized;
+    },
     proxyErrorHandler: (err, res, next) => {
       res
         .status(503)
@@ -619,7 +652,6 @@ app.get(
   })
 );
 
-// (Opcional) Rota de pendentes - não usada nos testes, mantida
 app.get(
   "/clientes/pending",
   authenticateToken,

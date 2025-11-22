@@ -49,7 +49,6 @@ public class AccountSagaListener {
             }
             String managerId = (String) payload.get("managerId");
 
-            // Debug: confirmar valor recebido
             System.out.println("handleCreateAccount payload salary=" + salary + " clientId=" + clientId + " managerId="
                     + managerId);
 
@@ -82,14 +81,12 @@ public class AccountSagaListener {
                     "limit", savedAccount.getAccountLimit(),
                     "creationDate", savedAccount.getCreationDate().toString());
 
-            System.out
-                    .println("Account created successfully: " + accountData);
+            System.out.println("Account created successfully: " + accountData);
+
             rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountCreatedKey(), accountData, m -> {
                 m.getMessageProperties().setCorrelationId(correlationId);
                 return m;
             });
-
-            // Publish CQRS event with correct field names for account-query-service
             Map<String, Object> cqrsEvent = Map.of(
                     "clientCpf", savedAccount.getClientId(),
                     "numero", savedAccount.getAccountNumber(),
@@ -108,6 +105,38 @@ public class AccountSagaListener {
         }
     }
 
+    @RabbitListener(queues = "${rabbit.account.updatelimit.queue}")
+    public void handleUpdateLimit(Message message) throws Exception {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+
+        try {
+            String clientId = (String) payload.get("clientId");
+
+            // Uso do método parseBigDecimal para evitar erro de conversão
+            BigDecimal newSalary = parseBigDecimal(payload.get("newSalary"));
+
+            if (newSalary == null) {
+                throw new IllegalArgumentException("Novo salário inválido ou nulo");
+            }
+
+            Account updatedAccount = accountService.updateLimitByClientId(clientId, newSalary);
+            rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountLimitUpdatedKey(), updatedAccount, m -> {
+                m.getMessageProperties().setCorrelationId(correlationId);
+                return m;
+            });
+            accountService.publishCqrsEvent("account.updated", updatedAccount);
+
+        } catch (Exception ex) {
+            System.err.println("Erro ao atualizar limite: " + ex.getMessage());
+            rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountLimitUpdateFailedKey(),
+                    Map.of("reason", ex.getMessage(), "payload", payload), m -> {
+                        m.getMessageProperties().setCorrelationId(correlationId);
+                        return m;
+                    });
+        }
+    }
+
     private BigDecimal parseBigDecimal(Object value) {
         if (value == null)
             return null;
@@ -119,38 +148,11 @@ public class AccountSagaListener {
         String s = value.toString().trim();
         if (s.isEmpty())
             return null;
-        // aceita vírgula como separador decimal
         s = s.replace(",", ".");
         try {
             return new BigDecimal(s);
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             return null;
-        }
-    }
-
-    @RabbitListener(queues = "${rabbit.account.updatelimit.queue}")
-    public void handleUpdateLimit(Message message) throws Exception {
-        String correlationId = message.getMessageProperties().getCorrelationId();
-        Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
-
-        try {
-            String clientId = (String) payload.get("clientId");
-            BigDecimal newSalary = new BigDecimal(payload.get("newSalary").toString());
-
-            Account updatedAccount = accountService.updateLimitByClientId(clientId, newSalary);
-
-            rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountLimitUpdatedKey(), updatedAccount, m -> {
-                m.getMessageProperties().setCorrelationId(correlationId);
-                return m;
-            });
-
-        } catch (Exception ex) {
-
-            rabbitTemplate.convertAndSend(sagaExchange, rabbitConfig.getAccountLimitUpdateFailedKey(),
-                    Map.of("reason", ex.getMessage(), "payload", payload), m -> {
-                        m.getMessageProperties().setCorrelationId(correlationId);
-                        return m;
-                    });
         }
     }
 }

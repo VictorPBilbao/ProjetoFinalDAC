@@ -2,10 +2,15 @@ package br.ufpr.client_service.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +26,15 @@ public class ClientService {
 
     private final ClientRepository clientRepository;
     private final EmailService emailService;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @Value("${rabbit.saga.exchange:saga.exchange}")
+    private String sagaExchange;
+
+    @Value("${rabbit.account.updatelimit.key:saga.account.updatelimit}")
+    private String updateLimitKey;
 
     public ClientService(ClientRepository clientRepository, EmailService emailService) {
         this.clientRepository = clientRepository;
@@ -54,9 +68,12 @@ public class ClientService {
         return convertToDTO(savedClient);
     }
 
+    @Transactional
     public ClientDTO updateClient(String cpf, ClientDTO updatedData) {
         Client client = clientRepository.findById(cpf)
                 .orElseThrow(() -> new RuntimeException("Cliente não encontrado com CPF: " + cpf));
+
+        BigDecimal oldSalario = client.getSalario();
 
         client.setNome(updatedData.getNome());
         client.setEmail(updatedData.getEmail());
@@ -68,10 +85,24 @@ public class ClientService {
         client.setEstado(updatedData.getEstado());
 
         Client savedClient = clientRepository.save(client);
+
+        if (oldSalario != null && savedClient.getSalario().compareTo(oldSalario) != 0) {
+            logger.info("Salário alterado para o cliente {}. Enviando evento para atualização de limite.", cpf);
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("clientId", savedClient.getCpf());
+            payload.put("newSalary", savedClient.getSalario());
+
+            try {
+                rabbitTemplate.convertAndSend(sagaExchange, updateLimitKey, payload);
+
+            } catch (Exception e) {
+                logger.error("Erro ao enviar evento de atualização de limite ou durante espera: {}", e.getMessage());
+            }
+        }
+
         return convertToDTO(savedClient);
     }
 
-    // NOVO MÉTODO: Atualiza a conta do cliente
     @Transactional
     public void updateClientAccount(String cpf, String conta) {
         Client client = clientRepository.findById(cpf)
@@ -144,8 +175,7 @@ public class ClientService {
                 client.getCep(),
                 client.getCidade(),
                 client.getEstado(),
-                client.getConta() // Incluindo a conta
-        );
+                client.getConta());
     }
 
     @Transactional
@@ -182,7 +212,7 @@ public class ClientService {
         client.setCep("80000-000");
         client.setCidade("Curitiba");
         client.setEstado("PR");
-        client.setConta(conta); // Define a conta no seed
+        client.setConta(conta);
 
         clientRepository.save(client);
     }
