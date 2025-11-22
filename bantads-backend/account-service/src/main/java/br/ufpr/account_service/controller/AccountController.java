@@ -23,7 +23,7 @@ public class AccountController {
         return ResponseEntity.ok(balanceDTO);
     }
 
-    @PostMapping("/depositar")
+    @PostMapping("/{conta}depositar")
     public ResponseEntity<Account> deposit(
             @RequestHeader("X-User-CPF") String authenticatedCpf,
             @Valid @RequestBody TransactionRequestDTO request) {
@@ -32,7 +32,7 @@ public class AccountController {
         return ResponseEntity.ok(updatedAccount);
     }
 
-    @PostMapping("/sacar")
+    @PostMapping("/{conta}sacar")
     public ResponseEntity<Account> withdraw(
             @RequestHeader("X-User-CPF") String authenticatedCpf,
             @Valid @RequestBody TransactionRequestDTO request) {
@@ -41,7 +41,7 @@ public class AccountController {
         return ResponseEntity.ok(updatedAccount);
     }
 
-    @PostMapping("/transferir")
+    @PostMapping("/{conta}transferir")
     public ResponseEntity<Account> transfer(
             @RequestHeader("X-User-CPF") String authenticatedCpf,
             @Valid @RequestBody TransferRequestDTO request) {
