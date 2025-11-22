@@ -51,19 +51,11 @@ export class TransferComponent implements OnDestroy, OnInit {
         timestamp: string;
     } | null = null;
 
-    darkMode: boolean = false;
-
     constructor(
         private clientService: ClientService,
         private contaService: ServiceContaService // Injete o serviço
     ) {}
     ngOnInit(): void {
-        // restaura preferência de tema
-        try {
-            this.darkMode = localStorage.getItem('transfer_dark') === 'true';
-        } catch {
-            this.darkMode = false;
-        }
         // expõe como observable para o template e sincroniza cliente local
         this.cliente$ = this.clientService.getLoggedClient();
         this.sub = this.cliente$.subscribe((c) => {
@@ -81,15 +73,6 @@ export class TransferComponent implements OnDestroy, OnInit {
 
     ngOnDestroy(): void {
         this.sub?.unsubscribe();
-    }
-
-    toggleDarkMode() {
-        this.darkMode = !this.darkMode;
-        try {
-            localStorage.setItem('transfer_dark', String(this.darkMode));
-        } catch {
-            /* noop */
-        }
     }
 
     submit() {
