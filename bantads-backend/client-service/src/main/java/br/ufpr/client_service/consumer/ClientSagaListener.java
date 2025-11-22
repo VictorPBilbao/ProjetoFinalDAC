@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import br.ufpr.client_service.model.Client;
 import br.ufpr.client_service.repository.ClientRepository;
+import br.ufpr.client_service.service.ClientService;
 import br.ufpr.client_service.service.EmailService;
 
 @Component
@@ -24,6 +25,9 @@ public class ClientSagaListener {
 
     @Autowired
     private ClientRepository clientRepository;
+
+    @Autowired
+    private ClientService clientService; // Injetar o Service
 
     @Autowired
     private ObjectMapper mapper;
@@ -82,8 +86,14 @@ public class ClientSagaListener {
         try {
             String nome = (String) payload.get("nome");
             String email = (String) payload.get("email");
+            String cpf = (String) payload.get("cpf"); // Extrair CPF
             String passwordGenerated = (String) payload.get("passwordGenerated");
             String accountNumber = (String) payload.get("accountNumber");
+
+            // Se houver número de conta e CPF, atualiza o cliente
+            if (cpf != null && accountNumber != null) {
+                clientService.updateClientAccount(cpf, accountNumber);
+            }
 
             // Only send email if password was generated (approval case)
             if (passwordGenerated != null && !passwordGenerated.isEmpty()) {
@@ -92,7 +102,7 @@ public class ClientSagaListener {
                 System.out.println("Email de aprovação enviado para: " + email + " com conta: " + accountInfo);
             }
         } catch (Exception ex) {
-            System.err.println("Erro ao enviar email de aprovação: " + ex.getMessage());
+            System.err.println("Erro ao processar criação de auth/conta: " + ex.getMessage());
             ex.printStackTrace();
         }
     }

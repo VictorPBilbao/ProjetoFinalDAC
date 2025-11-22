@@ -22,8 +22,6 @@ const services = {
   query: process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086",
 };
 
-require("dotenv").config();
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -38,19 +36,16 @@ const requireOneOfRoles =
     return res.status(403).json({ error: "Forbidden" });
   };
 
-// GET /clientes: regra por filtro
 const authorizeClientesList = (req, res, next) => {
   const filtro = req.query?.filtro;
   const tipo = req.user?.tipo;
 
-  // Relatório do ADM só para ADMINISTRADOR
   if (filtro === "adm_relatorio_clientes") {
     if (tipo !== "ADMINISTRADOR")
       return res.status(403).json({ error: "Forbidden" });
     return next();
   }
 
-  // Demais listagens: GERENTE/MANAGER ou ADMINISTRADOR
   if (tipo === "GERENTE" || tipo === "MANAGER" || tipo === "ADMINISTRADOR")
     return next();
   return res.status(403).json({ error: "Forbidden" });
@@ -82,14 +77,6 @@ app.use(morgan("dev"));
 // API COMPOSITION LOGIC
 // ============================================
 
-/**
- * R13: Consultar Cliente Detalhado (Agregação)
- * Em uma tela em branco, o gerente deve informar em um campo
-  de texto o CPF, o sistema deve mostrar todos os dados do cliente, incluindo os dados de sua
-  conta (saldo e limite);
- * Combina dados do Client-Service e do Account-Query-Service
- */
-
 app.get(
   "/clientes/:cpf",
   authenticateToken,
@@ -111,6 +98,7 @@ app.get(
         },
       };
 
+      // 1. Busca dados do cliente
       let clientData;
       try {
         const clientResponse = await axiosInstance.get(
@@ -131,11 +119,12 @@ app.get(
           .json({ erro: "Serviço de clientes indisponível" });
       }
 
+      // 2. Busca dados da conta (pode não existir)
       let accountData = null;
       try {
         const accountResponse = await axiosInstance.get(
           `${accountQueryServiceUrl}/query/account-by-cpf/${cpf}`,
-          { headers: { Authorization: authHeader } }
+          config
         );
         accountData = accountResponse.data;
       } catch (accountError) {
@@ -147,6 +136,7 @@ app.get(
         }
       }
 
+      // 3. Composição da resposta
       const composedResponse = {
         id: clientData.id,
         cpf: clientData.cpf,
@@ -159,14 +149,13 @@ app.get(
         cep: clientData.cep,
         salario: clientData.salario,
         status: clientData.status,
-
-        conta: accountData ? accountData.accountNumber : null,
+        conta: accountData?.accountNumber || clientData.conta || null,
         saldo: accountData ? accountData.balance : 0,
-        limite: accountData ? accountData.limit : 0,
+        limite: accountData?.limit ?? clientData.limite ?? 0,
         idGerente: accountData ? accountData.managerId : null,
       };
 
-      res.status(200).json(composedResponse);
+      return res.status(200).json(composedResponse);
     } catch (error) {
       console.error(
         `[API COMPOSITION ERROR] R13 para CPF ${cpf}:`,
@@ -180,129 +169,81 @@ app.get(
   }
 );
 
-/**
- * R14: Consultar Melhores Clientes (Agregação)
- * Consultar 3 melhores clientes - Deve ser apresentada uma tela contendo somente
-  os seus clientes que possuem os 3 maiores saldos em conta, mostrando CPF, Nome, Cidade,
-  Estado, Saldo da conta, ordenado de forma decrescente por saldo;
- * Combina dados do Client-Service e do Account-Query-Service
- */
-// R14: Consultar Melhores Clientes (Top 3 do Gerente)
-app.get(
-  "/relatorio/melhores-clientes",
-  authenticateToken,
-  requireRole("GERENTE", "MANAGER"),
-  async (req, res) => {
-    const managerCpf = req.user?.cpf;
-    const authHeader = req.headers.authorization;
-    const limit = Number(req.query.limit ?? 3);
+// ============================================================
+// ROTA 2: Lista de Melhores Clientes / Ranking (R14)
+// ============================================================
+app.get("/clientes/resumo/top-saldos", authenticateToken, async (req, res) => {
+  const authHeader = req.headers.authorization;
+  const clientServiceUrl =
+    process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+  const accountQueryServiceUrl =
+    process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
 
-    const clientServiceUrl =
-      process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
-    const accountQueryServiceUrl =
-      process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+  const config = {
+    headers: { Authorization: authHeader },
+  };
 
-    const config = { headers: { Authorization: authHeader } };
+  try {
+    const accountsResponse = await axiosInstance.get(
+      `${accountQueryServiceUrl}/query/all-accounts`,
+      config
+    );
+    const accounts = accountsResponse.data;
 
-    try {
-      console.log(
-        `[R14] requesting top ${limit} accounts for manager ${managerCpf}`
-      );
-
-      let accounts = [];
-      try {
-        const resp = await axiosInstance.get(
-          `${accountQueryServiceUrl}/query/top-accounts?managerCpf=${encodeURIComponent(
-            managerCpf
-          )}&limit=${limit}`,
+    const clientPromises = accounts.map((acc) =>
+      axiosInstance
+        .get(
+          `${clientServiceUrl}/clientes/${encodeURIComponent(
+            acc.clientId || acc.clientCpf || acc.client_id
+          )}`,
           config
-        );
-        accounts = Array.isArray(resp.data) ? resp.data : [];
-      } catch (acctErr) {
-        console.warn(`[R14] account-query error:`, acctErr.message);
-        if (acctErr.response?.status === 404) {
-          accounts = [];
-        } else if (acctErr.response) {
-          return res.status(acctErr.response.status).json({
-            erro:
-              acctErr.response.data?.message ||
-              acctErr.response.data ||
-              "Erro no account-query",
-            status: acctErr.response.status,
-          });
-        } else {
-          return res.status(503).json({
-            erro: "Serviço de contas indisponível",
-            status: 503,
-          });
-        }
-      }
-
-      const clientPromises = accounts.map((acc) =>
-        axiosInstance
-          .get(
-            `${clientServiceUrl}/clientes/${encodeURIComponent(
+        )
+        .then((r) => ({ client: r.data, account: acc }))
+        .catch((err) => {
+          console.warn(
+            `[R14] client-service missing for ${
               acc.clientId || acc.clientCpf || acc.client_id
-            )}`,
-            config
-          )
-          .then((r) => ({ client: r.data, account: acc }))
-          .catch((err) => {
-            console.warn(
-              `[R14] client-service missing for ${
-                acc.clientId || acc.clientCpf || acc.client_id
-              }: ${err.message}`
-            );
-            return { client: null, account: acc };
-          })
-      );
-
-      const results = await Promise.all(clientPromises);
-
-      const composed = results
-        .map(({ client, account }) => {
-          const cpf =
-            account.clientId ?? account.clientCpf ?? account.client_id ?? null;
-          const saldoRaw =
-            account.balance ?? account.saldo ?? account.Balance ?? 0;
-          const saldo = Number(saldoRaw ?? 0);
-          return {
-            cpf,
-            nome: client?.nome ?? "(Desconhecido)",
-            cidade: client?.cidade ?? client?.addressCity ?? null,
-            estado: client?.estado ?? client?.state ?? null,
-            saldo: Number(saldo).toFixed(2),
-          };
+            }: ${err.message}`
+          );
+          return { client: null, account: acc };
         })
+    );
 
-        .sort((a, b) => Number(b.saldo) - Number(a.saldo));
+    const results = await Promise.all(clientPromises);
 
-      return res.status(200).json(composed);
-    } catch (error) {
-      console.error("[API COMPOSITION ERROR] R14:", {
-        message: error.message,
-        status: error.response?.status,
-        downstream: error.response?.data,
-      });
-      if (error.response) {
-        return res.status(error.response.status).json(error.response.data);
-      }
-      return res.status(503).json({
-        error: "Serviço indisponível",
-        message: "Falha ao compor dados para R14",
-      });
+    const composed = results
+      .map(({ client, account }) => {
+        const cpf =
+          account.clientId ?? account.clientCpf ?? account.client_id ?? null;
+        const saldoRaw =
+          account.balance ?? account.saldo ?? account.Balance ?? 0;
+        const saldo = Number(saldoRaw ?? 0);
+        return {
+          cpf,
+          nome: client?.nome ?? "(Desconhecido)",
+          cidade: client?.cidade ?? client?.addressCity ?? null,
+          estado: client?.estado ?? client?.state ?? null,
+          saldo: Number(saldo).toFixed(2),
+        };
+      })
+      .sort((a, b) => Number(b.saldo) - Number(a.saldo));
+
+    return res.status(200).json(composed);
+  } catch (error) {
+    console.error("[API COMPOSITION ERROR] R14:", {
+      message: error.message,
+      status: error.response?.status,
+    });
+
+    if (error.response) {
+      return res.status(error.response.status).json(error.response.data);
     }
+    return res.status(503).json({
+      error: "Serviço indisponível",
+      message: "Falha ao compor dados para R14",
+    });
   }
-);
-
-/**
- * R15: Admin Manager Dashboard (Agregação)
- * Apresenta uma tela (pode ser em estilo dashboard)
-  mostrando todos os gerentes do banco, para cada gerente apresenta: quantos clientes
-  possui, a totalização (soma) de saldos positivo (0.0 conta como positivo) e a totalização
-  (soma) de saldos negativos. Deve ser mostrado os gerentes com maiores saldos positivos
-  primeiro;
- */
+});
 
 app.get(
   "/gerentes",
@@ -408,24 +349,12 @@ app.get(
 );
 
 // ============================================
-// HEALTH CHECK ENDPOINT
+// HEALTH CHECK & PROXIES
 // ============================================
 app.get("/health", (req, res) => {
-  res.json({
-    status: "✅ API Gateway is running!",
-    timestamp: new Date().toISOString(),
-    services: {
-      client: process.env.CLIENT_SERVICE_URL,
-      account: process.env.ACCOUNT_SERVICE_URL,
-      manager: process.env.MANAGER_SERVICE_URL,
-      auth: process.env.AUTH_SERVICE_URL,
-    },
-  });
+  res.json({ status: "✅ API Gateway is running!" });
 });
 
-// ============================================
-// SERVICE HEALTH CHECKS (Individual)
-// ============================================
 app.get(
   "/health/auth",
   proxy(process.env.AUTH_SERVICE_URL || "http://localhost:8084")
@@ -443,13 +372,6 @@ app.get(
   proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083")
 );
 
-// ============================================
-// CLIENT SERVICE ROUTES
-// ============================================
-
-// GET /clientes (R09, R12, R14, R16)
-// Esse cara ta puxando os dados agregados para relatorio de clientes, dai depende se é admin ou gerente
-// GET /clientes (R09, R12, R14, R16)
 app.get(
   "/clientes",
   authenticateToken,
@@ -460,12 +382,16 @@ app.get(
     const filtro = req.query.filtro;
     const busca = req.query.busca || "";
 
-    // Skip aggregation for para_aprovar filter - let it pass through to client service
     if (filtro === "para_aprovar") {
       return next();
     }
 
-    if (filtro === "adm_relatorio_clientes" || userRole === "GERENTE") {
+    if (
+      filtro === "adm_relatorio_clientes" ||
+      userRole === "GERENTE" ||
+      userRole === "MANAGER" ||
+      filtro === "melhores_clientes"
+    ) {
       const authHeader = req.headers.authorization;
       const config = { headers: { Authorization: authHeader } };
 
@@ -477,10 +403,10 @@ app.get(
         process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
 
       try {
-        console.log(`[Gateway] Agregando dados para ${userRole}...`);
+        console.log(
+          `[Gateway] Agregando dados para ${userRole}, filtro: ${filtro}`
+        );
 
-        // ✅ REMOVIDO: ?gerente=${userCpf}
-        // Client-service retorna TODOS os clientes
         let urlClientes = `${clientUrl}/clientes/listar`;
         if (busca) {
           urlClientes += `?busca=${encodeURIComponent(busca)}`;
@@ -500,22 +426,6 @@ app.get(
           ? accountsResp.data
           : [];
 
-        // ✅ Se for GERENTE, filtra no Gateway baseado nas contas
-        if (userRole === "GERENTE" || userRole === "MANAGER") {
-          const myCpfsSet = new Set();
-          accounts.forEach((acc) => {
-            const managerId = String(acc.managerId || acc.managerCpf || "");
-            if (managerId === userCpf) {
-              const clientCpf = acc.clientId || acc.clientCpf;
-              if (clientCpf) myCpfsSet.add(clientCpf);
-            }
-          });
-          clients = clients.filter((c) => myCpfsSet.has(c.cpf));
-          console.log(
-            `[Gateway] Gerente ${userCpf} tem ${clients.length} clientes`
-          );
-        }
-
         const accountMap = new Map();
         accounts.forEach((acc) => {
           const cpf = acc.clientId || acc.clientCpf;
@@ -528,12 +438,15 @@ app.get(
           if (mgr.id) managerMap.set(String(mgr.id), mgr);
         });
 
-        const relatorio = clients.map((client) => {
+        let relatorio = clients.map((client) => {
           const conta = accountMap.get(client.cpf);
 
           let gerente = null;
           if (conta && conta.managerId) {
             gerente = managerMap.get(String(conta.managerId));
+          }
+          if (!gerente && conta && conta.managerCpf) {
+            gerente = managerMap.get(conta.managerCpf);
           }
 
           return {
@@ -543,17 +456,22 @@ app.get(
             salario: client.salario,
             cidade: client.cidade,
             estado: client.estado,
-
-            numeroConta: conta ? conta.accountNumber : null,
-            saldo: conta ? conta.balance : 0,
-            limite: conta ? conta.limit : 0,
+            numeroConta: conta ? conta.accountNumber : client.conta || null,
+            saldo: conta ? conta.balance || conta.saldo || 0 : 0,
+            limite:
+              conta && conta.limit != null ? conta.limit : client.limite || 0,
 
             cpfGerente: gerente ? gerente.cpf : null,
             nomeGerente: gerente ? gerente.nome : "Não Atribuído",
           };
         });
 
-        relatorio.sort((a, b) => a.nome.localeCompare(b.nome));
+        if (filtro === "melhores_clientes") {
+          relatorio.sort((a, b) => Number(b.saldo) - Number(a.saldo));
+          relatorio = relatorio.slice(0, 3);
+        } else {
+          relatorio.sort((a, b) => a.nome.localeCompare(b.nome));
+        }
 
         return res.json(relatorio);
       } catch (error) {
@@ -1054,39 +972,39 @@ app.use((req, res) => {
 // ============================================
 app.listen(PORT, () => {
   console.log("\n🚀 =============================================");
-  console.log(`   BANTADS API GATEWAY`);
-  console.log("   =============================================");
-  console.log(`   📍 Running on: http://localhost:${PORT}`);
-  console.log(`   🕐 Started at: ${new Date().toLocaleString("pt-BR")}`);
-  console.log("   =============================================");
+  console.log(`   BANTADS API GATEWAY`);
+  console.log("   =============================================");
+  console.log(`   📍 Running on: http://localhost:${PORT}`);
+  console.log(`   🕐 Started at: ${new Date().toLocaleString("pt-BR")}`);
+  console.log("   =============================================");
   console.log("\n📡 Microservices Configuration:");
   console.log(
-    `   • Client Service:  ${
+    `   • Client Service:  ${
       process.env.CLIENT_SERVICE_URL || "http://localhost:8081"
     }`
   );
   console.log(
-    `   • Account Service: ${
+    `   • Account Service: ${
       process.env.ACCOUNT_SERVICE_URL || "http://localhost:8082"
     }`
   );
   console.log(
-    `   • Manager Service: ${
+    `   • Manager Service: ${
       process.env.MANAGER_SERVICE_URL || "http://localhost:8083"
     }`
   );
   console.log(
-    `   • Auth Service:    ${
+    `   • Auth Service:    ${
       process.env.AUTH_SERVICE_URL || "http://localhost:8084"
     }`
   );
   console.log(
-    `   • Saga Service:    ${
+    `   • Saga Service:    ${
       process.env.SAGA_ORCHESTRATOR_URL || "http://localhost:8085"
     }`
   );
   console.log(
-    `   • Auth Service:    ${
+    `   • Auth Service:    ${
       process.env.AUTH_SERVICE_URL || "http://localhost:8084"
     }`
   );

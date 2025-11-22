@@ -57,16 +57,13 @@ public class CqrsRabbitConfig {
 
     @Bean
     public Binding bindAccountUpdate(Queue accountUpdateQueue, TopicExchange accountEventsExchange) {
-        return BindingBuilder.bind(accountUpdateQueue).to(accountEventsExchange).with(accountUpdateKey);
-    }
-
-    @Bean
-    public Binding bindAccountCreated(Queue accountUpdateQueue, TopicExchange accountEventsExchange) {
-        return BindingBuilder.bind(accountUpdateQueue).to(accountEventsExchange).with("account.created");
+        // CORREÇÃO CRÍTICA: Usar "account.#" para capturar "account.updated" e "account.created"
+        return BindingBuilder.bind(accountUpdateQueue).to(accountEventsExchange).with("account.#");
     }
 
     @Bean
     public Binding bindTransactionCreated(Queue transactionCreatedQueue, TopicExchange accountEventsExchange) {
-        return BindingBuilder.bind(transactionCreatedQueue).to(accountEventsExchange).with(transactionCreatedKey);
+        // CORREÇÃO: Fixar "transaction.created" para garantir match exato com o produtor
+        return BindingBuilder.bind(transactionCreatedQueue).to(accountEventsExchange).with("transaction.created");
     }
 }

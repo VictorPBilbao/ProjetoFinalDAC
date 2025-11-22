@@ -435,7 +435,7 @@
             "in": "path",
             "description": "CPF do cliente a ser aprovado",
             "required": true,
-            "example": "12225276935",
+            "example": "55566677788",
             "schema": {
               "type": "string"
             }
