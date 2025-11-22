@@ -32,12 +32,12 @@
 						<div class="form-grid">
 							<div class="form-group">
 								<label for="agencia">Agência</label>
-								<input id="agencia" type="text" formControlName="agencia" />
+								<input id="agencia" type="text" formControlName="agencia" readonly />
 								<small class="error" *ngIf="form.get('agencia')?.touched && form.get('agencia')?.invalid">Informe a agência.</small>
 							</div>
 							<div class="form-group">
 								<label for="conta">Conta Corrente</label>
-								<input id="conta" type="text" formControlName="conta" />
+								<input id="conta" type="text" formControlName="conta" readonly />
 								<small class="error" *ngIf="form.get('conta')?.touched && form.get('conta')?.invalid">Informe a conta.</small>
 							</div>
 							<div class="form-group">

@@ -51,21 +51,18 @@ export class UserDetailsComponent implements OnInit {
             return;
         }
 
-        // Find client by email from logged user
-        this.clientService.getClients().subscribe({
-            next: (clients) => {
-                const userClient = clients.find(
-                    (c) => c.email === loggedUser.cpf
-                );
-                if (userClient) {
+        // Buscar dados do cliente logado usando o CPF
+        this.clientService.getLoggedClient().subscribe({
+            next: (cliente) => {
+                if (cliente) {
                     // Ensure client has all required fields with defaults if missing
                     this.cliente = {
-                        ...userClient,
-                        agencia: userClient.agencia || 'Pendente',
-                        conta: userClient.conta || 'Pendente',
-                        saldo: userClient.saldo || 0,
-                        limite: userClient.limite || 0,
-                        manager: userClient.manager || {
+                        ...cliente,
+                        agencia: cliente.agencia || 'Pendente',
+                        conta: cliente.conta || 'Pendente',
+                        saldo: cliente.saldo || 0,
+                        limite: cliente.limite || 0,
+                        manager: cliente.manager || {
                             id: '',
                             name: 'Aguardando designação',
                             cpf: '',
@@ -206,33 +203,45 @@ export class UserDetailsComponent implements OnInit {
         const valores = this.form.getRawValue(); // inclui CPF desabilitado
         const salarioAnterior = this.cliente.salario;
 
-        // Cria um cliente atualizado
-        const clienteAtualizado: Cliente = {
-            ...this.cliente,
+        // Cria payload compatível com ClientDTO do backend
+        const payload = {
+            cpf: valores.cpf,
             nome: valores.nome,
             email: valores.email,
             telefone: valores.telefone,
             salario: valores.salario,
-            endereco: { ...valores.endereco },
+            endereco: `${valores.endereco.tipo} ${valores.endereco.logradouro}, ${valores.endereco.numero}${valores.endereco.complemento ? ', ' + valores.endereco.complemento : ''}`,
+            cep: valores.endereco.cep.replace(/\D/g, ''), // Remove formatação
+            cidade: valores.endereco.cidade,
+            estado: valores.endereco.estado,
+            conta: this.cliente.conta
         };
 
         // Regra de recálculo de limite quando salário muda
-        if (salarioAnterior !== clienteAtualizado.salario) {
-            let novoLimite = this.calcularLimite(clienteAtualizado.salario);
+        if (salarioAnterior !== payload.salario) {
+            let novoLimite = this.calcularLimite(payload.salario);
             // Se o novo limite for menor que o saldo negativo atual, ajusta
             if (
-                clienteAtualizado.saldo < 0 &&
-                novoLimite < Math.abs(clienteAtualizado.saldo)
+                this.cliente.saldo < 0 &&
+                novoLimite < Math.abs(this.cliente.saldo)
             ) {
-                novoLimite = Math.abs(clienteAtualizado.saldo);
+                novoLimite = Math.abs(this.cliente.saldo);
             }
-            clienteAtualizado.limite = novoLimite;
+            // Note: limite não é enviado no payload, pois é calculado no backend
         }
 
         // Persiste as mudanças
-        this.clientService.updateClient(clienteAtualizado).subscribe({
+        this.clientService.updateClient(this.cliente, payload).subscribe({
             next: (response) => {
-                this.cliente = clienteAtualizado;
+                // Atualiza o cliente local com os novos valores
+                this.cliente = {
+                    ...this.cliente,
+                    nome: payload.nome,
+                    email: payload.email,
+                    telefone: payload.telefone,
+                    salario: payload.salario,
+                    endereco: valores.endereco
+                };
                 this.saved = true;
                 this.editMode = false;
                 console.log(

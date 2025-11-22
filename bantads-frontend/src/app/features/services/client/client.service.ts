@@ -91,16 +91,30 @@ export class ClientService {
             .pipe(catchError((err) => throwError(() => err)));
     }
 
-    updateClient(updatedClient: Cliente): Observable<any> {
-        const cpf = updatedClient.cpf;
+    updateClient(cliente: Cliente, payload?: any): Observable<any> {
+        const cpf = cliente.cpf;
         const token = this.authService.getToken();
         let headers = new HttpHeaders();
         if (token) {
             headers = headers.set('Authorization', token);
         }
 
+        // Se payload for fornecido, use-o; senão, crie um payload compatível com ClientDTO
+        const dataToSend = payload || {
+            cpf: cliente.cpf,
+            nome: cliente.nome,
+            email: cliente.email,
+            telefone: cliente.telefone,
+            salario: cliente.salario,
+            endereco: `${cliente.endereco.tipo} ${cliente.endereco.logradouro}, ${cliente.endereco.numero}${cliente.endereco.complemento ? ', ' + cliente.endereco.complemento : ''}`,
+            cep: cliente.endereco.cep.replace(/\D/g, ''),
+            cidade: cliente.endereco.cidade,
+            estado: cliente.endereco.estado,
+            conta: cliente.conta
+        };
+
         return this.http
-            .put(`${this.apiUrl}/clientes/${cpf}`, updatedClient, { headers })
+            .put(`${this.apiUrl}/clientes/${cpf}`, dataToSend, { headers })
             .pipe(catchError((err) => throwError(() => err)));
     }
 

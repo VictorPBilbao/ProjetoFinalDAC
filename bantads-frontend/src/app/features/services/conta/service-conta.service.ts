@@ -22,7 +22,7 @@ export class ServiceContaService {
         const token = this.authService.getToken();
         const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
         return this.http.post(`${API_URL}/contas/${numeroConta}/depositar`, {
-            amount: valor,
+            valor: valor,
         }, { headers });
     }
 
@@ -30,7 +30,7 @@ export class ServiceContaService {
         const token = this.authService.getToken();
         const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
         return this.http.post(`${API_URL}/contas/${numeroConta}/sacar`, {
-            amount: valor,
+            valor: valor,
         }, { headers });
     }
 
@@ -44,8 +44,8 @@ export class ServiceContaService {
         return this.http.post(
             `${API_URL}/contas/${numeroContaOrigem}/transferir`,
             {
-                destinationAccountNumber: numeroContaDestino,
-                amount: valor,
+                destino: numeroContaDestino,
+                valor: valor,
             },
             { headers }
         );

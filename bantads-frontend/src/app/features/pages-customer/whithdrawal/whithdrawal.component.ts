@@ -41,6 +41,13 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
             .getLoggedClient()
             .subscribe((client) => {
                 this.cliente = client ?? null;
+                // Preenche automaticamente os campos de agência e conta
+                if (this.cliente) {
+                    this.form.patchValue({
+                        agencia: this.cliente.agencia,
+                        conta: this.cliente.conta
+                    });
+                }
             });
     }
 
@@ -49,8 +56,8 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
     }
 
     form: FormGroup = this.fb.group({
-        agencia: ['', [Validators.required]],
-        conta: ['', [Validators.required]],
+        agencia: [{ value: '', disabled: true }, [Validators.required]],
+        conta: [{ value: '', disabled: true }, [Validators.required]],
         valor: [
             null as number | null,
             [Validators.required, Validators.min(0.01)],
@@ -61,17 +68,24 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
 
     submit() {
         this.message = null;
-        if (this.form.invalid) {
+        if (this.form.invalid || !this.cliente) {
             this.form.markAllAsTouched();
             return;
         }
-        const { conta, valor } = this.form.value;
+        const { valor } = this.form.value;
+
+        // Usa o número da conta do cliente logado
+        const numeroConta = this.cliente.conta;
 
         // Integração com Backend (Validação de saldo/limite ocorre no servidor)
-        this.contaService.sacar(conta, Number(valor)).subscribe({
+        this.contaService.sacar(numeroConta, Number(valor)).subscribe({
             next: () => {
                 this.message = { type: 'success', text: 'Saque realizado com sucesso.' };
                 this.form.patchValue({ valor: null });
+                // Atualiza os dados do cliente após o saque
+                this.clientService.getLoggedClient().subscribe((updatedClient) => {
+                    this.cliente = updatedClient ?? null;
+                });
             },
             error: (err) => {
                 // O backend retorna 400 se não houver saldo/limite

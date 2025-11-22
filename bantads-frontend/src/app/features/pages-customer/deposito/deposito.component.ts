@@ -32,11 +32,20 @@ export class DepositoComponent {
         this.cliente$ = this.clientService
             .getLoggedClient()
             .pipe(map((c) => c ?? null));
-        this.sub = this.cliente$.subscribe((c) => (this.cliente = c));
+        this.sub = this.cliente$.subscribe((c) => {
+            this.cliente = c;
+            // Preenche automaticamente os campos de agência e conta
+            if (this.cliente) {
+                this.form.patchValue({
+                    agencia: this.cliente.agencia,
+                    conta: this.cliente.conta
+                });
+            }
+        });
         this.lastAccess$ = this.clientService.getLastAccess();
         this.form = this.fb.group({
-            agencia: [this.cliente?.agencia ?? '', [Validators.required]],
-            conta: [this.cliente?.conta ?? '', [Validators.required]],
+            agencia: [{ value: '', disabled: true }, [Validators.required]],
+            conta: [{ value: '', disabled: true }, [Validators.required]],
             valor: [
                 null as number | null,
                 [Validators.required, Validators.min(0.01)],
@@ -58,7 +67,7 @@ export class DepositoComponent {
             return;
         }
 
-        const { agencia, conta, valor } = this.form.value as {
+        const { valor } = this.form.value as {
             agencia: string;
             conta: string;
             valor: number;
@@ -69,44 +78,49 @@ export class DepositoComponent {
             return;
         }
 
-        if (agencia !== this.cliente.agencia || conta !== this.cliente.conta) {
-            this.message = {
-                type: 'error',
-                text: 'Informe a sua agência e conta corretas para depósito.',
-            };
-            return;
-        }
-
+        // Atualiza o saldo localmente para feedback imediato
         const updated: Cliente = {
             ...this.cliente,
             saldo: (this.cliente.saldo ?? 0) + Number(valor),
         };
 
-        this.clientService?.updateClient(updated);
+        // Chama o serviço do backend para fazer o depósito
+        this.clientService.updateClient(updated).subscribe({
+            next: () => {
+                // Atualiza os dados do cliente após o depósito
+                this.clientService.getLoggedClient().subscribe((updatedClient) => {
+                    this.cliente = updatedClient ?? null;
+                });
 
-        const tx: Transaction = {
-            id: crypto.randomUUID
-                ? crypto.randomUUID()
-                : Math.random().toString(36).substring(2), // Gera um id único
-            clientId: updated.id,
-            dateTime: new Date(),
-            operation: 'Deposito',
-            fromOrToClient: updated.nome ?? updated.email,
-            amount: Number(valor),
-        };
-        try {
-            this.cli.addTransaction(tx);
-        } catch (e) {
-            console.warn('Não foi possível registrar transação', e);
-        }
+                const tx: Transaction = {
+                    id: crypto.randomUUID
+                        ? crypto.randomUUID()
+                        : Math.random().toString(36).substring(2),
+                    clientId: updated.id,
+                    dateTime: new Date(),
+                    operation: 'Deposito',
+                    fromOrToClient: updated.nome ?? updated.email,
+                    amount: Number(valor),
+                };
+                try {
+                    this.cli.addTransaction(tx);
+                } catch (e) {
+                    console.warn('Não foi possível registrar transação', e);
+                }
 
-        this.message = {
-            type: 'success',
-            text: `Depósito de R$ ${Number(valor).toFixed(
-                2
-            )} realizado com sucesso.`,
-        };
-        this.form.patchValue({ valor: null });
+                this.message = {
+                    type: 'success',
+                    text: `Depósito de R$ ${Number(valor).toFixed(
+                        2
+                    )} realizado com sucesso.`,
+                };
+                this.form.patchValue({ valor: null });
+            },
+            error: (err) => {
+                const msg = err.error?.message || 'Erro ao realizar depósito.';
+                this.message = { type: 'error', text: msg };
+            }
+        });
     }
 
     resetForm() {

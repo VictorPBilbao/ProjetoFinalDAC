@@ -35,8 +35,8 @@ export class TransferComponent implements OnDestroy, OnInit {
     private sub?: Subscription;
 
     form: FormGroup = this.fb.group({
-        agencia: ['', [Validators.required]],
-        conta: ['', [Validators.required]],
+        agencia: [{ value: '', disabled: true }, [Validators.required]],
+        conta: [{ value: '', disabled: true }, [Validators.required]],
         contaDestino: ['', [Validators.required]],
         valor: [
             null as number | null,
