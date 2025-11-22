@@ -311,8 +311,7 @@ app.get(
 
                 const dashboard = managers.map((mgr) => {
                     const mgrAccounts = accounts.filter(
-                        (acc) =>
-                            String(acc.managerId) === String(mgr.id) || acc.managerCpf === mgr.cpf
+                        (acc) => String(acc.managerId) === String(mgr.id)
                     );
 
                     let totalPos = 0;
@@ -320,7 +319,7 @@ app.get(
                     const clientesDoGerente = [];
 
                     mgrAccounts.forEach((acc) => {
-                        const saldo = Number(acc.balance || acc.saldo || 0);
+                        const saldo = Number(acc.balance || 0);
 
                         if (saldo >= 0) {
                             totalPos += saldo;
@@ -328,7 +327,7 @@ app.get(
                             totalNeg += saldo;
                         }
 
-                        const clientInfo = clientsMap.get(acc.clientId || acc.clientCpf);
+                        const clientInfo = clientsMap.get(acc.clientId);
 
                         if (clientInfo) {
                             clientesDoGerente.push({
@@ -341,9 +340,11 @@ app.get(
 
                     return {
                         gerente: {
+                            id: mgr.id,
                             cpf: mgr.cpf,
                             nome: mgr.nome,
                             email: mgr.email,
+                            telefone: mgr.telefone,
                         },
                         clientes: clientesDoGerente,
                         saldo_positivo: Number(totalPos.toFixed(2)),
