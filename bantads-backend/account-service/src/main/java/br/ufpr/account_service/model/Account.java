@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,12 +35,15 @@ public class Account {
     private String clientId;
 
     @Column(name = "account_number", nullable = false, length = 20, unique = true)
+    @JsonProperty("conta")
     private String accountNumber;
 
     @Column(name = "creation_date", nullable = false)
+    @JsonProperty("data")
     private LocalDateTime creationDate;
 
     @Column(name = "balance", nullable = false)
+    @JsonProperty("saldo")
     private BigDecimal balance;
 
     @Column(name = "account_limit", nullable = false)

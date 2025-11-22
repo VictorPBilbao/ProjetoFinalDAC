@@ -1,14 +1,21 @@
 package br.ufpr.account_service.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import br.ufpr.account_service.dto.BalanceDTO;
 import br.ufpr.account_service.dto.TransactionRequestDTO;
 import br.ufpr.account_service.dto.TransferRequestDTO;
 import br.ufpr.account_service.model.Account;
 import br.ufpr.account_service.service.AccountService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/contas")
@@ -23,12 +30,13 @@ public class AccountController {
         return ResponseEntity.ok(balanceDTO);
     }
 
-    @PostMapping("/depositar")
+    @PostMapping("/{id}/depositar")
     public ResponseEntity<Account> deposit(
+            @PathVariable("id") String id,
             @RequestHeader("X-User-CPF") String authenticatedCpf,
             @Valid @RequestBody TransactionRequestDTO request) {
 
-        Account updatedAccount = accountService.deposit(authenticatedCpf, request.getAmount());
+        Account updatedAccount = accountService.deposit(authenticatedCpf, request.getValor());
         return ResponseEntity.ok(updatedAccount);
     }
 
@@ -37,7 +45,7 @@ public class AccountController {
             @RequestHeader("X-User-CPF") String authenticatedCpf,
             @Valid @RequestBody TransactionRequestDTO request) {
 
-        Account updatedAccount = accountService.withdraw(authenticatedCpf, request.getAmount());
+        Account updatedAccount = accountService.withdraw(authenticatedCpf, request.getValor());
         return ResponseEntity.ok(updatedAccount);
     }
 
@@ -49,7 +57,7 @@ public class AccountController {
         Account updatedAccount = accountService.transfer(
                 authenticatedCpf,
                 request.getDestinationAccountNumber(),
-                request.getAmount());
+                request.getValor());
         return ResponseEntity.ok(updatedAccount);
     }
 
@@ -57,7 +65,7 @@ public class AccountController {
     public ResponseEntity<Boolean> rebootAccounts() {
         try {
             accountService.rebootAccounts();
-            return ResponseEntity.status(200).body(true);     
+            return ResponseEntity.status(200).body(true);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(false);
         }

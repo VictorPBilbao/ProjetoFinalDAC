@@ -3,6 +3,7 @@ package br.ufpr.account_service.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,8 +18,7 @@ import br.ufpr.account_service.model.Account;
 import br.ufpr.account_service.model.Transaction;
 import br.ufpr.account_service.repository.AccountRepository;
 import br.ufpr.account_service.repository.TransactionRepository;
-import java.util.Map;
-import java.util.HashMap;
+
 @Service
 public class AccountService {
 
@@ -40,8 +40,14 @@ public class AccountService {
 
     @Transactional
     public Account deposit(String clientCpf, BigDecimal amount) {
+
+        System.out.println(">>> DEBUG DEPOSIT: Iniciando deposito para CPF: " + clientCpf);
+        System.out.println(">>> DEBUG DEPOSIT: Valor recebido (amount): " + amount);
+
         Account account = findAccountByClientCpf(clientCpf);
         account.setBalance(account.getBalance().add(amount));
+
+        System.out.println(">>> DEBUG DEPOSIT: Saldo anterior: " + account.getBalance());
 
         Transaction tx = new Transaction();
         tx.setAccount(account);
@@ -51,6 +57,8 @@ public class AccountService {
         transactionRepository.save(tx);
 
         Account savedAccount = accountRepository.save(account);
+
+        System.out.println(">>> DEBUG DEPOSIT: Saldo apos save(): " + savedAccount.getBalance());
 
         publishCqrsEvent("account.updated", savedAccount);
         publishCqrsEvent("transaction.created", tx);
@@ -149,7 +157,7 @@ public class AccountService {
 
     public void publishCqrsEvent(String routingKey, Object event) {
         Object payload = event;
-        
+
         if (event instanceof Account) {
             Account a = (Account) event;
             Map<String, Object> map = new HashMap<>();
@@ -157,7 +165,7 @@ public class AccountService {
             map.put("clientCpf", a.getClientId());
             map.put("numero", a.getAccountNumber());
             map.put("saldo", a.getBalance());
-            map.put("limite", a.getAccountLimit()); 
+            map.put("limite", a.getAccountLimit());
             map.put("managerCpf", a.getManager());
             map.put("dataCriacao", a.getCreationDate());
             payload = map;
@@ -167,7 +175,7 @@ public class AccountService {
             map.put("id", t.getId());
             map.put("dataHora", t.getTimestamp());
             map.put("tipo", t.getType());
-            map.put("valor", t.getAmount()); 
+            map.put("valor", t.getAmount());
             map.put("origemCpf", t.getOriginClientId());
             map.put("destinoCpf", t.getDestinationClientId());
             payload = map;
