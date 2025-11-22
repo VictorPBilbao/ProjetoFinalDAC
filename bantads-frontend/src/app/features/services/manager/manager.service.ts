@@ -59,7 +59,7 @@ export class ManagerService {
         const token = this.authService.getToken();
 
         return this.http
-            .get<any[]>(`${this.apiUrl}/relatorio/melhores-clientes`, {
+            .get<any[]>(`${this.apiUrl}/clientes?filtro=melhores_clientes`, {
                 headers: token ? { Authorization: token } : {},
             })
             .pipe(
