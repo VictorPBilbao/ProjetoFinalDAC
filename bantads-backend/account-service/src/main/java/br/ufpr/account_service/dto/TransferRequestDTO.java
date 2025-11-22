@@ -16,6 +16,7 @@ public class TransferRequestDTO {
     private BigDecimal valor;
 
     @NotEmpty(message = "A conta de destino é obrigatória")
+    @JsonProperty("destino")
     private String destinationAccountNumber;
 
     public BigDecimal getValor() {
