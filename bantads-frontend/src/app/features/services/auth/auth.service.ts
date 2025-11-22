@@ -21,9 +21,9 @@ export class AuthService {
   private USER_KEY = 'auth_user';
 
   constructor(private http: HttpClient) {}
-
-  login(login: string, senha: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { login, senha }).pipe(
+ 
+  login(usuario: string, senha: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { login: usuario, senha }).pipe(
       tap(resp => {
         if (resp?.access_token) {
           const token = resp.access_token.startsWith('Bearer') ? resp.access_token : `Bearer ${resp.access_token}`;
@@ -74,7 +74,7 @@ export class AuthService {
 
   isAuthenticated(): Observable<boolean> {
     const token = this.getToken();
-    
+
     if (!token) {
         return of(false);
     }
