@@ -67,18 +67,20 @@ public class CqrsListener {
             }
 
             if (dataCriacaoObj != null) {
-                if (dataCriacaoObj instanceof Date) {
+                if (dataCriacaoObj instanceof String) {
+                    try {
+                        view.setCreationDate(LocalDateTime.parse((String) dataCriacaoObj));
+                    } catch (Exception e) {
+                        System.err.println("Erro parse data: " + e.getMessage());
+                    }
+                } else if (dataCriacaoObj instanceof Date) {
                     view.setCreationDate(((Date) dataCriacaoObj).toInstant()
                             .atZone(ZoneId.systemDefault()).toLocalDateTime());
-                } else if (dataCriacaoObj instanceof LocalDateTime) {
-                    view.setCreationDate((LocalDateTime) dataCriacaoObj);
-                } else if (dataCriacaoObj instanceof String) {
-                    view.setCreationDate(LocalDateTime.parse((String) dataCriacaoObj));
                 }
             }
 
             accountViewRepository.save(view);
-            System.out.println("Account view saved: " + view.getClientId() + " - " + view.getAccountNumber());
+            System.out.println("Account view saved/updated: " + view.getClientId());
         } catch (Exception e) {
             System.err.println("Error processing account update: " + e.getMessage());
             e.printStackTrace();
@@ -87,30 +89,47 @@ public class CqrsListener {
 
     @RabbitListener(queues = "transaction-created-queue")
     public void onTransaction(TransactionMessageDTO txDto) {
-        TransactionView txView = new TransactionView();
+        try {
+            TransactionView txView = new TransactionView();
 
-        if (txDto.getDataHora() != null) {
-            txView.setTimestamp(txDto.getDataHora().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
-        }
-        txView.setType(txDto.getTipo());
-        txView.setAmount(BigDecimal.valueOf(txDto.getValor()));
-        txView.setOriginClientId(txDto.getOrigemCpf());
-        txView.setDestinationClientId(txDto.getDestinoCpf());
-
-        String cpfDaConta = txDto.getOrigemCpf();
-        if ("DEPOSITO".equals(txDto.getTipo())) {
-            cpfDaConta = txDto.getDestinoCpf();
-        }
-
-        if (cpfDaConta != null) {
-            Optional<AccountView> accountViewOpt = accountViewRepository.findByClientId(cpfDaConta);
-
-            if (accountViewOpt.isPresent()) {
-                txView.setAccountId(accountViewOpt.get().getId());
-                transactionViewRepository.save(txView);
+            if (txDto.getDataHora() != null) {
+                txView.setTimestamp(LocalDateTime.parse(txDto.getDataHora()));
             } else {
-
+                txView.setTimestamp(LocalDateTime.now());
             }
+
+            txView.setType(txDto.getTipo());
+            txView.setAmount(BigDecimal.valueOf(txDto.getValor()));
+            txView.setOriginClientId(txDto.getOrigemCpf());
+            txView.setDestinationClientId(txDto.getDestinoCpf());
+
+            String cpfDaConta = txDto.getOrigemCpf();
+
+            if ("DEPOSITO".equals(txDto.getTipo()) || "TRANSFERENCIA_RECEBIDA".equals(txDto.getTipo())) {
+                cpfDaConta = txDto.getDestinoCpf();
+            }
+
+            if (cpfDaConta != null) {
+                Optional<AccountView> accountViewOpt = accountViewRepository.findByClientId(cpfDaConta);
+
+                if (accountViewOpt.isPresent()) {
+                    txView.setAccountId(accountViewOpt.get().getId());
+                    transactionViewRepository.save(txView);
+                    System.out.println("CQRS: Transaction saved for account CPF: " + cpfDaConta);
+                } else {
+                    String msg = "CQRS: Account not found for CPF " + cpfDaConta
+                            + ". Event might have arrived before Account creation. Retrying...";
+                    System.err.println(msg);
+                    throw new RuntimeException(msg);
+                }
+            } else {
+                System.err.println("CQRS: Owner CPF is null for transaction type " + txDto.getTipo());
+            }
+        } catch (RuntimeException re) {
+            throw re;
+        } catch (Exception e) {
+            System.err.println("Error saving transaction view: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

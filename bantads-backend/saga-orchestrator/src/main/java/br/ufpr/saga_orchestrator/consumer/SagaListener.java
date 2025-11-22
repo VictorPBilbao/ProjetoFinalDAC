@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import br.ufpr.saga_orchestrator.service.SagaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 @Component
 public class SagaListener {
@@ -19,6 +21,9 @@ public class SagaListener {
 
     private final SagaService saga;
     private final ObjectMapper mapper;
+
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     public SagaListener(SagaService saga, ObjectMapper mapper) {
         this.saga = saga;
@@ -76,6 +81,16 @@ public class SagaListener {
             String nome = getString(payload, "nome");
             String accountNumber = "";
             String limit = "";
+            String tipo = getString(payload, "tipo");
+
+            if ("GERENTE".equalsIgnoreCase(tipo)) {
+                log.info("Novo gerente detectado: {}. Enviando para account-service.", cpf);
+                // Envia para uma fila específica de criação de gerente
+                rabbitTemplate.convertAndSend("saga.exchange", "account.crud-manager.created", payload, m -> {
+                    m.getMessageProperties().setCorrelationId(correlationId);
+                    return m;
+                });
+            }
 
             if (payload.containsKey("accountNumber")) {
                 accountNumber = String.valueOf(payload.get("accountNumber"));
@@ -89,6 +104,54 @@ public class SagaListener {
         } catch (Exception ex) {
             log.error("Erro ao processar auth.created: {}", ex.getMessage());
             saga.notifyGatewayFailure(correlationId, "Erro ao processar autenticação: " + ex.getMessage(), 500);
+        }
+    }
+
+    /**
+     * Novo Listener para receber a confirmação do Account Service
+     * Configure a fila no application.properties: rabbit.saga.manager.processed.queue
+     */
+    @RabbitListener(queues = "${rabbit.saga.manager.processed.queue:saga-manager-processed-queue}")
+    public void onManagerAccountProcessed(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            
+            String transferredAccount = getString(payload, "transferredAccount");
+            String msg = getString(payload, "message");
+
+            log.info("Processo de conta do gerente finalizado. CorrelationId={}", correlationId);
+            log.info("Resultado: {} | Conta Transferida: {}", msg, transferredAccount);
+
+            // Aqui você chama o serviço do saga para finalizar o estado, se tiver persistência
+            // Exemplo: saga.finalizeManagerCreation(correlationId, payload);
+            
+            // Se não tiver persistência de estado no Saga, apenas logar ou notificar o Gateway
+            saga.notifyGatewaySuccess(correlationId, 
+                getString(payload, "cpf"), 
+                getString(payload, "nome"), 
+                transferredAccount != null ? transferredAccount : "",
+                ""
+            );
+
+        } catch (Exception ex) {
+            log.error("Erro ao processar resposta de manager account: {}", ex.getMessage());
+        }
+    }
+    
+    // Opcional: Listener de falha específico do fluxo de gerente
+    @RabbitListener(queues = "${rabbit.saga.manager.account.failed.queue:saga-manager-account-failed-queue}")
+    public void onManagerAccountFailed(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+             String reason = getString(payload, "reason");
+             log.error("Falha no processamento de conta de gerente. CorrelationId={} Reason={}", correlationId, reason);
+             
+             // Notifica erro
+             saga.notifyGatewayFailure(correlationId, "Erro ao vincular contas ao gerente: " + reason, 500);
+        } catch (Exception e) {
+            log.error("Erro fatal listener fail manager", e);
         }
     }
 

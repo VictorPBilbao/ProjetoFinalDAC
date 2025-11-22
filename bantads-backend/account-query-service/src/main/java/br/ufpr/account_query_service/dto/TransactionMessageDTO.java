@@ -7,7 +7,7 @@ public class TransactionMessageDTO {
     private String origemCpf;
     private String destinoCpf;
     private double valor;
-    private java.util.Date dataHora;
+    private String dataHora;
     private String accountId;
 
     public String getId() {
@@ -50,11 +50,11 @@ public class TransactionMessageDTO {
         this.valor = valor;
     }
 
-    public java.util.Date getDataHora() {
+    public String getDataHora() {
         return dataHora;
     }
 
-    public void setDataHora(java.util.Date dataHora) {
+    public void setDataHora(String dataHora) {
         this.dataHora = dataHora;
     }
 
