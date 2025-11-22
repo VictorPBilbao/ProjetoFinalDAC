@@ -1,30 +1,37 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Record as ContaRecord } from '../../models/record.model';
 import { Transaction } from '../../models/transaction.model';
+import { AuthService } from '../auth/auth.service';
 
 const API_URL = 'http://localhost:3000';
 
 @Injectable({ providedIn: 'root' })
 export class ServiceContaService {
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient, private authService: AuthService) {}
 
     getMinhaConta(): Observable<any> {
-        return this.http.get(`${API_URL}/query/my-account`);
+        const token = this.authService.getToken();
+        const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
+        return this.http.get(`${API_URL}/query/my-account`, { headers });
     }
 
     depositar(numeroConta: string, valor: number): Observable<any> {
+        const token = this.authService.getToken();
+        const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
         return this.http.post(`${API_URL}/contas/${numeroConta}/depositar`, {
             amount: valor,
-        });
+        }, { headers });
     }
 
     sacar(numeroConta: string, valor: number): Observable<any> {
+        const token = this.authService.getToken();
+        const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
         return this.http.post(`${API_URL}/contas/${numeroConta}/sacar`, {
             amount: valor,
-        });
+        }, { headers });
     }
 
     transferir(
@@ -32,12 +39,15 @@ export class ServiceContaService {
         numeroContaDestino: string,
         valor: number
     ): Observable<any> {
+        const token = this.authService.getToken();
+        const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
         return this.http.post(
             `${API_URL}/contas/${numeroContaOrigem}/transferir`,
             {
                 destinationAccountNumber: numeroContaDestino,
                 amount: valor,
-            }
+            },
+            { headers }
         );
     }
 
@@ -50,9 +60,13 @@ export class ServiceContaService {
         if (inicio) params = params.set('startDate', inicio);
         if (fim) params = params.set('endDate', fim);
 
+        const token = this.authService.getToken();
+        const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
+
         return this.http
             .get<any[]>(`${API_URL}/query/contas/${numeroConta}/extrato`, {
                 params,
+                headers,
             })
             .pipe(
                 map((respostaBackend) => {

@@ -20,7 +20,13 @@ export class ClientService {
         if (search) params = params.set('busca', search);
         if (filter) params = params.set('filtro', filter);
 
-        return this.http.get<any[]>(`${this.apiUrl}/clientes`, { params }).pipe(
+        const token = this.authService.getToken();
+        let headers = new HttpHeaders();
+        if (token) {
+            headers = headers.set('Authorization', token);
+        }
+
+        return this.http.get<any[]>(`${this.apiUrl}/clientes`, { params, headers }).pipe(
             map((response) => {
                 if (!Array.isArray(response)) return [];
                 return response.map((item) => this.mapToClientModel(item));
@@ -51,7 +57,13 @@ export class ClientService {
     }
 
     createClient(client: Cliente): Observable<Cliente> {
-        return this.http.post<Cliente>(`${this.apiUrl}/clientes`, client).pipe(
+        const token = this.authService.getToken();
+        let headers = new HttpHeaders();
+        if (token) {
+            headers = headers.set('Authorization', token);
+        }
+
+        return this.http.post<Cliente>(`${this.apiUrl}/clientes`, client, { headers }).pipe(
             catchError((err) => {
                 console.error('Erro ao criar cliente:', err);
                 return throwError(() => err);
@@ -68,21 +80,39 @@ export class ClientService {
     }
 
     addClient(newClient: any): Observable<any> {
+        const token = this.authService.getToken();
+        let headers = new HttpHeaders();
+        if (token) {
+            headers = headers.set('Authorization', token);
+        }
+
         return this.http
-            .post(`${this.apiUrl}/clientes`, newClient)
+            .post(`${this.apiUrl}/clientes`, newClient, { headers })
             .pipe(catchError((err) => throwError(() => err)));
     }
 
     updateClient(updatedClient: Cliente): Observable<any> {
         const cpf = updatedClient.cpf;
+        const token = this.authService.getToken();
+        let headers = new HttpHeaders();
+        if (token) {
+            headers = headers.set('Authorization', token);
+        }
+
         return this.http
-            .put(`${this.apiUrl}/clientes/${cpf}`, updatedClient)
+            .put(`${this.apiUrl}/clientes/${cpf}`, updatedClient, { headers })
             .pipe(catchError((err) => throwError(() => err)));
     }
 
     deleteClient(cpf: string): Observable<any> {
+        const token = this.authService.getToken();
+        let headers = new HttpHeaders();
+        if (token) {
+            headers = headers.set('Authorization', token);
+        }
+
         return this.http
-            .delete(`${this.apiUrl}/clientes/${cpf}`)
+            .delete(`${this.apiUrl}/clientes/${cpf}`, { headers })
             .pipe(catchError((err) => throwError(() => err)));
     }
 

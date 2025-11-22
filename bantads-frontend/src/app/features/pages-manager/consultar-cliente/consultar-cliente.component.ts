@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
@@ -21,10 +22,18 @@ export class ConsultarClienteComponent implements OnInit {
 
     constructor(
         private clientService: ClientService,
-        private loadingService: LoadingService
+        private loadingService: LoadingService,
+        private route: ActivatedRoute
     ) { }
 
     ngOnInit(): void {
+        this.route.params.subscribe(params => {
+            const cpf = params['cpf'];
+            if (cpf) {
+                this.search = cpf;
+                this.findClient();
+            }
+        });
     }
 
     findClient(): void {

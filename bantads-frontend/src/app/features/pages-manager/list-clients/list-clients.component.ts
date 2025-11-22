@@ -71,7 +71,7 @@ export class ListClientsComponent implements OnInit, OnDestroy {
     }
 
     viewClient(cliente: Cliente): void {
-        this.router.navigate(['/manager/consultar-cliente', cliente.cpf]);
+        this.router.navigate(['/gerente/consultar-cliente', cliente.cpf]);
     }
 
     openModal(cliente: Cliente): void {

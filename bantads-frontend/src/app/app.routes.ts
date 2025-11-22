@@ -98,6 +98,12 @@ export const routes: Routes = [
                 data: { role: ['gerente'] },
             },
             {
+                path: 'consultar-cliente/:cpf',
+                component: ConsultarClienteComponent,
+                canActivate: [authGuard],
+                data: { role: ['gerente'] },
+            },
+            {
                 path: 'consultar-cliente',
                 component: ConsultarClienteComponent,
                 canActivate: [authGuard],
