@@ -39,9 +39,15 @@ public class AccountQueryService {
                         "Conta não encontrada para o CPF " + authenticatedCpf));
     }
 
-    public List<DailyBalanceDTO> getStatement(String authenticatedCpf, String startDateStr, String endDateStr) {
-        AccountView account = getAccountByCpf(authenticatedCpf);
+    public AccountView getAccountByNumber(String accountNumber) {
+        return accountViewRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Conta não encontrada para o número " + accountNumber));
+    }
 
+    public List<DailyBalanceDTO> getStatement(String accountNumber, String startDateStr, String endDateStr) {
+        AccountView account = getAccountByNumber(accountNumber);
         LocalDate end = (endDateStr != null && !endDateStr.isBlank())
                 ? LocalDate.parse(endDateStr)
                 : LocalDate.now();

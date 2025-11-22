@@ -35,30 +35,26 @@ public class AccountService {
     private Account findAccountByClientCpf(String clientCpf) {
         return accountRepository.findByClientId(clientCpf)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                "Conta não encontrada para o cliente CPF: " + clientCpf));
+                        "Conta não encontrada para o cliente CPF: " + clientCpf));
     }
 
     @Transactional
     public Account deposit(String clientCpf, BigDecimal amount) {
-
         System.out.println(">>> DEBUG DEPOSIT: Iniciando deposito para CPF: " + clientCpf);
-        System.out.println(">>> DEBUG DEPOSIT: Valor recebido (amount): " + amount);
 
         Account account = findAccountByClientCpf(clientCpf);
         account.setBalance(account.getBalance().add(amount));
-
-        System.out.println(">>> DEBUG DEPOSIT: Saldo anterior: " + account.getBalance());
 
         Transaction tx = new Transaction();
         tx.setAccount(account);
         tx.setType("DEPOSITO");
         tx.setAmount(amount);
         tx.setTimestamp(LocalDateTime.now());
+        tx.setDestinationClientId(account.getClientId());
+
         transactionRepository.save(tx);
 
         Account savedAccount = accountRepository.save(account);
-
-        System.out.println(">>> DEBUG DEPOSIT: Saldo apos save(): " + savedAccount.getBalance());
 
         publishCqrsEvent("account.updated", savedAccount);
         publishCqrsEvent("transaction.created", tx);
@@ -81,6 +77,8 @@ public class AccountService {
         tx.setType("SAQUE");
         tx.setAmount(amount.negate());
         tx.setTimestamp(LocalDateTime.now());
+        tx.setOriginClientId(account.getClientId());
+
         transactionRepository.save(tx);
 
         Account savedAccount = accountRepository.save(account);
@@ -92,7 +90,6 @@ public class AccountService {
 
     @Transactional
     public Account transfer(String clientCpf, String destinationAccountNumber, BigDecimal amount) {
-
         Account originAccount = findAccountByClientCpf(clientCpf);
 
         BigDecimal availableBalance = originAccount.getBalance().add(originAccount.getAccountLimit());
@@ -110,6 +107,7 @@ public class AccountService {
         originTx.setAccount(originAccount);
         originTx.setType("TRANSFERENCIA_ENVIADA");
         originTx.setAmount(amount.negate());
+        originTx.setOriginClientId(originAccount.getClientId());
         originTx.setDestinationClientId(destAccount.getClientId());
         originTx.setTimestamp(LocalDateTime.now());
         transactionRepository.save(originTx);
@@ -119,6 +117,7 @@ public class AccountService {
         destTx.setType("TRANSFERENCIA_RECEBIDA");
         destTx.setAmount(amount);
         destTx.setOriginClientId(originAccount.getClientId());
+        destTx.setDestinationClientId(destAccount.getClientId());
         destTx.setTimestamp(LocalDateTime.now());
         transactionRepository.save(destTx);
 
@@ -167,13 +166,14 @@ public class AccountService {
             map.put("saldo", a.getBalance());
             map.put("limite", a.getAccountLimit());
             map.put("managerCpf", a.getManager());
-            map.put("dataCriacao", a.getCreationDate());
+            map.put("dataCriacao", a.getCreationDate() != null ? a.getCreationDate().toString() : null);
             payload = map;
         } else if (event instanceof Transaction) {
             Transaction t = (Transaction) event;
             Map<String, Object> map = new HashMap<>();
             map.put("id", t.getId());
-            map.put("dataHora", t.getTimestamp());
+            map.put("dataHora",
+                    t.getTimestamp() != null ? t.getTimestamp().toString() : LocalDateTime.now().toString());
             map.put("tipo", t.getType());
             map.put("valor", t.getAmount());
             map.put("origemCpf", t.getOriginClientId());
@@ -187,20 +187,18 @@ public class AccountService {
     public BalanceDTO getBalance(String accountNumber) {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                "Conta não encontrada: " + accountNumber));
+                        "Conta não encontrada: " + accountNumber));
 
         return new BalanceDTO(
                 account.getClientId(),
                 account.getAccountNumber(),
-                account.getBalance()
-        );
+                account.getBalance());
     }
 
     @Transactional
     public void rebootAccounts() {
         transactionRepository.deleteAll();
         accountRepository.deleteAll();
-
         insertInitialData();
     }
 
@@ -211,50 +209,56 @@ public class AccountService {
 
         Account catharyna = createSeedAccount(
                 "12912861012", "1291", new BigDecimal("800.00"), new BigDecimal("5000.00"),
-                genieveCpf, LocalDateTime.of(2000, 1, 1, 0, 0)
-        );
-        createSeedTransaction(catharyna, "DEPOSITO", new BigDecimal("1000.00"), LocalDateTime.of(2020, 1, 1, 10, 0), null);
-        createSeedTransaction(catharyna, "DEPOSITO", new BigDecimal("900.00"), LocalDateTime.of(2020, 1, 1, 11, 0), null);
+                genieveCpf, LocalDateTime.of(2000, 1, 1, 0, 0));
+        createSeedTransaction(catharyna, "DEPOSITO", new BigDecimal("1000.00"), LocalDateTime.of(2020, 1, 1, 10, 0),
+                null);
+        createSeedTransaction(catharyna, "DEPOSITO", new BigDecimal("900.00"), LocalDateTime.of(2020, 1, 1, 11, 0),
+                null);
         createSeedTransaction(catharyna, "SAQUE", new BigDecimal("-550.00"), LocalDateTime.of(2020, 1, 1, 12, 0), null);
         createSeedTransaction(catharyna, "SAQUE", new BigDecimal("-350.00"), LocalDateTime.of(2020, 1, 1, 13, 0), null);
-        createSeedTransaction(catharyna, "DEPOSITO", new BigDecimal("2000.00"), LocalDateTime.of(2020, 1, 10, 15, 0), null);
+        createSeedTransaction(catharyna, "DEPOSITO", new BigDecimal("2000.00"), LocalDateTime.of(2020, 1, 10, 15, 0),
+                null);
         createSeedTransaction(catharyna, "SAQUE", new BigDecimal("-500.00"), LocalDateTime.of(2020, 1, 15, 8, 0), null);
-        createSeedTransaction(catharyna, "TRANSFERENCIA_ENVIADA", new BigDecimal("-1700.00"), LocalDateTime.of(2020, 1, 20, 12, 0), "09506382000");
+        createSeedTransaction(catharyna, "TRANSFERENCIA_ENVIADA", new BigDecimal("-1700.00"),
+                LocalDateTime.of(2020, 1, 20, 12, 0), "09506382000");
 
         Account cleuddonio = createSeedAccount(
                 "09506382000", "0950", new BigDecimal("-10000.00"), new BigDecimal("10000.00"),
-                godophredoCpf, LocalDateTime.of(1990, 10, 10, 0, 0)
-        );
-        createSeedTransaction(cleuddonio, "DEPOSITO", new BigDecimal("1000.00"), LocalDateTime.of(2025, 1, 1, 12, 0), null);
-        createSeedTransaction(cleuddonio, "DEPOSITO", new BigDecimal("5000.00"), LocalDateTime.of(2025, 1, 2, 10, 0), null);
-        createSeedTransaction(cleuddonio, "SAQUE", new BigDecimal("-200.00"), LocalDateTime.of(2025, 1, 10, 10, 0), null);
-        createSeedTransaction(cleuddonio, "DEPOSITO", new BigDecimal("7000.00"), LocalDateTime.of(2025, 2, 5, 10, 0), null);
+                godophredoCpf, LocalDateTime.of(1990, 10, 10, 0, 0));
+        createSeedTransaction(cleuddonio, "DEPOSITO", new BigDecimal("1000.00"), LocalDateTime.of(2025, 1, 1, 12, 0),
+                null);
+        createSeedTransaction(cleuddonio, "DEPOSITO", new BigDecimal("5000.00"), LocalDateTime.of(2025, 1, 2, 10, 0),
+                null);
+        createSeedTransaction(cleuddonio, "SAQUE", new BigDecimal("-200.00"), LocalDateTime.of(2025, 1, 10, 10, 0),
+                null);
+        createSeedTransaction(cleuddonio, "DEPOSITO", new BigDecimal("7000.00"), LocalDateTime.of(2025, 2, 5, 10, 0),
+                null);
 
         Account catianna = createSeedAccount(
                 "85733854057", "8573", new BigDecimal("-1000.00"), new BigDecimal("1500.00"),
-                gyandulaCpf, LocalDateTime.of(2012, 12, 12, 0, 0)
-        );
-        createSeedTransaction(catianna, "DEPOSITO", new BigDecimal("1000.00"), LocalDateTime.of(2025, 5, 5, 10, 0), null); // Hora fictícia pois só tem data no PDF
+                gyandulaCpf, LocalDateTime.of(2012, 12, 12, 0, 0));
+        createSeedTransaction(catianna, "DEPOSITO", new BigDecimal("1000.00"), LocalDateTime.of(2025, 5, 5, 10, 0),
+                null);
         createSeedTransaction(catianna, "SAQUE", new BigDecimal("-2000.00"), LocalDateTime.of(2025, 5, 6, 10, 0), null);
 
         Account cutardo = createSeedAccount(
                 "58872160006", "5887", new BigDecimal("150000.00"), new BigDecimal("0.00"),
-                genieveCpf, LocalDateTime.of(2022, 2, 22, 0, 0)
-        );
-        createSeedTransaction(cutardo, "DEPOSITO", new BigDecimal("150000.00"), LocalDateTime.of(2025, 6, 1, 10, 0), null);
+                genieveCpf, LocalDateTime.of(2022, 2, 22, 0, 0));
+        createSeedTransaction(cutardo, "DEPOSITO", new BigDecimal("150000.00"), LocalDateTime.of(2025, 6, 1, 10, 0),
+                null);
 
         Account coandrya = createSeedAccount(
                 "76179646090", "7617", new BigDecimal("1500.00"), new BigDecimal("0.00"),
-                godophredoCpf, LocalDateTime.of(2025, 1, 1, 0, 0)
-        );
-        createSeedTransaction(coandrya, "DEPOSITO", new BigDecimal("1500.00"), LocalDateTime.of(2025, 7, 1, 10, 0), null);
+                godophredoCpf, LocalDateTime.of(2025, 1, 1, 0, 0));
+        createSeedTransaction(coandrya, "DEPOSITO", new BigDecimal("1500.00"), LocalDateTime.of(2025, 7, 1, 10, 0),
+                null);
     }
 
-    private Account createSeedAccount(String clientId, String accountNumber, BigDecimal balance, BigDecimal limit, String managerId, LocalDateTime creationDate) {
+    private Account createSeedAccount(String clientId, String accountNumber, BigDecimal balance, BigDecimal limit,
+            String managerId, LocalDateTime creationDate) {
         if (accountRepository.findByAccountNumber(accountNumber).isPresent()) {
             return accountRepository.findByAccountNumber(accountNumber).get();
         }
-
         Account account = new Account();
         account.setClientId(clientId);
         account.setAccountNumber(accountNumber);
@@ -262,24 +266,27 @@ public class AccountService {
         account.setAccountLimit(limit);
         account.setManager(managerId);
         account.setCreationDate(creationDate);
-
         Account saved = accountRepository.save(account);
         publishCqrsEvent("account.updated", saved);
         return saved;
     }
 
-    private void createSeedTransaction(Account account, String type, BigDecimal amount, LocalDateTime timestamp, String relatedClientId) {
-
+    private void createSeedTransaction(Account account, String type, BigDecimal amount, LocalDateTime timestamp,
+            String relatedClientId) {
         Transaction tx = new Transaction();
         tx.setAccount(account);
         tx.setType(type);
         tx.setAmount(amount);
         tx.setTimestamp(timestamp);
 
-        if ("TRANSFERENCIA_ENVIADA".equals(type)) {
-            tx.setDestinationClientId(relatedClientId);
-        } else if ("TRANSFERENCIA_RECEBIDA".equals(type)) {
-            tx.setOriginClientId(relatedClientId);
+        if ("DEPOSITO".equals(type) || "TRANSFERENCIA_RECEBIDA".equals(type)) {
+            tx.setDestinationClientId(account.getClientId());
+            if (relatedClientId != null)
+                tx.setOriginClientId(relatedClientId);
+        } else {
+            tx.setOriginClientId(account.getClientId());
+            if (relatedClientId != null)
+                tx.setDestinationClientId(relatedClientId);
         }
 
         transactionRepository.save(tx);

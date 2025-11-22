@@ -13,6 +13,8 @@ public interface AccountViewRepository extends JpaRepository<AccountView, Long> 
 
         Optional<AccountView> findByClientId(String clientId);
 
+        Optional<AccountView> findByAccountNumber(String accountNumber);
+
         @Query(value = "SELECT manager_id as managerId, COUNT(*) as qtd, "
                         + "SUM(CASE WHEN balance >= 0 THEN balance ELSE 0 END) as totalPositivo, "
                         + "SUM(CASE WHEN balance < 0 THEN balance ELSE 0 END) as totalNegativo "
