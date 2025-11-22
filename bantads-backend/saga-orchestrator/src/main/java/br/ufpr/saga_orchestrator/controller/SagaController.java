@@ -71,6 +71,7 @@ public class SagaController {
             @RequestBody Map<String, Object> managerDto,
             @RequestHeader(name = "Authorization", required = false) String authorization) {
 
+        managerDto.put("cpf", cpf);
         SagaResult result = sagaService.updateManagerSaga(cpf, managerDto, authorization);
 
         if (!result.isSuccess()) {

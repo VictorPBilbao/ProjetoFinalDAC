@@ -21,7 +21,7 @@ export class AuthService {
   private USER_KEY = 'auth_user';
 
   constructor(private http: HttpClient) {}
-
+ 
   login(usuario: string, senha: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { login: usuario, senha }).pipe(
       tap(resp => {

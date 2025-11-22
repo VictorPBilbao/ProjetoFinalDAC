@@ -115,7 +115,7 @@ public class SagaListener {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
 
             log.info("Auth atualizado correlationId={}", correlationId);
-            saga.notifyUpdateSuccess(correlationId);
+            saga.notifyUpdateSuccess(correlationId, payload);
         } catch (Exception ex) {
             log.error("Erro ao processar auth.updated: {}", ex.getMessage());
         }
