@@ -35,6 +35,12 @@ public class RabbitConfig {
     @Value("${rabbit.account.limit-update-failed.key:saga.account.limit-update-failed}")
     private String accountLimitUpdateFailedKey;
 
+    @Value("${rabbit.account.manager.created.queue}")
+    private String accountManagerCreatedQueueName;
+
+    @Value("${rabbit.account.manager.created.key}")
+    private String accountManagerCreatedKey;
+
     @Bean
     public TopicExchange sagaExchange() {
         return new TopicExchange(sagaExchange, true, false);
@@ -70,6 +76,19 @@ public class RabbitConfig {
     public Jackson2JsonMessageConverter jsonConverter(ObjectMapper mapper) {
         return new Jackson2JsonMessageConverter(mapper);
     }
+
+    @Bean
+    public Queue accountManagerCreatedQueue() {
+        return QueueBuilder.durable(accountManagerCreatedQueueName).build();
+    }
+
+    @Bean
+    public Binding bindAccountManagerCreated(Queue accountManagerCreatedQueue, TopicExchange sagaExchange) {
+        return BindingBuilder.bind(accountManagerCreatedQueue)
+                .to(sagaExchange)
+                .with(accountManagerCreatedKey);
+    }
+
 
     // Getters for routing keys
     public String getAccountCreatedKey() {

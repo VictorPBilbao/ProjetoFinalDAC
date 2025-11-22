@@ -137,6 +137,64 @@ public class AccountSagaListener {
         }
     }
 
+    @RabbitListener(queues = "${rabbit.account.manager.created.queue}")
+    public void handleManagerCreated(Message message) throws Exception {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+
+        try {
+            String newManagerCpf = (String) payload.get("cpf");
+            System.out.println("Processando novo gerente no Account Service: " + newManagerCpf);
+
+            // 1. Lógica de Negócio
+            Account updatedAccount = accountService.reassignAccountToNewManager(newManagerCpf);
+
+            // Monta o payload de resposta para o Saga
+            // Clonamos o payload original para manter dados como nome/cpf e adicionamos o resultado
+            Map<String, Object> responsePayload = new java.util.HashMap<>(payload);
+            
+            if (updatedAccount != null) {
+                System.out.println("Conta " + updatedAccount.getAccountNumber() + " transferida.");
+                
+                // Atualiza CQRS
+                Map<String, Object> cqrsEvent = Map.of(
+                    "clientCpf", updatedAccount.getClientId(),
+                    "numero", updatedAccount.getAccountNumber(),
+                    "saldo", updatedAccount.getBalance(),
+                    "limite", updatedAccount.getAccountLimit(),
+                    "managerCpf", updatedAccount.getManager(),
+                    "dataCriacao", updatedAccount.getCreationDate().toString()
+                );
+                accountService.publishCqrsEvent("account.updated", cqrsEvent);
+
+                // Adiciona info da conta transferida para o Saga saber
+                responsePayload.put("transferredAccount", updatedAccount.getAccountNumber());
+                responsePayload.put("message", "Gerente assumiu conta existente com sucesso.");
+            } else {
+                System.out.println("Nenhuma conta transferida.");
+                responsePayload.put("transferredAccount", null);
+                responsePayload.put("message", "Gerente criado sem contas iniciais.");
+            }
+
+            // 2. VOLTA PARA O SAGA
+            // Use uma routing key que o Saga vai escutar, ex: "saga.manager.account.processed"
+            rabbitTemplate.convertAndSend(sagaExchange, "saga.manager.account.processed", responsePayload, m -> {
+                m.getMessageProperties().setCorrelationId(correlationId);
+                return m;
+            });
+
+        } catch (Exception ex) {
+            System.err.println("Erro ao processar criação de gerente: " + ex.getMessage());
+            
+            // Opcional: Enviar falha para o Saga se isso for crítico
+             rabbitTemplate.convertAndSend(sagaExchange, "saga.manager.account.failed", 
+                 Map.of("reason", ex.getMessage(), "payload", payload), m -> {
+                 m.getMessageProperties().setCorrelationId(correlationId);
+                 return m;
+             });
+        }
+    }
+
     private BigDecimal parseBigDecimal(Object value) {
         if (value == null)
             return null;
