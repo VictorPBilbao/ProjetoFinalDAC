@@ -80,7 +80,7 @@ public class AccountQueryService {
                 String tipoMovimento = tx.getAmount().compareTo(BigDecimal.ZERO) >= 0 ? "depósito" : "saque";
 
                 StatementItemDTO item = new StatementItemDTO();
-                item.setDataHora(tx.getTimestamp());
+                item.setData(tx.getTimestamp());
                 item.setOperacao(tx.getType());
                 item.setTipo(tipoMovimento);
                 item.setValor(tx.getAmount().abs());

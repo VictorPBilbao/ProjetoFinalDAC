@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class StatementItemDTO {
-    private LocalDateTime dataHora;
+    private LocalDateTime data;
     private String operacao;
     private String tipo;
     private String origem;

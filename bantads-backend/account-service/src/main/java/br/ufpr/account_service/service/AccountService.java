@@ -48,10 +48,10 @@ public class AccountService {
 
         Transaction tx = new Transaction();
         tx.setAccount(account);
-        tx.setType("DEPOSITO");
+        tx.setType("depósito");
         tx.setAmount(amount);
         tx.setTimestamp(LocalDateTime.now());
-        tx.setDestinationClientId(account.getClientId());
+        tx.setOriginClientId(account.getClientId());
 
         transactionRepository.save(tx);
 
@@ -75,7 +75,7 @@ public class AccountService {
 
         Transaction tx = new Transaction();
         tx.setAccount(account);
-        tx.setType("SAQUE");
+        tx.setType("saque");
         tx.setAmount(amount.negate());
         tx.setTimestamp(LocalDateTime.now());
         tx.setOriginClientId(account.getClientId());
