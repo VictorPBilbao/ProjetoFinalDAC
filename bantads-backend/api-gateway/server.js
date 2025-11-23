@@ -281,6 +281,7 @@ app.get(
           headers: { Authorization: req.headers.authorization },
         };
 
+        // 🔹 Buscar dados dos serviços
         const managersResp = await axiosInstance.get(
           `${MANAGER_URL}/gerentes`,
           config
@@ -299,35 +300,40 @@ app.get(
         );
         const clientsList = clientsResp.data || [];
 
+        // 🔹 Map de clientes por CPF
         const clientsMap = new Map();
-        clientsList.forEach((c) => clientsMap.set(c.cpf, c));
+        clientsList.forEach((c) => clientsMap.set(String(c.cpf), c));
 
+        // 🔹 Montar dashboard
         const dashboard = managers.map((mgr) => {
+          // Filtrar contas apenas pelo CPF do gerente
           const mgrAccounts = accounts.filter(
-            (acc) =>
-              String(acc.managerId) === String(mgr.id) ||
-              String(acc.managerId) === mgr.cpf
+            (acc) => String(acc.managerId) === String(mgr.cpf)
           );
 
           let totalPos = 0;
           let totalNeg = 0;
           const clientesDoGerente = [];
 
+          // Deduplicar clientes por CPF
+          const seenCpfs = new Set();
+
           mgrAccounts.forEach((acc) => {
-            const saldo = Number(acc.balance || acc.saldo || 0);
+            const saldo = Number(acc.balance ?? acc.saldo ?? 0);
+            const clientCpf = String(acc.clientCpf ?? acc.clientId ?? "");
 
-            if (saldo >= 0) {
-              totalPos += saldo;
-            } else {
-              totalNeg += saldo;
-            }
+            if (!clientCpf) return;
 
-            const clientInfo = clientsMap.get(acc.clientId || acc.clientCpf);
+            if (saldo >= 0) totalPos += saldo;
+            else totalNeg += saldo;
 
-            if (clientInfo) {
+            if (!seenCpfs.has(clientCpf)) {
+              seenCpfs.add(clientCpf);
+
+              const clientInfo = clientsMap.get(clientCpf);
               clientesDoGerente.push({
-                cpf: clientInfo.cpf,
-                nome: clientInfo.nome,
+                cpf: clientCpf,
+                nome: clientInfo?.nome ?? "Cliente não encontrado",
                 saldo: saldo,
               });
             }
@@ -345,6 +351,7 @@ app.get(
           };
         });
 
+        // 🔹 Ordenar por saldo positivo
         dashboard.sort((a, b) => b.saldo_positivo - a.saldo_positivo);
 
         return res.status(200).json(dashboard);
@@ -363,6 +370,8 @@ app.get(
   },
   proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083")
 );
+
+
 
 // ============================================
 // HEALTH CHECK & PROXIES
