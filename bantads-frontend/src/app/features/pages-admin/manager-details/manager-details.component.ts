@@ -34,9 +34,8 @@ export class ManagerDetailsComponent implements OnInit {
         private route: ActivatedRoute,
         private managerService: ManagerService
     ) {
-        // 1. ADICIONADO o campo 'password' ao formulário
         this.managerForm = this.fb.group({
-            name: ['', [Validators.required, Validators.minLength(3)]],
+            nome: ['', [Validators.required, Validators.minLength(3)]],
             cpf: ['', [Validators.required]],
             email: ['', [Validators.required, Validators.email]],
             telephone: ['', [Validators.required]],
@@ -57,15 +56,12 @@ export class ManagerDetailsComponent implements OnInit {
             if (manager) {
                 this.managerForm.patchValue(manager);
 
-                // 2. LÓGICA DE EDIÇÃO IMPLEMENTADA
-                // Torna a senha opcional na edição
                 this.managerForm.get('password')?.clearValidators();
                 this.managerForm
                     .get('password')
                     ?.addValidators(Validators.minLength(6));
                 this.managerForm.get('password')?.updateValueAndValidity();
 
-                // Trava os campos que não podem ser alterados
                 this.managerForm.get('cpf')?.disable();
                 this.managerForm.get('email')?.disable();
                 this.managerForm.get('telephone')?.disable();
@@ -84,39 +80,42 @@ export class ManagerDetailsComponent implements OnInit {
         action$.subscribe({
             next: (response) => {
                 console.log('Resposta completa:', response);
-                
-                // Verifica se não é uma resposta de erro do catchError
+
                 if (response.success === false) {
-                    Swal.fire('Erro!', response.message || 'Falha ao salvar o gerente.', 'error');
+                    Swal.fire(
+                        'Erro!',
+                        response.message || 'Falha ao salvar o gerente.',
+                        'error'
+                    );
                 } else {
-                    // Sucesso - backend retornou 200/201
-                    Swal.fire('Sucesso!', 'Gerente salvo com sucesso!', 'success')
-                        .then(() => this.router.navigate(['/admin/gerentes']));
+                    Swal.fire(
+                        'Sucesso!',
+                        'Gerente salvo com sucesso!',
+                        'success'
+                    ).then(() => this.router.navigate(['/admin/gerentes']));
                 }
             },
             error: (err) => {
-                const backendMsg = err.error?.message || 'Ocorreu um erro inesperado ao salvar o gerente.';
+                const backendMsg =
+                    err.error?.message ||
+                    'Ocorreu um erro inesperado ao salvar o gerente.';
                 Swal.fire('Erro!', backendMsg, 'error');
                 console.error('Erro ao salvar gerente:', err);
             },
         });
     }
 
-    // 3. MÉTODOS DE CREATE E UPDATE CORRIGIDOS
     private create(): Observable<any> {
         return this.managerService.createManager(this.managerForm.value);
     }
 
     private update(): Observable<any> {
         const formValues = this.managerForm.getRawValue();
-
-        return this.managerService.updateManager(
-            formValues as Manager
-        );
+        return this.managerService.updateManager(formValues as Manager);
     }
 
     onVerifyManagerByCPF(): void {
-        if (this.isEditMode) return; // Não verifica CPF em modo de edição
+        if (this.isEditMode) return;
 
         const cpfControl = this.managerForm.get('cpf');
         if (!cpfControl?.valid || !cpfControl.value) return;

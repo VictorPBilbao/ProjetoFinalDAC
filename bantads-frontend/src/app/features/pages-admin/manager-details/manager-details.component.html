@@ -9,18 +9,18 @@
         class="manager-form"
     >
         <div class="form-group">
-            <label for="name">Nome</label>
+            <label for="nome">Nome</label>
             <input
                 type="text"
-                id="name"
-                formControlName="name"
+                id="nome"
+                formControlName="nome"
                 placeholder="Nome Completo"
                 required
             />
             <div
                 *ngIf="
-                    managerForm.get('name')?.invalid &&
-                    managerForm.get('name')?.touched
+                    managerForm.get('nome')?.invalid &&
+                    managerForm.get('nome')?.touched
                 "
                 class="error-feedback"
             >
