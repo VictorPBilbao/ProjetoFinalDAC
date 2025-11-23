@@ -97,19 +97,36 @@ export class ServiceContaService {
             : new HttpHeaders();
 
         return this.http
-            .get<any[]>(`${API_URL}/contas/${numeroConta}/extrato`, {
+            .get<any>(`${API_URL}/contas/${numeroConta}/extrato`, {
                 params,
                 headers,
             })
             .pipe(
                 map((respostaBackend) => {
-                    return respostaBackend.map((dia) => ({
-                        date: new Date(dia.data + 'T00:00:00'),
-                        consolidatedBalance: dia.saldoDoDia,
-                        transactions: dia.movimentacoes.map((mov: any) =>
+                    if (!respostaBackend || !respostaBackend.movimentacoes) {
+                        return [];
+                    }
+
+                    const agrupadoPorDia: { [key: string]: any } = {};
+
+                    respostaBackend.movimentacoes.forEach((mov: any) => {
+                        const dataObj = new Date(mov.data);
+                        const dataKey = dataObj.toLocaleDateString('pt-BR');
+
+                        if (!agrupadoPorDia[dataKey]) {
+                            agrupadoPorDia[dataKey] = {
+                                date: dataObj,
+                                transactions: [],
+                                consolidatedBalance: 0,
+                            };
+                        }
+
+                        agrupadoPorDia[dataKey].transactions.push(
                             this.mapToTransaction(mov)
-                        ),
-                    }));
+                        );
+                    });
+
+                    return Object.values(agrupadoPorDia);
                 })
             );
     }
