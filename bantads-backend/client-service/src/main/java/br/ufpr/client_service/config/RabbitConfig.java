@@ -20,6 +20,12 @@ public class RabbitConfig {
     @Value("${rabbit.clients.approve-key:client.approve}")
     private String approveKey;
 
+    @Value("${rabbit.clients.update-queue:client.update.queue}")
+    private String updateQueue;
+
+    @Value("${rabbit.clients.update-key:client.update}")
+    private String updateKey;
+
     @Value("${rabbit.auth.exchange:auth.exchange}")
     private String authExchange;
 
@@ -52,6 +58,16 @@ public class RabbitConfig {
     @Bean
     public Binding bindApprove(Queue clientApproveQueue, TopicExchange clientsExchange) {
         return BindingBuilder.bind(clientApproveQueue).to(clientsExchange).with(approveKey);
+    }
+
+    @Bean
+    public Queue clientUpdateQueue() {
+        return QueueBuilder.durable(updateQueue).build();
+    }
+
+    @Bean
+    public Binding bindUpdate(Queue clientUpdateQueue, TopicExchange clientsExchange) {
+        return BindingBuilder.bind(clientUpdateQueue).to(clientsExchange).with(updateKey);
     }
 
     @Bean

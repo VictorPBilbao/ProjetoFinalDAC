@@ -140,4 +140,24 @@ public class SagaController {
 
         return ResponseEntity.ok(result.getDetail());
     }
+
+    @PutMapping("/clientes/{cpf}")
+    public ResponseEntity<?> updateClienteSaga(@PathVariable @NotBlank String cpf,
+            @RequestBody Map<String, Object> clientDto) {
+
+        SagaResult result = sagaService.updateClientSaga(cpf, clientDto);
+
+        if (!result.isSuccess()) {
+            return ResponseEntity.status(result.getStatusCode()).body(Map.of("erro", result.getMessage()));
+        }
+
+        // After SAGA completes, compose complete client data
+        try {
+            Map<String, Object> composedData = sagaService.composeClientData(cpf);
+            return ResponseEntity.ok(composedData);
+        } catch (Exception ex) {
+            return ResponseEntity.status(500)
+                    .body(Map.of("erro", "Erro ao compor dados do cliente: " + ex.getMessage()));
+        }
+    }
 }

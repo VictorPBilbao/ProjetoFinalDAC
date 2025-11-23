@@ -109,47 +109,49 @@ public class SagaListener {
 
     /**
      * Novo Listener para receber a confirmação do Account Service
-     * Configure a fila no application.properties: rabbit.saga.manager.processed.queue
+     * Configure a fila no application.properties:
+     * rabbit.saga.manager.processed.queue
      */
     @RabbitListener(queues = "${rabbit.saga.manager.processed.queue:saga-manager-processed-queue}")
     public void onManagerAccountProcessed(Message message) {
         String correlationId = message.getMessageProperties().getCorrelationId();
         try {
             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
-            
+
             String transferredAccount = getString(payload, "transferredAccount");
             String msg = getString(payload, "message");
 
             log.info("Processo de conta do gerente finalizado. CorrelationId={}", correlationId);
             log.info("Resultado: {} | Conta Transferida: {}", msg, transferredAccount);
 
-            // Aqui você chama o serviço do saga para finalizar o estado, se tiver persistência
+            // Aqui você chama o serviço do saga para finalizar o estado, se tiver
+            // persistência
             // Exemplo: saga.finalizeManagerCreation(correlationId, payload);
-            
-            // Se não tiver persistência de estado no Saga, apenas logar ou notificar o Gateway
-            saga.notifyGatewaySuccess(correlationId, 
-                getString(payload, "cpf"), 
-                getString(payload, "nome"), 
-                transferredAccount != null ? transferredAccount : "",
-                ""
-            );
+
+            // Se não tiver persistência de estado no Saga, apenas logar ou notificar o
+            // Gateway
+            saga.notifyGatewaySuccess(correlationId,
+                    getString(payload, "cpf"),
+                    getString(payload, "nome"),
+                    transferredAccount != null ? transferredAccount : "",
+                    "");
 
         } catch (Exception ex) {
             log.error("Erro ao processar resposta de manager account: {}", ex.getMessage());
         }
     }
-    
+
     // Opcional: Listener de falha específico do fluxo de gerente
     @RabbitListener(queues = "${rabbit.saga.manager.account.failed.queue:saga-manager-account-failed-queue}")
     public void onManagerAccountFailed(Message message) {
         String correlationId = message.getMessageProperties().getCorrelationId();
         try {
-             Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
-             String reason = getString(payload, "reason");
-             log.error("Falha no processamento de conta de gerente. CorrelationId={} Reason={}", correlationId, reason);
-             
-             // Notifica erro
-             saga.notifyGatewayFailure(correlationId, "Erro ao vincular contas ao gerente: " + reason, 500);
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            String reason = getString(payload, "reason");
+            log.error("Falha no processamento de conta de gerente. CorrelationId={} Reason={}", correlationId, reason);
+
+            // Notifica erro
+            saga.notifyGatewayFailure(correlationId, "Erro ao vincular contas ao gerente: " + reason, 500);
         } catch (Exception e) {
             log.error("Erro fatal listener fail manager", e);
         }
@@ -332,6 +334,65 @@ public class SagaListener {
         } catch (Exception ex) {
             log.error("Erro ao processar saga.account.create-failed: {}", ex.getMessage());
             saga.notifyApproveClientFailure(correlationId, "Erro ao processar falha: " + ex.getMessage(), 500);
+        }
+    }
+
+    @RabbitListener(queues = "#{clientUpdatedQueue.name}")
+    public void onClientUpdated(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            log.info("Cliente atualizado correlationId={}", correlationId);
+            saga.handleClientUpdated(correlationId, payload);
+        } catch (Exception ex) {
+            log.error("Erro ao processar client.updated: {}", ex.getMessage());
+            saga.notifyUpdateClientFailure(correlationId, "Erro ao processar atualização: " + ex.getMessage(), 500);
+        }
+    }
+
+    @RabbitListener(queues = "#{clientUpdateFailedQueue.name}")
+    public void onClientUpdateFailed(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            String error = getErrorMessage(payload);
+            int status = getStatusCode(payload);
+
+            log.warn("Client update falhou correlationId={} erro={} status={}", correlationId, error, status);
+            saga.notifyUpdateClientFailure(correlationId, error, status);
+        } catch (Exception ex) {
+            log.error("Erro ao processar client.update-failed: {}", ex.getMessage());
+            saga.notifyUpdateClientFailure(correlationId, "Erro ao processar falha: " + ex.getMessage(), 500);
+        }
+    }
+
+    @RabbitListener(queues = "#{accountLimitUpdatedQueue.name}")
+    public void onAccountLimitUpdated(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            log.info("Limite de conta atualizado correlationId={}", correlationId);
+            saga.handleAccountLimitUpdated(correlationId, payload);
+        } catch (Exception ex) {
+            log.error("Erro ao processar account.limit-updated: {}", ex.getMessage());
+            saga.notifyUpdateClientFailure(correlationId, "Erro ao processar limite atualizado: " + ex.getMessage(),
+                    500);
+        }
+    }
+
+    @RabbitListener(queues = "#{accountLimitUpdateFailedQueue.name}")
+    public void onAccountLimitUpdateFailed(Message message) {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        try {
+            Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+            String error = getErrorMessage(payload);
+            int status = getStatusCode(payload);
+
+            log.warn("Account limit update falhou correlationId={} erro={} status={}", correlationId, error, status);
+            saga.notifyUpdateClientFailure(correlationId, error, status);
+        } catch (Exception ex) {
+            log.error("Erro ao processar account.limit-update-failed: {}", ex.getMessage());
+            saga.notifyUpdateClientFailure(correlationId, "Erro ao processar falha: " + ex.getMessage(), 500);
         }
     }
 
