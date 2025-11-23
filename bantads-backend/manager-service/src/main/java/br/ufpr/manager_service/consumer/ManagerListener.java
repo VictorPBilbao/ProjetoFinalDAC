@@ -179,7 +179,7 @@ public class ManagerListener {
 
             Map<String, Object> event = new HashMap<>();
             event.put("cpf", cpf);
-            event.put("managerId", assignedManager.getId());
+            event.put("managerId", assignedManager.getCpf());
             event.put("salario", salario);
             event.put("nome", payload.get("nome"));
             event.put("email", payload.get("email"));
@@ -189,8 +189,8 @@ public class ManagerListener {
                     m.getMessageProperties().setCorrelationId(correlationId);
                 return m;
             });
-            log.info("Published manager.assigned correlationId={} managerId={}", correlationId,
-                    assignedManager.getId());
+            log.info("Published manager.assigned correlationCpf={} managerCpf={}", correlationId,
+                    assignedManager.getCpf());
         } catch (Exception ex) {
             log.error("Error processing manager.assign", ex);
             sendFailed(message, ex);
