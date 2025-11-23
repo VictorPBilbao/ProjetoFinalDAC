@@ -173,7 +173,6 @@ app.get("/clientes/resumo/top-saldos", authenticateToken, async (req, res) => {
     const config = {
         headers: { Authorization: authHeader },
     };
-
     try {
         const accountsResponse = await axiosInstance.get(
             `${accountQueryServiceUrl}/query/all-accounts`,
@@ -199,7 +198,7 @@ app.get("/clientes/resumo/top-saldos", authenticateToken, async (req, res) => {
                     return { client: null, account: acc };
                 })
         );
-
+      
         const results = await Promise.all(clientPromises);
 
         const composed = results
@@ -326,6 +325,8 @@ app.get(
     },
     proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083")
 );
+
+
 
 // ============================================
 // HEALTH CHECK & PROXIES
