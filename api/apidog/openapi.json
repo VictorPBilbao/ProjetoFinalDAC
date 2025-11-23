@@ -335,7 +335,7 @@
             "in": "path",
             "description": "cpf do cliente a ser pesquisado",
             "required": true,
-            "example": "12225278935",
+            "example": "12912861012",
             "schema": {
               "type": "string"
             }
@@ -368,7 +368,7 @@
         },
         "security": [
           {
-            "JTW Token": []
+            "bearer": []
           }
         ]
       },
