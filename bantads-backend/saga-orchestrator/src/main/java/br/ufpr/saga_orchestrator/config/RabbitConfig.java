@@ -178,6 +178,50 @@ public class RabbitConfig {
     }
 
     @Bean
+    public Queue clientUpdatedQueue() {
+        return new Queue("client.updated.queue", true);
+    }
+
+    @Bean
+    public Queue clientUpdateFailedQueue() {
+        return new Queue("client.update-failed.queue", true);
+    }
+
+    @Bean
+    public Binding bindClientUpdated(Queue clientUpdatedQueue, TopicExchange clientsExchange,
+            @Value("${rabbit.clients.updated-key:client.updated}") String key) {
+        return BindingBuilder.bind(clientUpdatedQueue).to(clientsExchange).with(key);
+    }
+
+    @Bean
+    public Binding bindClientUpdateFailed(Queue clientUpdateFailedQueue, TopicExchange clientsExchange,
+            @Value("${rabbit.clients.update-failed-key:client.update-failed}") String key) {
+        return BindingBuilder.bind(clientUpdateFailedQueue).to(clientsExchange).with(key);
+    }
+
+    @Bean
+    public Queue accountLimitUpdatedQueue() {
+        return new Queue("account.limit-updated.queue", true);
+    }
+
+    @Bean
+    public Queue accountLimitUpdateFailedQueue() {
+        return new Queue("account.limit-update-failed.queue", true);
+    }
+
+    @Bean
+    public Binding bindAccountLimitUpdated(Queue accountLimitUpdatedQueue, TopicExchange sagaExchange,
+            @Value("${rabbit.account.limit-updated-key:saga.account.limit-updated}") String key) {
+        return BindingBuilder.bind(accountLimitUpdatedQueue).to(sagaExchange).with(key);
+    }
+
+    @Bean
+    public Binding bindAccountLimitUpdateFailed(Queue accountLimitUpdateFailedQueue, TopicExchange sagaExchange,
+            @Value("${rabbit.account.limit-update-failed-key:saga.account.limit-update-failed}") String key) {
+        return BindingBuilder.bind(accountLimitUpdateFailedQueue).to(sagaExchange).with(key);
+    }
+
+    @Bean
     public Queue managerAssignedQueue() {
         return new Queue("manager.assigned.queue", true);
     }

@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -21,6 +22,7 @@ public class SagaService {
     private static final Logger log = LoggerFactory.getLogger(SagaService.class);
 
     private final RabbitTemplate rabbit;
+    private final RestTemplate restTemplate;
     private final Map<String, SagaResult> sagaResults = new ConcurrentHashMap<>();
     private final Map<String, String> correlationToManagerId = new ConcurrentHashMap<>();
     private final Map<String, Map<String, Object>> correlationToClientData = new ConcurrentHashMap<>();
@@ -58,8 +60,21 @@ public class SagaService {
     @Value("${rabbit.clients.approve-key:client.approve}")
     private String clientsApproveKey;
 
-    public SagaService(RabbitTemplate rabbit) {
+    @Value("${rabbit.clients.update-key:client.update}")
+    private String clientsUpdateKey;
+
+    @Value("${service.client.url:http://localhost:8081}")
+    private String clientServiceUrl;
+
+    @Value("${service.account-query.url:http://localhost:8086}")
+    private String accountQueryServiceUrl;
+
+    @Value("${service.manager.url:http://localhost:8083}")
+    private String managerServiceUrl;
+
+    public SagaService(RabbitTemplate rabbit, RestTemplate restTemplate) {
         this.rabbit = rabbit;
+        this.restTemplate = restTemplate;
     }
 
     public SagaResult createManagerSaga(Map<String, Object> managerDto) {
@@ -146,6 +161,28 @@ public class SagaService {
         } catch (Exception ex) {
             log.error("Erro ao aprovar cliente: {}", ex.getMessage(), ex);
             return new SagaResult(false, "approve-client", "Erro ao publicar evento: " + ex.getMessage(), null, 500);
+        }
+    }
+
+    public SagaResult updateClientSaga(String cpf, Map<String, Object> clientDto) {
+        String correlationId = UUID.randomUUID().toString();
+
+        try {
+            Map<String, Object> updateCmd = new HashMap<>(clientDto);
+            updateCmd.put("cpf", cpf);
+            sendEvent(clientsExchange, clientsUpdateKey, updateCmd, correlationId);
+
+            Map<String, Object> result = Map.of(
+                    "correlationId", correlationId,
+                    "status", "pending");
+
+            SagaResult pending = new SagaResult(true, "update-client", "Aguardando atualização", result, 202);
+            sagaResults.put(correlationId, pending);
+
+            return waitForResult(correlationId, pending);
+        } catch (Exception ex) {
+            log.error("Erro ao atualizar cliente: {}", ex.getMessage(), ex);
+            return new SagaResult(false, "update-client", "Erro ao publicar evento: " + ex.getMessage(), null, 500);
         }
     }
 
@@ -275,14 +312,12 @@ public class SagaService {
 
     public void notifyUpdateSuccess(String correlationId, Map<String, Object> payload) {
         sagaResults.put(correlationId,
-            new SagaResult(
-                true,
-                "update-manager",
-                "Manager atualizado com sucesso",
-                payload,  // <<--- Aqui agora envia o JSON real vindo do Auth
-                200
-            )
-        );
+                new SagaResult(
+                        true,
+                        "update-manager",
+                        "Manager atualizado com sucesso",
+                        payload, // <<--- Aqui agora envia o JSON real vindo do Auth
+                        200));
     }
 
     public void notifyUpdateFailure(String correlationId, String errorMessage, int statusCode) {
@@ -426,5 +461,96 @@ public class SagaService {
         int code = statusCode > 0 ? statusCode : 400;
         sagaResults.put(correlationId, new SagaResult(false, "approve-client", errorMessage,
                 Map.of("erro", errorMessage, "statusCode", code), code));
+    }
+
+    public void handleClientUpdated(String correlationId, Map<String, Object> payload) {
+        if (correlationId == null)
+            return;
+
+        log.info("[SAGA] Cliente atualizado correlationId={}", correlationId);
+
+        String cpf = getString(payload, "cpf");
+        Object salario = payload.get("salario");
+        Object oldSalario = payload.get("oldSalario");
+
+        if (salario != null && oldSalario != null && !salario.equals(oldSalario)) {
+            log.info("[SAGA] Salário alterado, atualizando limite correlationId={}", correlationId);
+
+            Map<String, Object> limitPayload = new HashMap<>();
+            limitPayload.put("clientId", cpf);
+            limitPayload.put("newSalary", salario);
+
+            try {
+                sendEvent("saga.exchange", "saga.account.updatelimit", limitPayload, correlationId);
+                sagaResults.put(correlationId, new SagaResult(true, "update-client", "Aguardando atualização de limite",
+                        Map.of("correlationId", correlationId, "status", "pending-limit"), 202));
+            } catch (Exception ex) {
+                log.error("Erro ao publicar atualização de limite: {}", ex.getMessage(), ex);
+                notifyUpdateClientFailure(correlationId, "Erro ao atualizar limite: " + ex.getMessage(), 500);
+            }
+        } else {
+            notifyUpdateClientSuccess(correlationId, payload);
+        }
+    }
+
+    public void handleAccountLimitUpdated(String correlationId, Map<String, Object> payload) {
+        if (correlationId == null)
+            return;
+
+        log.info("[SAGA] Limite da conta atualizado correlationId={}", correlationId);
+        notifyUpdateClientSuccess(correlationId, payload);
+    }
+
+    public void notifyUpdateClientSuccess(String correlationId, Map<String, Object> data) {
+        log.info("[SAGA] Cliente atualizado com sucesso correlationId={}", correlationId);
+        sagaResults.put(correlationId, new SagaResult(true, "update-client", "Cliente atualizado com sucesso",
+                data, 200));
+    }
+
+    public void notifyUpdateClientFailure(String correlationId, String errorMessage, int statusCode) {
+        int code = statusCode > 0 ? statusCode : 400;
+        sagaResults.put(correlationId, new SagaResult(false, "update-client", errorMessage,
+                Map.of("erro", errorMessage, "statusCode", code), code));
+    }
+
+    public Map<String, Object> composeClientData(String cpf) {
+        log.info("[SAGA] Composing client data for CPF={}", cpf);
+
+        try {
+            // 1. Get client data from client-service
+            Map<String, Object> clientData = restTemplate.getForObject(
+                    clientServiceUrl + "/clientes/" + cpf,
+                    Map.class);
+
+            if (clientData == null) {
+                throw new RuntimeException("Cliente não encontrado");
+            }
+
+            // 2. Get account data from account-query-service
+            Map<String, Object> accountData = null;
+            try {
+                accountData = restTemplate.getForObject(
+                        accountQueryServiceUrl + "/query/account-by-cpf/" + cpf,
+                        Map.class);
+            } catch (Exception e) {
+                log.warn("Conta não encontrada para CPF {}: {}", cpf, e.getMessage());
+            }
+
+            // 3. Compose final response
+            Map<String, Object> response = new HashMap<>(clientData);
+
+            if (accountData != null) {
+                response.put("conta", accountData.get("accountNumber"));
+                response.put("saldo", accountData.get("balance"));
+                response.put("limite", accountData.get("limit"));
+                response.put("gerente", accountData.get("managerId"));
+                response.put("idGerente", accountData.get("managerId"));
+            }
+
+            return response;
+        } catch (Exception ex) {
+            log.error("Erro ao compor dados do cliente: {}", ex.getMessage(), ex);
+            throw new RuntimeException("Erro ao buscar dados do cliente: " + ex.getMessage());
+        }
     }
 }

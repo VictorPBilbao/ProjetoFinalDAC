@@ -1,5 +1,6 @@
 package br.ufpr.client_service.consumer;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -104,6 +105,73 @@ public class ClientSagaListener {
         } catch (Exception ex) {
             System.err.println("Erro ao processar criação de auth/conta: " + ex.getMessage());
             ex.printStackTrace();
+        }
+    }
+
+    @RabbitListener(queues = "${rabbit.clients.update-queue:client.update.queue}")
+    public void handleUpdateClient(Message message) throws Exception {
+        String correlationId = message.getMessageProperties().getCorrelationId();
+        Map<String, Object> payload = mapper.readValue(message.getBody(), Map.class);
+
+        try {
+            String cpf = (String) payload.get("cpf");
+
+            Client client = clientRepository.findById(cpf)
+                    .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
+
+            Object oldSalario = client.getSalario();
+
+            if (payload.containsKey("nome")) {
+                client.setNome((String) payload.get("nome"));
+            }
+            if (payload.containsKey("email")) {
+                client.setEmail((String) payload.get("email"));
+            }
+            if (payload.containsKey("telefone")) {
+                client.setTelefone((String) payload.get("telefone"));
+            }
+            if (payload.containsKey("salario")) {
+                Object salarioObj = payload.get("salario");
+                if (salarioObj instanceof Number) {
+                    client.setSalario(BigDecimal.valueOf(((Number) salarioObj).doubleValue()));
+                }
+            }
+            if (payload.containsKey("endereco")) {
+                client.setEndereco((String) payload.get("endereco"));
+            }
+            if (payload.containsKey("cep")) {
+                client.setCep((String) payload.get("cep"));
+            }
+            if (payload.containsKey("cidade")) {
+                client.setCidade((String) payload.get("cidade"));
+            }
+            if (payload.containsKey("estado")) {
+                client.setEstado((String) payload.get("estado"));
+            }
+
+            clientRepository.save(client);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("cpf", client.getCpf());
+            response.put("nome", client.getNome());
+            response.put("email", client.getEmail());
+            response.put("salario", client.getSalario());
+            response.put("oldSalario", oldSalario);
+
+            rabbitTemplate.convertAndSend(clientsExchange, "client.updated", response, m -> {
+                m.getMessageProperties().setCorrelationId(correlationId);
+                return m;
+            });
+
+        } catch (Exception ex) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("reason", ex.getMessage());
+            errorResponse.put("payload", payload);
+
+            rabbitTemplate.convertAndSend(clientsExchange, "client.update-failed", errorResponse, m -> {
+                m.getMessageProperties().setCorrelationId(correlationId);
+                return m;
+            });
         }
     }
 }
