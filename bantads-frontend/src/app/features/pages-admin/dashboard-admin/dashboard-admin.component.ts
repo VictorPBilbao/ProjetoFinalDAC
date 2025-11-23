@@ -1,10 +1,11 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { NgxChartsModule, ScaleType } from '@swimlane/ngx-charts';
 import { forkJoin, Subscription } from 'rxjs';
 
-import { Manager } from '../../models/manager.model';
+import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { NgxChartsModule, ScaleType } from '@swimlane/ngx-charts';
+
 import { Cliente } from '../../models/cliente.model';
+import { Manager } from '../../models/manager.model';
 import { ClientService } from '../../services/client/client.service';
 import { ManagerService } from '../../services/manager/manager.service';
 
@@ -43,16 +44,25 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
                 next: (processedManagers) => {
                     console.log('Dados recebidos:', processedManagers);
 
-                    // ✅ Validação e sanitização dos dados com tipo explícito
                     this.managers = (processedManagers || [])
-                        .filter((m): m is Manager => m !== null && m !== undefined && !!m.name)
-                        .map(m => ({
-                            ...m,
-                            name: m.name || 'Desconhecido',
-                            positiveTotal: this.safeNumber(m.positiveTotal),
-                            negativeTotal: this.safeNumber(m.negativeTotal),
-                            clientCount: this.safeNumber(m.clientCount)
-                        } as Manager))
+                        .filter(
+                            (m): m is Manager =>
+                                m !== null && m !== undefined && !!m.nome
+                        )
+                        .map(
+                            (m) =>
+                                ({
+                                    ...m,
+                                    name: m.nome || 'Desconhecido',
+                                    positiveTotal: this.safeNumber(
+                                        m.positiveTotal
+                                    ),
+                                    negativeTotal: this.safeNumber(
+                                        m.negativeTotal
+                                    ),
+                                    clientCount: this.safeNumber(m.clientCount),
+                                } as Manager)
+                        )
                         .sort((a, b) => {
                             const aTotal = this.safeNumber(a.positiveTotal);
                             const bTotal = this.safeNumber(b.positiveTotal);
@@ -61,13 +71,17 @@ export class DashboardAdminComponent implements OnInit, OnDestroy {
 
                     // ✅ Prepara dados do gráfico com validação extra
                     this.chartData = this.managers
-                        .filter(m => m.name && m.name.trim() !== '')
+                        .filter((m) => m.nome && m.nome.trim() !== '')
                         .map((m) => {
-                            const positiveValue = this.safeNumber(m.positiveTotal);
-                            const negativeValue = this.safeNumber(m.negativeTotal);
-                            
+                            const positiveValue = this.safeNumber(
+                                m.positiveTotal
+                            );
+                            const negativeValue = this.safeNumber(
+                                m.negativeTotal
+                            );
+
                             return {
-                                name: m.name,
+                                name: m.nome,
                                 series: [
                                     {
                                         name: 'Saldo Positivo',

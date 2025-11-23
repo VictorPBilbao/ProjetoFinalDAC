@@ -15,8 +15,6 @@ import { Manager } from '../../models/manager.model';
 import { Transaction } from '../../models/transaction.model';
 import { ClientService } from '../../services/client/client.service';
 import { ServiceContaService } from '../../services/conta/service-conta.service';
-import { LocalStorageServiceService } from '../../services/local-storages/local-storage-service.service';
-import { TransactionService } from '../../services/transaction/transaction.service';
 
 @Component({
     selector: 'app-transfer',

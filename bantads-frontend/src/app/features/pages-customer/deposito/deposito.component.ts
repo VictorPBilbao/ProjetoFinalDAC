@@ -13,7 +13,6 @@ import {
 import { Cliente } from '../../models/cliente.model';
 import { ClientService } from '../../services/client/client.service';
 import { ServiceContaService } from '../../services/conta/service-conta.service';
-import { TransactionService } from '../../services/transaction/transaction.service';
 
 @Component({
     selector: 'app-deposito',

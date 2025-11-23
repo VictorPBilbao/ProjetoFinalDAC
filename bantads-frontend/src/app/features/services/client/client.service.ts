@@ -192,7 +192,7 @@ export class ClientService {
 
             manager: {
                 cpf: data.cpfGerente || data.idGerente || gerenteData.cpf,
-                name:
+                nome:
                     data.nomeGerente ||
                     data.gerenteName ||
                     gerenteData.nome ||

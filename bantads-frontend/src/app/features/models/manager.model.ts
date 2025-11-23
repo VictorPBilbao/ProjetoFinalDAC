@@ -1,15 +1,15 @@
 import { Cliente } from './cliente.model';
 
 export interface Manager {
-  id: string;
-  cpf: string;
-  name: string;
-  email: string;
-  telephone: string;
-  password?: string; //Estão como opcionais só pra eu n ter que colocar no Mock
-  salt?: string;
-  clients?: Cliente[];
-  clientCount?: number;
-  positiveTotal?: number;
-  negativeTotal?: number;
+    id: string;
+    cpf: string;
+    nome: string;
+    email: string;
+    telephone: string;
+    password: string;
+    salt?: string;
+    clients?: Cliente[];
+    clientCount?: number;
+    positiveTotal?: number;
+    negativeTotal?: number;
 }

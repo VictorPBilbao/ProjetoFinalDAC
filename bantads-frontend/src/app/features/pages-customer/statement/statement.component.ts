@@ -7,9 +7,7 @@ import { FormsModule } from '@angular/forms';
 
 import { Cliente } from '../../models/cliente.model';
 import { Record } from '../../models/record.model';
-import { ClientService } from '../../services/client/client.service';
 import { ServiceContaService } from '../../services/conta/service-conta.service';
-import { TransactionService } from '../../services/transaction/transaction.service';
 
 @Component({
     selector: 'app-statement',
@@ -35,11 +33,7 @@ export class StatementComponent implements OnInit, OnDestroy {
     private sub?: Subscription;
     isLoading: any;
 
-    constructor(
-        private readonly contaService: ServiceContaService,
-        private readonly clientService: ClientService,
-        private readonly transactionService: TransactionService
-    ) {}
+    constructor(private readonly contaService: ServiceContaService) {}
 
     ngOnDestroy(): void {
         if (this.sub) {

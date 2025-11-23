@@ -1,15 +1,11 @@
 import { Observable, of } from 'rxjs';
-import { catchError, delay, finalize, map } from 'rxjs/operators';
+import { catchError, delay, finalize, map, tap } from 'rxjs/operators';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { Cliente } from '../../models/cliente.model';
 import { Manager } from '../../models/manager.model';
-import {
-    LocalStorageServiceService,
-    RejectedClient,
-} from '../../services/local-storages/local-storage-service.service';
 import { AuthService } from '../auth/auth.service';
 import { LoadingService } from '../utils/loading-service.service';
 
@@ -18,7 +14,6 @@ export class ManagerService {
     private readonly apiUrl = 'http://localhost:3000';
 
     constructor(
-        private readonly storage: LocalStorageServiceService,
         private readonly authService: AuthService,
         private readonly loadingService: LoadingService,
         private readonly http: HttpClient
@@ -37,7 +32,7 @@ export class ManagerService {
                     return response.map((item) => {
                         return {
                             id: item.gerente.id || item.gerente.cpf,
-                            name: item.gerente.nome,
+                            nome: item.gerente.nome,
                             cpf: item.gerente.cpf,
                             email: item.gerente.email,
                             telephone: item.gerente.telefone,
@@ -221,7 +216,7 @@ export class ManagerService {
         const token = this.authService.getToken();
         const payload = {
             cpf: manager.cpf,
-            nome: manager.name,
+            nome: manager.nome,
             email: manager.email,
             senha: manager.password,
             telefone: manager.telephone,
@@ -267,6 +262,9 @@ export class ManagerService {
                 headers: token ? { Authorization: token } : {},
             })
             .pipe(
+                tap((gerentes) =>
+                    console.log('Lista recebida do back: ', gerentes)
+                ),
                 catchError((err) => {
                     console.error('Erro ao buscar gerentes:', err);
                     return of([]);
@@ -298,7 +296,7 @@ export class ManagerService {
         console.log('Atualizando gerente:', updated);
         const payload = {
             cpf: updated.cpf,
-            nome: updated.name,
+            nome: updated.nome,
             email: updated.email,
             senha: updated.password,
             telefone: updated.telephone,
@@ -351,7 +349,7 @@ export class ManagerService {
             );
     }
 
-    getRejectedClients(): Observable<RejectedClient[]> {
+    getRejectedClients(): Observable<Cliente[]> {
         const token = this.authService.getToken();
 
         return this.http
@@ -363,7 +361,7 @@ export class ManagerService {
                     const rejeitados = clientes.filter(
                         (c) => c.status === 'REJEITADO'
                     );
-                    return rejeitados as RejectedClient[];
+                    return rejeitados;
                 }),
                 catchError((err) => {
                     console.error('Erro ao buscar clientes rejeitados:', err);

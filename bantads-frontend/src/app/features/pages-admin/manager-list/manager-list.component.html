@@ -19,7 +19,7 @@
             </thead>
             <tbody>
                 <tr *ngFor="let manager of managers">
-                    <td>{{ manager.name }}</td>
+                    <td>{{ manager.nome }}</td>
                     <td>{{ manager.cpf | cpf }}</td>
                     <td>{{ manager.email }}</td>
                     <td>{{ manager.telephone }}</td>
@@ -32,7 +32,7 @@
                         </a>
                         <button
                             class="delete-button"
-                            (click)="confirmDelete(manager.cpf, manager.name)"
+                            (click)="confirmDelete(manager.cpf, manager.nome)"
                         >
                             <i class="fas fa-trash-alt"></i> Remover
                         </button>
