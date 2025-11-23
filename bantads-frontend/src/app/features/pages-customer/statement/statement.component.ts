@@ -91,6 +91,7 @@ export class StatementComponent implements OnInit, OnDestroy {
             .subscribe({
                 next: (dados) => {
                     this.dailyRecords = dados;
+                    console.log(dados);
                     this.currentPg = 1;
                     this.updatePgView();
                     this.isLoading = false;
