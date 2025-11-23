@@ -1,17 +1,18 @@
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { Observable, Subscription } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import {
     FormBuilder,
     FormGroup,
     ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+
 import { Cliente } from '../../models/cliente.model';
-import { Observable, Subscription } from 'rxjs';
-import { ClientService } from '../../services/client/client.service';
-import { TransactionService } from '../../services/transaction/transaction.service';
 import { Transaction } from '../../models/transaction.model';
+import { ClientService } from '../../services/client/client.service';
 import { ServiceContaService } from '../../services/conta/service-conta.service';
 
 @Component({
@@ -26,29 +27,28 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
 
     cliente$!: Observable<Cliente | null>;
     cliente: Cliente | null = null;
-    lastAccess$!: import('rxjs').Observable<string | null>;
+    lastAccess$!: Date;
     private clienteSub?: Subscription;
     transaction: Transaction | null = null;
 
     constructor(
         private clientService: ClientService,
-        private contaService: ServiceContaService // Injete o serviço
-    ) { }
-
+        private contaService: ServiceContaService
+    ) {}
 
     ngOnInit(): void {
         this.clienteSub = this.clientService
             .getLoggedClient()
             .subscribe((client) => {
                 this.cliente = client ?? null;
-                // Preenche automaticamente os campos de agência e conta
                 if (this.cliente) {
                     this.form.patchValue({
                         agencia: this.cliente.agencia,
-                        conta: this.cliente.conta
+                        conta: this.cliente.conta,
                     });
                 }
             });
+        this.lastAccess$ = this.clientService.getLastAccess();
     }
 
     ngOnDestroy(): void {
@@ -74,24 +74,25 @@ export class WhithdrawalComponent implements OnInit, OnDestroy {
         }
         const { valor } = this.form.value;
 
-        // Usa o número da conta do cliente logado
         const numeroConta = this.cliente.conta;
 
-        // Integração com Backend (Validação de saldo/limite ocorre no servidor)
         this.contaService.sacar(numeroConta, Number(valor)).subscribe({
             next: () => {
-                this.message = { type: 'success', text: 'Saque realizado com sucesso.' };
+                this.message = {
+                    type: 'success',
+                    text: 'Saque realizado com sucesso.',
+                };
                 this.form.patchValue({ valor: null });
-                // Atualiza os dados do cliente após o saque
-                this.clientService.getLoggedClient().subscribe((updatedClient) => {
-                    this.cliente = updatedClient ?? null;
-                });
+                this.clientService
+                    .getLoggedClient()
+                    .subscribe((updatedClient) => {
+                        this.cliente = updatedClient ?? null;
+                    });
             },
             error: (err) => {
-                // O backend retorna 400 se não houver saldo/limite
                 const msg = err.error?.message || 'Erro ao realizar saque.';
                 this.message = { type: 'error', text: msg };
-            }
+            },
         });
     }
 }

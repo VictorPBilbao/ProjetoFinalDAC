@@ -1,13 +1,15 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
-import { Record } from '../../models/record.model';
-import { Cliente } from '../../models/cliente.model';
-import { ServiceContaService } from '../../services/conta/service-conta.service';
-import { ClientService } from '../../services/client/client.service';
-import { TransactionService } from '../../services/transaction/transaction.service';
 import Swal from 'sweetalert2';
+
+import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { Cliente } from '../../models/cliente.model';
+import { Record } from '../../models/record.model';
+import { ClientService } from '../../services/client/client.service';
+import { ServiceContaService } from '../../services/conta/service-conta.service';
+import { TransactionService } from '../../services/transaction/transaction.service';
 
 @Component({
     selector: 'app-statement',
@@ -46,7 +48,7 @@ export class StatementComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        this.contaService.getMinhaConta().subscribe({
+        this.contaService.getMinhaConta(this.cliente?.cpf).subscribe({
             next: (conta) => {
                 this.numeroConta =
                     conta.numero || conta.conta || conta.accountNumber;

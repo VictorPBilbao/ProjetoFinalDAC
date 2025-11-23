@@ -1,11 +1,12 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
+
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 
 import { Cliente } from '../../models/cliente.model';
-import { AuthService } from '../auth/auth.service';
 import { Manager } from '../../models/manager.model';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable({
     providedIn: 'root',
@@ -26,16 +27,18 @@ export class ClientService {
             headers = headers.set('Authorization', token);
         }
 
-        return this.http.get<any[]>(`${this.apiUrl}/clientes`, { params, headers }).pipe(
-            map((response) => {
-                if (!Array.isArray(response)) return [];
-                return response.map((item) => this.mapToClientModel(item));
-            }),
-            catchError((err) => {
-                console.error('Erro ao buscar clientes:', err);
-                return of([]);
-            })
-        );
+        return this.http
+            .get<any[]>(`${this.apiUrl}/clientes`, { params, headers })
+            .pipe(
+                map((response) => {
+                    if (!Array.isArray(response)) return [];
+                    return response.map((item) => this.mapToClientModel(item));
+                }),
+                catchError((err) => {
+                    console.error('Erro ao buscar clientes:', err);
+                    return of([]);
+                })
+            );
     }
 
     getClientById(cpf: string): Observable<Cliente | undefined> {
@@ -63,12 +66,14 @@ export class ClientService {
             headers = headers.set('Authorization', token);
         }
 
-        return this.http.post<Cliente>(`${this.apiUrl}/clientes`, client, { headers }).pipe(
-            catchError((err) => {
-                console.error('Erro ao criar cliente:', err);
-                return throwError(() => err);
-            })
-        );
+        return this.http
+            .post<Cliente>(`${this.apiUrl}/clientes`, client, { headers })
+            .pipe(
+                catchError((err) => {
+                    console.error('Erro ao criar cliente:', err);
+                    return throwError(() => err);
+                })
+            );
     }
 
     getLoggedClient(): Observable<Cliente | undefined> {
@@ -106,11 +111,17 @@ export class ClientService {
             email: cliente.email,
             telefone: cliente.telefone,
             salario: cliente.salario,
-            endereco: `${cliente.endereco.tipo} ${cliente.endereco.logradouro}, ${cliente.endereco.numero}${cliente.endereco.complemento ? ', ' + cliente.endereco.complemento : ''}`,
+            endereco: `${cliente.endereco.tipo} ${
+                cliente.endereco.logradouro
+            }, ${cliente.endereco.numero}${
+                cliente.endereco.complemento
+                    ? ', ' + cliente.endereco.complemento
+                    : ''
+            }`,
             cep: cliente.endereco.cep.replace(/\D/g, ''),
             cidade: cliente.endereco.cidade,
             estado: cliente.endereco.estado,
-            conta: cliente.conta
+            conta: cliente.conta,
         };
 
         return this.http
@@ -130,8 +141,8 @@ export class ClientService {
             .pipe(catchError((err) => throwError(() => err)));
     }
 
-    getLastAccess(): string {
-        return new Date().toLocaleString('pt-BR');
+    getLastAccess(): Date {
+        return new Date();
     }
 
     private mapToClientModel(data: any): Cliente {
@@ -144,7 +155,10 @@ export class ClientService {
         let numeroConta = '';
         if (data.numeroConta) {
             numeroConta = data.numeroConta;
-        } else if (typeof data.conta === 'string' || typeof data.conta === 'number') {
+        } else if (
+            typeof data.conta === 'string' ||
+            typeof data.conta === 'number'
+        ) {
             numeroConta = String(data.conta);
         } else if (contaData.numero || contaData.conta) {
             numeroConta = contaData.numero || contaData.conta;
@@ -166,21 +180,26 @@ export class ClientService {
                 cep: data.cep || enderecoData.cep || '',
                 cidade: data.cidade || enderecoData.cidade || '',
                 estado: data.estado || enderecoData.estado || '',
-                bairro: data.bairro || enderecoData.bairro || ''
+                bairro: data.bairro || enderecoData.bairro || '',
             },
 
             conta: numeroConta,
-            saldo: data.saldo !== undefined ? data.saldo : (contaData.saldo || 0),
-            limite: data.limite !== undefined ? data.limite : (contaData.limite || 0),
+            saldo: data.saldo !== undefined ? data.saldo : contaData.saldo || 0,
+            limite:
+                data.limite !== undefined ? data.limite : contaData.limite || 0,
             agencia: data.agencia || '0001',
             criadoEm: data.criadoEm || new Date().toISOString(),
 
             manager: {
                 cpf: data.cpfGerente || data.idGerente || gerenteData.cpf,
-                name: data.nomeGerente || data.gerenteName || gerenteData.nome || 'Não Atribuído',
+                name:
+                    data.nomeGerente ||
+                    data.gerenteName ||
+                    gerenteData.nome ||
+                    'Não Atribuído',
                 id: gerenteData.id || null,
                 email: gerenteData.email || '',
-                telephone: gerenteData.telefone || ''
+                telephone: gerenteData.telefone || '',
             } as Manager,
         };
     }

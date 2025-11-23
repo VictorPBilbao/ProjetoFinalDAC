@@ -1,7 +1,9 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { map } from 'rxjs/operators';
+
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
 import { Record as ContaRecord } from '../../models/record.model';
 import { Transaction } from '../../models/transaction.model';
 import { AuthService } from '../auth/auth.service';
@@ -12,26 +14,53 @@ const API_URL = 'http://localhost:3000';
 export class ServiceContaService {
     constructor(private http: HttpClient, private authService: AuthService) {}
 
-    getMinhaConta(): Observable<any> {
+    getMinhaConta(cpfParam?: string): Observable<any> {
         const token = this.authService.getToken();
-        const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
-        return this.http.get(`${API_URL}/query/my-account`, { headers });
+        const loggedUser = this.authService.getUser();
+        const cpf = cpfParam || loggedUser?.cpf;
+
+        if (!cpf) {
+            return throwError(
+                () =>
+                    new Error(
+                        'CPF não encontrado e/ou usuário não está logado.'
+                    )
+            );
+        }
+
+        const headers = token
+            ? new HttpHeaders().set('Authorization', token)
+            : new HttpHeaders();
+        return this.http.get(`${API_URL}/clientes/${cpf}`, { headers });
     }
 
     depositar(numeroConta: string, valor: number): Observable<any> {
         const token = this.authService.getToken();
-        const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
-        return this.http.post(`${API_URL}/contas/${numeroConta}/depositar`, {
-            valor: valor,
-        }, { headers });
+        const headers = token
+            ? new HttpHeaders().set('Authorization', token)
+            : new HttpHeaders();
+        console.log(`Depositando na conta ${numeroConta}`);
+        return this.http.post(
+            `${API_URL}/contas/${numeroConta}/depositar`,
+            {
+                valor: valor,
+            },
+            { headers }
+        );
     }
 
     sacar(numeroConta: string, valor: number): Observable<any> {
         const token = this.authService.getToken();
-        const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
-        return this.http.post(`${API_URL}/contas/${numeroConta}/sacar`, {
-            valor: valor,
-        }, { headers });
+        const headers = token
+            ? new HttpHeaders().set('Authorization', token)
+            : new HttpHeaders();
+        return this.http.post(
+            `${API_URL}/contas/${numeroConta}/sacar`,
+            {
+                valor: valor,
+            },
+            { headers }
+        );
     }
 
     transferir(
@@ -40,7 +69,9 @@ export class ServiceContaService {
         valor: number
     ): Observable<any> {
         const token = this.authService.getToken();
-        const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
+        const headers = token
+            ? new HttpHeaders().set('Authorization', token)
+            : new HttpHeaders();
         return this.http.post(
             `${API_URL}/contas/${numeroContaOrigem}/transferir`,
             {
@@ -61,10 +92,12 @@ export class ServiceContaService {
         if (fim) params = params.set('endDate', fim);
 
         const token = this.authService.getToken();
-        const headers = token ? new HttpHeaders().set('Authorization', token) : new HttpHeaders();
+        const headers = token
+            ? new HttpHeaders().set('Authorization', token)
+            : new HttpHeaders();
 
         return this.http
-            .get<any[]>(`${API_URL}/query/contas/${numeroConta}/extrato`, {
+            .get<any[]>(`${API_URL}/contas/${numeroConta}/extrato`, {
                 params,
                 headers,
             })

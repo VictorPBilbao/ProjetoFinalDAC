@@ -14,9 +14,9 @@ import { Cliente } from '../../models/cliente.model';
 import { Manager } from '../../models/manager.model';
 import { Transaction } from '../../models/transaction.model';
 import { ClientService } from '../../services/client/client.service';
+import { ServiceContaService } from '../../services/conta/service-conta.service';
 import { LocalStorageServiceService } from '../../services/local-storages/local-storage-service.service';
 import { TransactionService } from '../../services/transaction/transaction.service';
-import { ServiceContaService } from '../../services/conta/service-conta.service';
 
 @Component({
     selector: 'app-transfer',
@@ -30,7 +30,7 @@ export class TransferComponent implements OnDestroy, OnInit {
 
     cliente$!: Observable<Cliente | undefined>;
     cliente: Cliente | null = null;
-    lastAccess$!: string;
+    lastAccess$!: Date;
     transaction: Transaction | null = null;
     private sub?: Subscription;
 
@@ -83,20 +83,27 @@ export class TransferComponent implements OnDestroy, OnInit {
         }
         const { conta, contaDestino, valor } = this.form.value;
 
-        this.contaService.transferir(conta, contaDestino, Number(valor)).subscribe({
-            next: () => {
-                this.message = { type: 'success', text: 'Transferência realizada com sucesso.' };
-                this.lastTransfer = {
-                    destinoConta: contaDestino,
-                    valor: Number(valor),
-                    timestamp: new Date().toISOString(),
-                };
-                this.form.patchValue({ valor: null, contaDestino: '' });
-            },
-            error: (err) => {
-                const msg = err.error?.message || 'Erro na transferência. Verifique o saldo ou a conta destino.';
-                this.message = { type: 'error', text: msg };
-            }
-        });
+        this.contaService
+            .transferir(conta, contaDestino, Number(valor))
+            .subscribe({
+                next: () => {
+                    this.message = {
+                        type: 'success',
+                        text: 'Transferência realizada com sucesso.',
+                    };
+                    this.lastTransfer = {
+                        destinoConta: contaDestino,
+                        valor: Number(valor),
+                        timestamp: new Date().toISOString(),
+                    };
+                    this.form.patchValue({ valor: null, contaDestino: '' });
+                },
+                error: (err) => {
+                    const msg =
+                        err.error?.message ||
+                        'Erro na transferência. Verifique o saldo ou a conta destino.';
+                    this.message = { type: 'error', text: msg };
+                },
+            });
     }
 }

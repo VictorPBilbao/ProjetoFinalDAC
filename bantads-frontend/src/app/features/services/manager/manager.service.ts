@@ -1,4 +1,9 @@
+import { Observable, of } from 'rxjs';
+import { catchError, delay, finalize, map } from 'rxjs/operators';
+
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+
 import { Cliente } from '../../models/cliente.model';
 import { Manager } from '../../models/manager.model';
 import {
@@ -7,9 +12,6 @@ import {
 } from '../../services/local-storages/local-storage-service.service';
 import { AuthService } from '../auth/auth.service';
 import { LoadingService } from '../utils/loading-service.service';
-import { Observable, of } from 'rxjs';
-import { catchError, delay, finalize, map } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
 
 @Injectable({ providedIn: 'root' })
 export class ManagerService {
@@ -40,9 +42,11 @@ export class ManagerService {
                             email: item.gerente.email,
                             telephone: item.gerente.telefone,
 
-                            clientCount: item.clientes ? item.clientes.length : 0,
+                            clientCount: item.clientes
+                                ? item.clientes.length
+                                : 0,
                             positiveTotal: item.saldo_positivo,
-                            negativeTotal: item.saldo_negativo
+                            negativeTotal: item.saldo_negativo,
                         } as Manager;
                     });
                 }),
@@ -248,8 +252,10 @@ export class ManagerService {
     }
 
     verifyManagerByCPF(cpf: string): Observable<{ exists: boolean }> {
-        const exists = this.storage.getManagers().some((m) => m.cpf === cpf);
-        return of({ exists }).pipe(delay(500));
+        return this.getManagerById(cpf).pipe(
+            map((manager) => ({ exists: !!manager })),
+            catchError(() => of({ exists: false }))
+        );
     }
 
     // ---------------- READ ----------------
@@ -345,9 +351,24 @@ export class ManagerService {
             );
     }
 
-    // ---------------- REJECTED CLIENTS ----------------
     getRejectedClients(): Observable<RejectedClient[]> {
-        const rejectedClients = this.storage.getRejectedClients();
-        return of(rejectedClients).pipe(delay(500));
+        const token = this.authService.getToken();
+
+        return this.http
+            .get<any[]>(`${this.apiUrl}/clientes`, {
+                headers: token ? { Authorization: token } : {},
+            })
+            .pipe(
+                map((clientes) => {
+                    const rejeitados = clientes.filter(
+                        (c) => c.status === 'REJEITADO'
+                    );
+                    return rejeitados as RejectedClient[];
+                }),
+                catchError((err) => {
+                    console.error('Erro ao buscar clientes rejeitados:', err);
+                    return of([]);
+                })
+            );
     }
 }
