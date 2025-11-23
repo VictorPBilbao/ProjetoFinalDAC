@@ -110,12 +110,13 @@ export class ServiceContaService {
                     const agrupadoPorDia: { [key: string]: any } = {};
 
                     respostaBackend.movimentacoes.forEach((mov: any) => {
-                        const dataObj = new Date(mov.data);
+                        const stringDataLimpa = mov.data.split('.')[0];
+                        const dataObj = new Date(stringDataLimpa);
                         const dataKey = dataObj.toLocaleDateString('pt-BR');
 
                         if (!agrupadoPorDia[dataKey]) {
                             agrupadoPorDia[dataKey] = {
-                                date: dataObj,
+                                data: dataObj,
                                 transactions: [],
                                 consolidatedBalance: 0,
                             };
@@ -130,6 +131,7 @@ export class ServiceContaService {
                 })
             );
     }
+
     private mapToTransaction(mov: any): Transaction {
         let op: 'Transferencia' | 'Deposito' | 'Saque' = 'Transferencia';
         const tipo = (mov.operacao || '').toUpperCase();
@@ -137,10 +139,16 @@ export class ServiceContaService {
         if (tipo.includes('DEPOSITO')) op = 'Deposito';
         else if (tipo.includes('SAQUE')) op = 'Saque';
 
+        const rawDate = mov.data;
+
+        const cleanDateString = rawDate
+            ? rawDate.toString().split('.')[0] + 'Z'
+            : '';
+
         return {
             id: '',
             clientId: '',
-            dateTime: new Date(mov.dataHora),
+            dateTime: cleanDateString ? new Date(cleanDateString) : new Date(),
             operation: op,
             fromOrToClient: mov.origem || mov.destino,
             amount: mov.valor,
