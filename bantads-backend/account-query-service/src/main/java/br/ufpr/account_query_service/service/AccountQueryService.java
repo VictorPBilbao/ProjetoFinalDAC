@@ -77,7 +77,7 @@ public class AccountQueryService {
             for (TransactionView tx : dailyTxs) {
                 currentBalance = currentBalance.add(tx.getAmount());
 
-                String tipoMovimento = tx.getAmount().compareTo(BigDecimal.ZERO) >= 0 ? "ENTRADA" : "SAIDA";
+                String tipoMovimento = tx.getAmount().compareTo(BigDecimal.ZERO) >= 0 ? "depósito" : "saque";
 
                 StatementItemDTO item = new StatementItemDTO();
                 item.setDataHora(tx.getTimestamp());
@@ -110,5 +110,9 @@ public class AccountQueryService {
             return List.of();
         }
         return accountViewRepository.findTopAccountsByManager(managerCpf, limit);
+    }
+
+    public void rebuildAccountViews() {
+        accountViewRepository.deleteAll();
     }
 }

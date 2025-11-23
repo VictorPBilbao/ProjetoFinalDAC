@@ -234,99 +234,116 @@ app.get("/clientes/resumo/top-saldos", authenticateToken, async (req, res) => {
 });
 
 app.get(
-    "/gerentes",
-    authenticateToken,
-    requireRole("ADMINISTRADOR"),
-    async (req, res, next) => {
-        if (req.query.filtro === "dashboard") {
-            try {
-                console.log("📊 [DASHBOARD] Gerando dashboard de gerentes (R15)...");
+  "/gerentes",
+  authenticateToken,
+  requireRole("ADMINISTRADOR"),
+  async (req, res, next) => {
+    if (req.query.filtro === "dashboard") {
+      try {
+        console.log("📊 [DASHBOARD] Gerando dashboard de gerentes (R15)...");
 
-                const MANAGER_URL = process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
-                const ACCOUNT_QUERY_URL =
-                    process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
-                const CLIENT_URL = process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
+        const MANAGER_URL =
+          process.env.MANAGER_SERVICE_URL || "http://localhost:8083";
+        const ACCOUNT_QUERY_URL =
+          process.env.ACCOUNT_QUERY_SERVICE_URL || "http://localhost:8086";
+        const CLIENT_URL =
+          process.env.CLIENT_SERVICE_URL || "http://localhost:8081";
 
-                const config = {
-                    headers: { Authorization: req.headers.authorization },
-                };
+        const config = {
+          headers: { Authorization: req.headers.authorization },
+        };
 
-                const managersResp = await axiosInstance.get(`${MANAGER_URL}/gerentes`, config);
-                const managers = managersResp.data || [];
+        // 🔹 1. Buscar todas as contas primeiro
+        const accountsResp = await axiosInstance.get(
+          `${ACCOUNT_QUERY_URL}/query/all`,
+          config
+        );
+        const accounts = accountsResp.data || [];
 
-                const accountsResp = await axiosInstance.get(
-                    `${ACCOUNT_QUERY_URL}/query/all`,
-                    config
-                );
-                const accounts = accountsResp.data || [];
+        // 🔹 2. Extrair CPFs de gerentes e clientes das contas
+        const managerCpfs = [...new Set(accounts.map(acc => String(acc.managerId)))];
+        const clientCpfs = [...new Set(accounts.map(acc => String(acc.clientCpf ?? acc.clientId)))];
 
-                const clientsResp = await axiosInstance.get(
-                    `${CLIENT_URL}/clientes/listar`,
-                    config
-                );
-                const clientsList = clientsResp.data || [];
+        // 🔹 3. Buscar apenas gerentes e clientes que aparecem nas contas
+        const managersResp = await axiosInstance.get(
+          `${MANAGER_URL}/gerentes`,
+          config
+        );
+        const allManagers = managersResp.data || [];
+        const managers = allManagers.filter(mgr => managerCpfs.includes(String(mgr.cpf)));
 
-                const clientsMap = new Map();
-                clientsList.forEach((c) => clientsMap.set(c.cpf, c));
+        const clientsResp = await axiosInstance.get(
+          `${CLIENT_URL}/clientes/listar`,
+          config
+        );
+        const allClients = clientsResp.data || [];
+        const clientsList = allClients.filter(c => clientCpfs.includes(String(c.cpf)));
 
-                const dashboard = managers.map((mgr) => {
-                    const mgrAccounts = accounts.filter(
-                        (acc) =>
-                            String(acc.managerId) === String(mgr.id) ||
-                            String(acc.managerId) === mgr.cpf
-                    );
+        // 🔹 4. Map de clientes por CPF
+        const clientsMap = new Map();
+        clientsList.forEach((c) => clientsMap.set(String(c.cpf), c));
 
-                    let totalPos = 0;
-                    let totalNeg = 0;
-                    const clientesDoGerente = [];
+        // 🔹 5. Montar dashboard
+        const dashboard = managers.map((mgr) => {
+          const mgrAccounts = accounts.filter(
+            (acc) => String(acc.managerId) === String(mgr.cpf)
+          );
 
-                    mgrAccounts.forEach((acc) => {
-                        const saldo = Number(acc.balance || acc.saldo || 0);
+          let totalPos = 0;
+          let totalNeg = 0;
+          const clientesDoGerente = [];
+          const seenCpfs = new Set();
 
-                        if (saldo >= 0) {
-                            totalPos += saldo;
-                        } else {
-                            totalNeg += saldo;
-                        }
+          mgrAccounts.forEach((acc) => {
+            const saldo = Number(acc.balance ?? acc.saldo ?? 0);
+            const clientCpf = String(acc.clientCpf ?? acc.clientId ?? "");
 
-                        const clientInfo = clientsMap.get(acc.clientId || acc.clientCpf);
+            if (!clientCpf) return;
 
-                        if (clientInfo) {
-                            clientesDoGerente.push({
-                                cpf: clientInfo.cpf,
-                                nome: clientInfo.nome,
-                                saldo: saldo,
-                            });
-                        }
-                    });
+            if (saldo >= 0) totalPos += saldo;
+            else totalNeg += saldo;
 
-                    return {
-                        gerente: {
-                            cpf: mgr.cpf,
-                            nome: mgr.nome,
-                            email: mgr.email,
-                        },
-                        clientes: clientesDoGerente,
-                        saldo_positivo: Number(totalPos.toFixed(2)),
-                        saldo_negativo: Number(totalNeg.toFixed(2)),
-                    };
-                });
-
-                dashboard.sort((a, b) => b.saldo_positivo - a.saldo_positivo);
-
-                return res.status(200).json(dashboard);
-            } catch (error) {
-                console.error("❌ [DASHBOARD ERROR] Falha ao agregar dados:", error.message);
-                return res.status(500).json({ error: "Erro ao gerar dashboard de gerentes" });
+            if (!seenCpfs.has(clientCpf)) {
+              seenCpfs.add(clientCpf);
+              const clientInfo = clientsMap.get(clientCpf);
+              clientesDoGerente.push({
+                cpf: clientCpf,
+                nome: clientInfo?.nome ?? "Cliente não encontrado",
+                saldo: saldo,
+              });
             }
-        }
+          });
 
-        next();
-    },
-    proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083")
+          return {
+            gerente: {
+              cpf: mgr.cpf,
+              nome: mgr.nome,
+              email: mgr.email,
+            },
+            clientes: clientesDoGerente,
+            saldo_positivo: Number(totalPos.toFixed(2)),
+            saldo_negativo: Number(totalNeg.toFixed(2)),
+          };
+        });
+
+        dashboard.sort((a, b) => b.saldo_positivo - a.saldo_positivo);
+
+        return res.status(200).json(dashboard);
+      } catch (error) {
+        console.error(
+          "❌ [DASHBOARD ERROR] Falha ao agregar dados:",
+          error.message
+        );
+        return res
+          .status(500)
+          .json({ error: "Erro ao gerar dashboard de gerentes" });
+      }
+    }
+
+    next();
+  },
+  proxy(process.env.MANAGER_SERVICE_URL || "http://localhost:8083")
 );
-
-
 
 // ============================================
 // HEALTH CHECK & PROXIES
@@ -847,6 +864,10 @@ app.get("/reboot", async (req, res) => {
             name: "Account Service",
             url: process.env.ACCOUNT_SERVICE_URL + "/contas",
         },
+        {
+            name: "Account query Service",
+            url: process.env.ACCOUNT_QUERY_SERVICE_URL + "/query",
+        }
     ];
 
     // Dispara as requisições em paralelo usando Promise.all

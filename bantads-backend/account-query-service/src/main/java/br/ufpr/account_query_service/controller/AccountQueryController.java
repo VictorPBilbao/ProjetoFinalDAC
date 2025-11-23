@@ -71,4 +71,10 @@ public class AccountQueryController {
     public ResponseEntity<List<AccountView>> getAllAccounts() {
         return ResponseEntity.ok(accountViewRepository.findAll());
     }
+
+    @PostMapping("/reboot")
+    public ResponseEntity<String> rebootAccountViews() {
+        accountQueryService.rebuildAccountViews();
+        return ResponseEntity.ok("Account views rebuild initiated.");
+    }
 }

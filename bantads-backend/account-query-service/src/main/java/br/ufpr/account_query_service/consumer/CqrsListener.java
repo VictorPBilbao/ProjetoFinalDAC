@@ -88,8 +88,10 @@ public class CqrsListener {
     }
 
     @RabbitListener(queues = "transaction-created-queue")
-    public void onTransaction(TransactionMessageDTO txDto) {
+    public void onTransaction(Message message) {
         try {
+            TransactionMessageDTO txDto = objectMapper.readValue(message.getBody(), TransactionMessageDTO.class);
+            
             TransactionView txView = new TransactionView();
 
             if (txDto.getDataHora() != null) {
@@ -100,8 +102,16 @@ public class CqrsListener {
 
             txView.setType(txDto.getTipo());
             txView.setAmount(BigDecimal.valueOf(txDto.getValor()));
-            txView.setOriginClientId(txDto.getOrigemCpf());
-            txView.setDestinationClientId(txDto.getDestinoCpf());
+
+            String accountNumberOrigin = accountViewRepository.findByClientId(txDto.getOrigemCpf())
+                    .map(AccountView::getAccountNumber)
+                    .orElse(null);
+            String accountNumberDestino = accountViewRepository.findByClientId(txDto.getDestinoCpf())
+                    .map(AccountView::getAccountNumber)
+                    .orElse(null);
+
+            txView.setOriginClientId(accountNumberOrigin);
+            txView.setDestinationClientId(accountNumberDestino);
 
             String cpfDaConta = txDto.getOrigemCpf();
 
