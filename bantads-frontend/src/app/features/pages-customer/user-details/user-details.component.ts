@@ -25,6 +25,7 @@ export class UserDetailsComponent implements OnInit {
     saved = false;
     limiteOriginal!: number;
     loading = true;
+    saving = false;
     error: string | null = null;
     loadingCep = false;
     cepError: string | null = null;
@@ -34,7 +35,7 @@ export class UserDetailsComponent implements OnInit {
         private readonly authService: AuthService,
         private readonly clientService: ClientService,
         private readonly userService: UserService
-    ) { }
+    ) {}
 
     ngOnInit() {
         this.loadUserData();
@@ -107,7 +108,7 @@ export class UserDetailsComponent implements OnInit {
                 bairro: [
                     { value: this.cliente.endereco.bairro, disabled: true },
                 ],
-                numero: [this.cliente.endereco.numero, Validators.required],
+                numero: [this.cliente.endereco.numero],
                 complemento: [this.cliente.endereco.complemento],
                 cep: [
                     this.cliente.endereco.cep,
@@ -123,6 +124,7 @@ export class UserDetailsComponent implements OnInit {
         });
         this.limiteOriginal = this.cliente.limite;
         this.setupCepListener();
+        this.autoFillAddressFromCep();
     }
 
     private setupCepListener() {
@@ -137,6 +139,25 @@ export class UserDetailsComponent implements OnInit {
                     this.searchCep(cep);
                 }
             });
+        }
+    }
+
+    private autoFillAddressFromCep() {
+        const cepControl = this.enderecoGroup?.get('cep');
+        const logradouroControl = this.enderecoGroup?.get('logradouro');
+
+        if (cepControl && cepControl.value) {
+            const cepValue = cepControl.value;
+            const isAddressEmpty =
+                !logradouroControl?.value ||
+                logradouroControl.value.trim() === '';
+
+            if (isAddressEmpty && cepValue.length >= 8) {
+                const cleanCep = cepValue.replace(/\D/g, '');
+                if (cleanCep.length === 8) {
+                    this.searchCep(cleanCep);
+                }
+            }
         }
     }
 
@@ -200,68 +221,49 @@ export class UserDetailsComponent implements OnInit {
             return;
         }
 
-        const valores = this.form.getRawValue(); // inclui CPF desabilitado
-        const salarioAnterior = this.cliente.salario;
+        this.saving = true;
+        this.error = null;
 
-        // Cria payload compatível com ClientDTO do backend
+        const valores = this.form.getRawValue();
+
         const payload = {
             cpf: valores.cpf,
             nome: valores.nome,
             email: valores.email,
             telefone: valores.telefone,
             salario: valores.salario,
-            endereco: `${valores.endereco.tipo} ${valores.endereco.logradouro}, ${valores.endereco.numero}${valores.endereco.complemento ? ', ' + valores.endereco.complemento : ''}`,
-            cep: valores.endereco.cep.replace(/\D/g, ''), // Remove formatação
+            endereco: `${valores.endereco.tipo} ${
+                valores.endereco.logradouro
+            }, ${valores.endereco.numero}${
+                valores.endereco.complemento
+                    ? ', ' + valores.endereco.complemento
+                    : ''
+            }`,
+            cep: valores.endereco.cep.replace(/\D/g, ''),
             cidade: valores.endereco.cidade,
             estado: valores.endereco.estado,
-            conta: this.cliente.conta
+            conta: this.cliente.conta,
         };
 
-        // Regra de recálculo de limite quando salário muda
-        if (salarioAnterior !== payload.salario) {
-            let novoLimite = this.calcularLimite(payload.salario);
-            // Se o novo limite for menor que o saldo negativo atual, ajusta
-            if (
-                this.cliente.saldo < 0 &&
-                novoLimite < Math.abs(this.cliente.saldo)
-            ) {
-                novoLimite = Math.abs(this.cliente.saldo);
-            }
-            // Note: limite não é enviado no payload, pois é calculado no backend
-        }
-
-        // Persiste as mudanças
-        this.clientService.updateClient(this.cliente, payload).subscribe({
-            next: (response) => {
-                // Atualiza o cliente local com os novos valores
-                this.cliente = {
-                    ...this.cliente,
-                    nome: payload.nome,
-                    email: payload.email,
-                    telefone: payload.telefone,
-                    salario: payload.salario,
-                    endereco: valores.endereco
-                };
+        this.clientService.updateClient(valores.cpf, payload).subscribe({
+            next: (updatedClient) => {
+                this.cliente = updatedClient;
+                this.buildForm();
                 this.saved = true;
                 this.editMode = false;
-                console.log(
-                    'Cliente atualizado com sucesso:',
-                    response.message
-                );
+                this.error = null;
+                this.saving = false;
+
+                setTimeout(() => {
+                    this.saved = false;
+                }, 5000);
             },
             error: (err) => {
                 this.error = 'Erro ao salvar alterações. Tente novamente.';
+                this.saving = false;
                 console.error('Erro ao atualizar cliente:', err);
             },
         });
-    }
-
-    private calcularLimite(salario: number): number {
-        // Conforme R4: Cliente com salário ≥ R$2.000,00 tem limite igual a metade do salário
-        if (salario >= 2000) {
-            return salario * 0.5;
-        }
-        return 0; // Sem limite para salários abaixo de R$2.000,00
     }
 
     get enderecoGroup() {
