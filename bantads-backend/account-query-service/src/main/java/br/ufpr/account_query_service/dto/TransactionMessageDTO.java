@@ -1,4 +1,5 @@
 package br.ufpr.account_query_service.dto;
+import java.time.LocalDateTime;
 
 public class TransactionMessageDTO {
 
@@ -7,7 +8,7 @@ public class TransactionMessageDTO {
     private String origemCpf;
     private String destinoCpf;
     private double valor;
-    private String dataHora;
+    private LocalDateTime creationDate;
     private String accountId;
 
     public String getId() {
@@ -50,12 +51,12 @@ public class TransactionMessageDTO {
         this.valor = valor;
     }
 
-    public String getDataHora() {
-        return dataHora;
+    public LocalDateTime getCreationDate() {
+        return creationDate;
     }
 
-    public void setDataHora(String dataHora) {
-        this.dataHora = dataHora;
+    public void setCreationDate(LocalDateTime creationDate) {
+        this.creationDate = creationDate;
     }
 
     public String getAccountId() {

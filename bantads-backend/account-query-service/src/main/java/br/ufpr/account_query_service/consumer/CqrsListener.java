@@ -90,12 +90,25 @@ public class CqrsListener {
     @RabbitListener(queues = "transaction-created-queue")
     public void onTransaction(Message message) {
         try {
+            Map<String, Object> payload = objectMapper.readValue(message.getBody(), Map.class);
+            System.out.println(">>> DEBUG Payload JSON: " + payload.toString());
+
             TransactionMessageDTO txDto = objectMapper.readValue(message.getBody(), TransactionMessageDTO.class);
+            
+            txDto.setCreationDate(payload.get("dataHora") != null
+                    ? LocalDateTime.parse(payload.get("dataHora").toString())
+                    : null);
+
+            txDto.setAccountId(payload.get("id") != null
+                    ? payload.get("id").toString()
+                    : null);
             
             TransactionView txView = new TransactionView();
 
-            if (txDto.getDataHora() != null) {
-                txView.setTimestamp(LocalDateTime.parse(txDto.getDataHora()));
+            System.out.println(">>> DEBUG TransactionMessageDTO JSON: " + objectMapper.writeValueAsString(txDto));
+
+            if (txDto.getCreationDate() != null) {
+                txView.setTimestamp(txDto.getCreationDate());
             } else {
                 txView.setTimestamp(LocalDateTime.now());
             }
