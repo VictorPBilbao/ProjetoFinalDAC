@@ -108,9 +108,9 @@ public class CqrsListener {
             System.out.println(">>> DEBUG TransactionMessageDTO JSON: " + objectMapper.writeValueAsString(txDto));
 
             if (txDto.getCreationDate() != null) {
-                txView.setTimestamp(txDto.getCreationDate());
+                txView.setTimestamp(txDto.getCreationDate().withNano(0));
             } else {
-                txView.setTimestamp(LocalDateTime.now());
+                txView.setTimestamp(LocalDateTime.now().withNano(0));
             }
 
             txView.setType(txDto.getTipo());

@@ -77,10 +77,12 @@ public class AccountQueryService {
             for (TransactionView tx : dailyTxs) {
                 currentBalance = currentBalance.add(tx.getAmount());
 
-                String tipoMovimento = tx.getAmount().compareTo(BigDecimal.ZERO) >= 0 ? "depósito" : "saque";
+                String tipoMovimento = tx.getType().equals("TRANSFERENCIA_ENVIADA") || tx.getType().equals("TRANSFERENCIA_RECEBIDA")
+                        ? "transferência"
+                        : (tx.getAmount().compareTo(BigDecimal.ZERO) >= 0 ? "depósito" : "saque");
 
                 StatementItemDTO item = new StatementItemDTO();
-                item.setData(tx.getTimestamp());
+                item.setData(tx.getTimestamp().withNano(0));
                 item.setOperacao(tx.getType());
                 item.setTipo(tipoMovimento);
                 item.setValor(tx.getAmount().abs());

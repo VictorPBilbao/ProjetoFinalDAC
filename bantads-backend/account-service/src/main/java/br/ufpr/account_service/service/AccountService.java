@@ -50,11 +50,12 @@ public class AccountService {
         tx.setAccount(account);
         tx.setType("depósito");
         tx.setAmount(amount);
-        tx.setTimestamp(LocalDateTime.now());
+        tx.setTimestamp(LocalDateTime.now().withNano(0));
         tx.setOriginClientId(account.getClientId());
 
         transactionRepository.save(tx);
 
+        account.setCreationDate(tx.getTimestamp());
         Account savedAccount = accountRepository.save(account);
 
         publishCqrsEvent("account.updated", savedAccount);
@@ -77,11 +78,12 @@ public class AccountService {
         tx.setAccount(account);
         tx.setType("saque");
         tx.setAmount(amount.negate());
-        tx.setTimestamp(LocalDateTime.now());
+        tx.setTimestamp(LocalDateTime.now().withNano(0));
         tx.setOriginClientId(account.getClientId());
 
         transactionRepository.save(tx);
 
+        account.setCreationDate(tx.getTimestamp());
         Account savedAccount = accountRepository.save(account);
 
         publishCqrsEvent("account.updated", savedAccount);
@@ -110,7 +112,7 @@ public class AccountService {
         originTx.setAmount(amount.negate());
         originTx.setOriginClientId(originAccount.getClientId());
         originTx.setDestinationClientId(destAccount.getClientId());
-        originTx.setTimestamp(LocalDateTime.now());
+        originTx.setTimestamp(LocalDateTime.now().withNano(0));
         transactionRepository.save(originTx);
 
         Transaction destTx = new Transaction();
@@ -119,7 +121,7 @@ public class AccountService {
         destTx.setAmount(amount);
         destTx.setOriginClientId(originAccount.getClientId());
         destTx.setDestinationClientId(destAccount.getClientId());
-        destTx.setTimestamp(LocalDateTime.now());
+        destTx.setTimestamp(LocalDateTime.now().withNano(0));
         transactionRepository.save(destTx);
 
         accountRepository.save(destAccount);
@@ -207,7 +209,7 @@ public class AccountService {
             Map<String, Object> map = new HashMap<>();
             map.put("id", t.getId());
             map.put("dataHora",
-                    t.getTimestamp() != null ? t.getTimestamp().toString() : LocalDateTime.now().toString());
+                    t.getTimestamp() != null ? t.getTimestamp().withNano(0).toString() : LocalDateTime.now().withNano(0).toString());
             map.put("tipo", t.getType());
             map.put("valor", t.getAmount());
             map.put("origemCpf", t.getOriginClientId());

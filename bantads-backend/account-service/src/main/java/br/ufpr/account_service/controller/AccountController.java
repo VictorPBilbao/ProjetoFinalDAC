@@ -69,7 +69,7 @@ public class AccountController {
         response.put("saldo", updatedAccount.getBalance());
         response.put("destino", request.getDestinationAccountNumber());
         response.put("valor", request.getValor());
-        response.put("data", LocalDateTime.now().toString());
+        response.put("data", LocalDateTime.now().withNano(0).toString());
 
         return ResponseEntity.ok(response);
     }
